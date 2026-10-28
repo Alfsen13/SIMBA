@@ -1,0 +1,29 @@
+{
+	# Diperlukan agar FrankenPHP aktif (bukan Caddy biasa).
+	frankenphp
+
+	admin off
+}
+
+http://127.0.0.1:8000 {
+	# Folder depan aplikasi Laravel.
+	root * public
+
+	# Kompresi respons.
+	encode zstd br gzip
+
+	# Log.access dinonaktifkan: menambah I/O per request tanpa manfaat di lokal.
+	log {
+		output file storage/logs/frankenphp.log
+		format console
+	}
+
+	# Catatan: TIDAK memakai `worker` mode di sini.
+	# Mode classic (php_server) sudah menjalankan tiap request di thread PHP
+	# sendiri, sehingga request panjang (generate AI sinkron 1-5 menit)
+	# tidak lagi membekukan request lain.
+	php_server {
+		# File statis (build/assets, storage) dilayani langsung oleh Caddy.
+		try_files {path} index.php
+	}
+}

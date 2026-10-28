@@ -1,0 +1,903 @@
+{
+    "records": [
+        {
+            "id": "calc.int.definite",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Integral Tertentu",
+            "symbol": "∫ₐᵇ",
+            "latex": "\\int_{a}^{b} f(x)\\,dx",
+            "name": "Integral Tertentu",
+            "definition": "Luas area di bawah kurva f(x) dari x=a sampai x=b. Menghasilkan bilangan (scalar).",
+            "meaning": "Accumulation (akumulasi) atau total perubahan kuantitas sepanjang interval",
+            "formula": "\\int_{a}^{b} f(x)\\,dx = F(b) - F(a), di mana F'(x)=f(x)",
+            "variables": [
+                "a",
+                "b",
+                "x",
+                "f(x)",
+                "F(x)"
+            ],
+            "unit": "sama dengan f(x) x (mis. m·pada f(x)=kecepatan)",
+            "example": "\\int_{0}^{2} 3x\\,dx = [\\tfrac{3}{2}x^2]_0^2 = 6",
+            "related_symbols": [
+                "calc.int.indefinite",
+                "calc.fundamental"
+            ],
+            "related_concepts": [
+                "luas area",
+                "analisis",
+                "kalkulus"
+            ],
+            "common_misunderstanding": "Mengira integral selalu positif; jika batas atas lebih kecil dari batas bawah hasilnya negatif.",
+            "keywords": [
+                "integral",
+                "tertentu",
+                " definite",
+                "luas",
+                "kurva",
+                "area"
+            ],
+            "retrieval_text": "integral tertentu batas atas bawah luas area kurva f(x) dx"
+        },
+        {
+            "id": "calc.int.indefinite",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Integral Tak Tertentu",
+            "symbol": "∫ f(x)dx",
+            "latex": "\\int f(x)\\,dx = F(x) + C",
+            "name": "Integral Tak Tertentu (Antiderivatif)",
+            "definition": "Fungsi antiderivatif dari f(x). Selalu harus ditambah konstanta sembarang C.",
+            "meaning": "Mencari fungsi yang turunan-nya sama dengan f(x)",
+            "formula": "\\int f(x)\\,dx = F(x) + C, dengan F'(x) = f(x)",
+            "variables": [
+                "x",
+                "f(x)",
+                "F(x)",
+                "C"
+            ],
+            "unit": "sama dengan f(x) x",
+            "example": "\\int 5x^2\\,dx = \\tfrac{5}{3}x^3 + C",
+            "related_symbols": [
+                "calc.int.definite",
+                "calc.diff.symbol"
+            ],
+            "related_concepts": [
+                "antiderivatif",
+                "turunan baliknya"
+            ],
+            "common_misunderstanding": "Lupa menambahkan konstanta C; hasil tanpanya salah karena semua konstanta berbeda memiliki turunan sama.",
+            "keywords": [
+                "integral",
+                "tak tentu",
+                "antiderivatif",
+                "konstanta",
+                "C"
+            ],
+            "retrieval_text": "integral tak tentu antiderivatif konstanta C fungsi primitif"
+        },
+        {
+            "id": "calc.int.power",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Rumus Inti",
+            "symbol": "∫xⁿdx",
+            "latex": "\\int x^n\\,dx = \\frac{x^{n+1}}{n+1} + C",
+            "name": "Integral Pangkat",
+            "definition": "Rumus dasar integral untuk pangkat, berlaku saat n bukan -1.",
+            "meaning": "Rumus integral utama untuk x pangkat",
+            "formula": "\\int x^n\\,dx = \\frac{x^{n+1}}{n+1} + C, \\quad n \\neq -1",
+            "variables": [
+                "x",
+                "n"
+            ],
+            "unit": "tak bersatuan (hasil fungsi x)",
+            "example": "\\int x^4\\,dx = \\frac{x^5}{5} + C",
+            "related_symbols": [
+                "calc.int.ln",
+                "calc.int.exp"
+            ],
+            "related_concepts": [
+                "pangkat",
+                "eksponensial",
+                "power rule"
+            ],
+            "common_misunderstanding": "Menerapkan rumus pangkat untuk n = -1; kasus khusus itu harus pakai ln.",
+            "keywords": [
+                "integral",
+                "pangkat",
+                "power rule",
+                "x^n",
+                "n+1"
+            ],
+            "retrieval_text": "integral pangkat x^n dx x^(n+1)/(n+1)+C rumus power rule"
+        },
+        {
+            "id": "calc.int.ln",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Rumus Inti",
+            "symbol": "∫dx/x",
+            "latex": "\\int \\frac{1}{x}\\,dx = \\ln|x| + C",
+            "name": "Integral Reciprocal (Kasus Khusus n = -1)",
+            "definition": "Kasus khusus integral pangkat saat n = -1, hasilnya logaritma natural.",
+            "meaning": "Pengecualian dari rumus pangkat",
+            "formula": "\\int \\frac{1}{x}\\,dx = \\ln|x| + C",
+            "variables": [
+                "x"
+            ],
+            "unit": "tak bersatuan",
+            "example": "\\int \\frac{1}{x}\\,dx = \\ln|x| + C",
+            "related_symbols": [
+                "calc.int.power",
+                "math.log.ln"
+            ],
+            "related_concepts": [
+                "logaritma natural",
+                "kasus khusus"
+            ],
+            "common_misunderstanding": "Menyebutnya sebagai kasus khusus (exception); menulis x^0/x = 1/x berarti hasil 0, bukan ln.",
+            "keywords": [
+                "integral",
+                "1/x",
+                "ln",
+                "logaritma natural",
+                "kasus khusus"
+            ],
+            "retrieval_text": "integral 1/x dx ln|x| logaritma natural kasus khusus n=-1"
+        },
+        {
+            "id": "calc.int.exp",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Rumus Inti",
+            "symbol": "∫eˣdx",
+            "latex": "\\int e^x\\,dx = e^x + C",
+            "name": "Integral Eksponensial",
+            "definition": "Integral dari eksponensial natural e^x menghasilkan e^x itu sendiri.",
+            "meaning": "Fungsi eksponensial bersifat antiderivatif dari dirinya sendiri",
+            "formula": "\\int e^x\\,dx = e^x + C, \\quad \\int a^x\\,dx = \\frac{a^x}{\\ln a} + C",
+            "variables": [
+                "x",
+                "a"
+            ],
+            "unit": "tak bersatuan",
+            "example": "\\int e^{2x}\\,dx = \\tfrac{1}{2}e^{2x} + C",
+            "related_symbols": [
+                "calc.int.power",
+                "math.log.ln"
+            ],
+            "related_concepts": [
+                "eksponensial",
+                "e"
+            ],
+            "common_misunderstanding": "Lupa faktor 1/a pada ∫aˣdx untuk a bukan e.",
+            "keywords": [
+                "integral",
+                "eksponensial",
+                "e^x",
+                "a^x",
+                "ln a"
+            ],
+            "retrieval_text": "integral eksponensial e^x dx a^x/ln a antiderivatif eksponensial"
+        },
+        {
+            "id": "calc.int.sin",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Rumus Inti",
+            "symbol": "∫sin x dx",
+            "latex": "\\int \\sin x\\,dx = -\\cos x + C",
+            "name": "Integral Trigonometri",
+            "definition": "Integral fungsi trigonometri dasar, dengan tanda berlawanan pada cos dan tan.",
+            "meaning": "Aturan integral sin, cos, tan",
+            "formula": "\\int\\sin x\\,dx=-\\cos x+C, \\int\\cos x\\,dx=\\sin x+C, \\int\\tan x\\,dx=-\\ln|\\cos x|+C",
+            "variables": [
+                "x"
+            ],
+            "unit": "tak bersatuan",
+            "example": "\\int \\sin(3x)\\,dx = -\\tfrac{1}{3}\\cos(3x) + C",
+            "related_symbols": [
+                "calc.int.power",
+                "math.trig.sin"
+            ],
+            "related_concepts": [
+                "trigonometri",
+                "sin",
+                "cos",
+                "tan"
+            ],
+            "common_misunderstanding": "Tanda pada ∫sin xdx forgot salah (harus minus); dan lupa faktor 1/k pada sin(kx).",
+            "keywords": [
+                "integral",
+                "sin",
+                "cos",
+                "tan",
+                "trigonometri",
+                "-cos"
+            ],
+            "retrieval_text": "integral trigonometri sin cos tan -cos(x)+C ln cos"
+        },
+        {
+            "id": "calc.int.sum",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Rumus Inti",
+            "symbol": "∫Σfᵢdx",
+            "latex": "\\int \\sum_{i} f_i(x)\\,dx = \\sum_{i} \\int f_i(x)\\,dx",
+            "name": "Integral dari Jumlah (Linearitas)",
+            "definition": "Integral bersifat linear terhadap penjumlahan dan perkalian konstanta.",
+            "meaning": "Integral bisa dipisah per suku",
+            "formula": "\\int (af + bg)\\,dx = a\\int f\\,dx + b\\int g\\,dx",
+            "variables": [
+                "f",
+                "g",
+                "a",
+                "b",
+                "i"
+            ],
+            "unit": "tak bersatuan",
+            "example": "\\int (2x + 3)\\,dx = x^2 + 3x + C",
+            "related_symbols": [
+                "calc.int.power"
+            ],
+            "related_concepts": [
+                "linearitas",
+                "superposisi",
+                "penjumlahan"
+            ],
+            "common_misunderstanding": "Mengira integral dari hasil kali sama dengan hasil kali integral (salah; itu hanya untuk penjumlahan).",
+            "keywords": [
+                "integral",
+                "linearitas",
+                "penjumlahan",
+                "superposisi",
+                "af+bg"
+            ],
+            "retrieval_text": "integral linearitas penjumlahan perkalian konstanta af+bg"
+        },
+        {
+            "id": "calc.int.substitution",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Teknik",
+            "symbol": "u = g(x)",
+            "latex": "\\int f(g(x))g'(x)\\,dx = \\int f(u)\\,du",
+            "name": "Substitusi u",
+            "definition": "Teknik integral dengan mengganti bagian dalam fungsi dengan variabel baru u.",
+            "meaning": "Menyederhanakan integral komposit",
+            "formula": "u = g(x), \\; du = g'(x)\\,dx \\; \\Rightarrow \\; \\int f(g(x))g'(x)\\,dx = \\int f(u)\\,du",
+            "variables": [
+                "u",
+                "g(x)",
+                "f",
+                "x"
+            ],
+            "unit": "tak bersatuan",
+            "example": "\\int 2x\\cos(x^2)\\,dx = \\sin(x^2) + C (dengan u=x^2)",
+            "related_symbols": [
+                "calc.int.indefinite",
+                "calc.diff.chain"
+            ],
+            "related_concepts": [
+                "substitusi",
+                "variable change",
+                "u"
+            ],
+            "common_misunderstanding": "Lupa mengubah batas (limit) integral tertentu saat substitusi, padahal du/dx tidak sama dengan du.",
+            "keywords": [
+                "substitusi",
+                "u",
+                "integral",
+                "teknik",
+                "g'(x)"
+            ],
+            "retrieval_text": "substitusi u integral teknik ganti variabel du g'(x) dx"
+        },
+        {
+            "id": "calc.int.parts",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Teknik",
+            "symbol": "∫u dv",
+            "latex": "\\int u\\,dv = uv - \\int v\\,du",
+            "name": "Integrasi per Bagian",
+            "definition": "Teknik integral untuk hasil kali dua fungsi, memecah salah satunya menjadi dv.",
+            "meaning": "Mengintegralkan produk (mis. x·eˣ, x·sin x)",
+            "formula": "\\int u\\,dv = uv - \\int v\\,du \\quad (LIATE: Log, Inverse trig, Algebraic, Trig, Exponential)",
+            "variables": [
+                "u",
+                "v",
+                "du",
+                "dv"
+            ],
+            "unit": "tak bersatuan",
+            "example": "\\int x e^x\\,dx = x e^x - e^x + C = e^x(x-1) + C",
+            "related_symbols": [
+                "calc.int.substitution",
+                "calc.int.product"
+            ],
+            "related_concepts": [
+                "per bagian",
+                "integration by parts",
+                "LIATE"
+            ],
+            "common_misunderstanding": " salah memilih u; panduan LIATE (Log, Inverse trig, Aljabar, Trig, Eksponensial) diikuti agar termudah yang jadi u.",
+            "keywords": [
+                "per bagian",
+                "integration by parts",
+                "LIATE",
+                "u dv",
+                "uv",
+                "integral parsial",
+                "parsial"
+            ],
+            "retrieval_text": "integral per bagian integration by parts LIATE u dv uv - integral v du integral parsial"
+        },
+        {
+            "id": "calc.int.product",
+            "domain": "kalkulus",
+            "category": "Integral",
+            "subcategory": "Rumus Inti",
+            "symbol": "∫f g'",
+            "latex": "\\int f(x)g'(x)\\,dx = f(x)g(x) - \\int f'(x)g(x)\\,dx",
+            "name": "Rumus Produk",
+            "definition": "Rumus integral untuk hasil kali dua fungsi, setara dengan integrasi per bagian.",
+            "meaning": "Menyederhanakan integral produk",
+            "formula": "\\int f(x)g'(x)\\,dx = f(x)g(x) - \\int f'(x)g(x)\\,dx",
+            "variables": [
+                "f",
+                "g",
+                "x"
+            ],
+            "unit": "tak bersatuan",
+            "example": "\\int x\\cos x\\,dx = x\\sin x - \\sin x + C",
+            "related_symbols": [
+                "calc.int.parts"
+            ],
+            "related_concepts": [
+                "produk",
+                "per bagian",
+                "differensiasi produk"
+            ],
+            "common_misunderstanding": "Mengira hasil kali bisa dipisah jadi dua integral terpisah; salah, ada suku pengoreksi.",
+            "keywords": [
+                "produk",
+                "product rule",
+                "integral",
+                "f g'"
+            ],
+            "retrieval_text": "integral produk f g' fg - integral f'g product rule"
+        },
+        {
+            "id": "calc.fundamental",
+            "domain": "kalkulus",
+            "category": "Teorema",
+            "subcategory": "Fundamental Theorem of Calculus",
+            "symbol": "FTC",
+            "latex": "\\frac{d}{dx}\\int_a^x f(t)\\,dt = f(x)",
+            "name": "Teorema Fundamental Kalkulus (FTC)",
+            "definition": "Menghubungkan turunan (diferensiasi) dengan integral. Versi 1: turunan integral definite adalah integrannya.",
+            "meaning": "Jembatan antara kalkulus differensial (turunan) dan integral",
+            "formula": "\\int_a^b f'(x)\\,dx = f(b)-f(a), \\quad \\frac{d}{dx}\\int_a^x f(t)\\,dt = f(x)",
+            "variables": [
+                "f",
+                "x",
+                "t",
+                "a",
+                "b"
+            ],
+            "unit": "tak bersatuan",
+            "example": "Jika dF/dx = 3x², maka F(2)-F(0) = \\int_0^2 3x^2\\,dx = 8",
+            "related_symbols": [
+                "calc.int.definite",
+                "calc.diff.symbol"
+            ],
+            "related_concepts": [
+                "FTC",
+                "teorema fundamental",
+                "diferensiasi integral"
+            ],
+            "common_misunderstanding": "Mengira FTC otomatis berarti ∫f = f; sebenarnya perlu fungsi antiderivatif F dengan F'=f.",
+            "keywords": [
+                "FTC",
+                "teorema fundamental",
+                "kalkulus",
+                "turunan integral"
+            ],
+            "retrieval_text": "teorema fundamental kalkulus FTC turunan integral definite f(b)-f(a)"
+        },
+        {
+            "id": "calc.diff.symbol",
+            "domain": "kalkulus",
+            "category": "Diferensiasi",
+            "subcategory": "Turunan",
+            "symbol": "d/dx",
+            "latex": "\\frac{d}{dx}f(x)",
+            "name": "Operator Turunan (Derivatif)",
+            "definition": "Operator yang menghasilkan laju perubahan fungsi terhadap variabel independen.",
+            "meaning": "Laju perubahan, gradien fungsi",
+            "formula": "\\frac{d}{dx}x^n = n x^{n-1}, \\quad \\frac{d}{dx}\\sin x = \\cos x, \\quad \\frac{d}{dx}\\ln x = \\frac{1}{x}",
+            "variables": [
+                "x",
+                "f(x)",
+                "n"
+            ],
+            "unit": "unit fungsi / unit x",
+            "example": "\\frac{d}{dx}(x^3) = 3x^2",
+            "related_symbols": [
+                "calc.diff.second",
+                "calc.int.indefinite",
+                "calc.fundamental"
+            ],
+            "related_concepts": [
+                "turunan",
+                "derivatif",
+                "laju perubahan"
+            ],
+            "common_misunderstanding": "Mencampur turunan dan integral; d/dx dan ∫dx adalah operasi berlawanan tapi tidak identik tanpa konstanta.",
+            "keywords": [
+                "turunan",
+                "derivatif",
+                "d/dx",
+                "dy/dx",
+                "power rule"
+            ],
+            "retrieval_text": "turunan derivatif d/dx power rule n x^(n-1) operator turunan"
+        },
+        {
+            "id": "calc.diff.second",
+            "domain": "kalkulus",
+            "category": "Diferensiasi",
+            "subcategory": "Turunan",
+            "symbol": "d²/dx²",
+            "latex": "\\frac{d^2}{dx^2}f(x)",
+            "name": "Turunan Kedua",
+            "definition": "Turunan dari turunan pertama, mengukur kelengkungan (concavity).",
+            "meaning": "Kelengkungan grafik, percepatan jika f posisi",
+            "formula": "\\frac{d^2}{dx^2}x^n = n(n-1)x^{n-2}",
+            "variables": [
+                "x",
+                "f(x)",
+                "n"
+            ],
+            "unit": "unit fungsi / unit x²",
+            "example": "\\frac{d^2}{dx^2}(x^4) = 12x^2",
+            "related_symbols": [
+                "calc.diff.symbol",
+                "calc.diff.partial"
+            ],
+            "related_concepts": [
+                "turunan kedua",
+                "kelengkungan",
+                "konveks"
+            ],
+            "common_misunderstanding": "Menyebut turunan kedua sebagai percepatan; percepatan = turunan kedua posisi terhadap WAKTU, bukan x generik.",
+            "keywords": [
+                "turunan kedua",
+                "second derivative",
+                "d2/dx2",
+                "kelengkungan"
+            ],
+            "retrieval_text": "turunan kedua d2/dx2 n(n-1)x^(n-2) kelengkungan concavity"
+        },
+        {
+            "id": "calc.diff.chain",
+            "domain": "kalkulus",
+            "category": "Diferensiasi",
+            "subcategory": "Teknik",
+            "symbol": "dy/dx = (dy/du)(du/dx)",
+            "latex": "\\frac{df}{dx} = \\frac{df}{du}\\cdot\\frac{du}{dx}",
+            "name": "Aturan Rantai (Chain Rule)",
+            "definition": "Menurunkan fungsi komposit dengan mengalikan turunan setiap lapisan.",
+            "meaning": "Turunan fungsi komposit f(g(x))",
+            "formula": "\\frac{d}{dx}f(g(x)) = f'(g(x))\\cdot g'(x)",
+            "variables": [
+                "f",
+                "g",
+                "u",
+                "x"
+            ],
+            "unit": "tak bersatuan",
+            "example": "\\frac{d}{dx}\\sin(x^2) = 2x\\cos(x^2)",
+            "related_symbols": [
+                "calc.diff.symbol",
+                "calc.int.substitution"
+            ],
+            "related_concepts": [
+                "chain rule",
+                "komposit",
+                "rantai"
+            ],
+            "common_misunderstanding": "Melewatkan turunan lapisan dalam; contoh salah: d/dx sin(x²) dianggap = cos(x²) tanpa faktor 2x.",
+            "keywords": [
+                "chain rule",
+                "aturan rantai",
+                "komposit",
+                "f(g(x))"
+            ],
+            "retrieval_text": "aturan rantai chain rule df/dx=df/du du/dx turunan komposit"
+        },
+        {
+            "id": "calc.diff.partial",
+            "domain": "kalkulus",
+            "category": "Diferensiasi",
+            "subcategory": "Turunan",
+            "symbol": "∂/∂x",
+            "latex": "\\frac{\\partial f}{\\partial x}",
+            "name": "Turunan Parsial",
+            "definition": "Turunan terhadap satu variabel sementara variabel lain dianggap konstanta.",
+            "meaning": "Diferensiasi multivariat (fungsi beberapa variabel)",
+            "formula": "\\frac{\\partial}{\\partial x}f(x,y) \\text{ dengan } y \\text{ konstan}",
+            "variables": [
+                "f(x,y)",
+                "x",
+                "y"
+            ],
+            "unit": "unit fungsi / unit x",
+            "example": "\\frac{\\partial}{\\partial x}(x^2 + y^2) = 2x",
+            "related_symbols": [
+                "calc.diff.second",
+                "calc.grad"
+            ],
+            "related_concepts": [
+                "turunan parsial",
+                "multivariat",
+                "gradien"
+            ],
+            "common_misunderstanding": "Menggunakan d bukan ∂ untuk fungsi multivariat; dan mengabaikan bahwa variabel lain ikut berubah bila fungsi multivariat (itu butuh turunan total).",
+            "keywords": [
+                "turunan parsial",
+                "partial",
+                "multivariat",
+                "gradien"
+            ],
+            "retrieval_text": "turunan parsial partial derivative multivariat variabel konstan"
+        },
+        {
+            "id": "calc.grad",
+            "domain": "kalkulus",
+            "category": "Vektor",
+            "subcategory": "Gradien",
+            "symbol": "∇",
+            "latex": "\\nabla f = \\left(\\frac{\\partial f}{\\partial x}, \\frac{\\partial f}{\\partial y}, \\frac{\\partial f}{\\partial z}\\right)",
+            "name": "Gradien (∇)",
+            "definition": "Vektor yang arahnya menunjukkan laju perubahan terbesar suatu fungsi skalar.",
+            "meaning": "Arah kenaikan tercepat (kouching) fungsi",
+            "formula": "\\nabla f = \\left(\\frac{\\partial f}{\\partial x}, \\frac{\\partial f}{\\partial y}, \\frac{\\partial f}{\\partial z}\\right)",
+            "variables": [
+                "f",
+                "x",
+                "y",
+                "z"
+            ],
+            "unit": "unit fungsi / unit panjang",
+            "example": "\\nabla(x^2+y^2) = 2\\hat{x} + 2\\hat{y}",
+            "related_symbols": [
+                "calc.diff.partial",
+                "calc.div"
+            ],
+            "related_concepts": [
+                "gradien",
+                "nabla",
+                "multivariat",
+                "kouching",
+                "arah"
+            ],
+            "common_misunderstanding": "Mengira gradien = turunan biasa; gradien berupa vektor arah, bukan skalar laju perubahan.",
+            "keywords": [
+                "gradien",
+                "nabla",
+                "nabla f",
+                "multivariat",
+                "arah"
+            ],
+            "retrieval_text": "gradien nabla vector arah perubahan terbesar multivariat"
+        },
+        {
+            "id": "calc.div",
+            "domain": "kalkulus",
+            "category": "Vektor",
+            "subcategory": "Divergensi",
+            "symbol": "∇·",
+            "latex": "\\nabla \\cdot \\mathbf{F} = \\frac{\\partial F_x}{\\partial x} + \\frac{\\partial F_y}{\\partial y} + \\frac{\\partial F_z}{\\partial z}",
+            "name": "Divergensi",
+            "definition": "Skalar yang mengukur kecenderungan medan vektor keluar atau masuk dari suatu titik.",
+            "meaning": "Sumber/sink dari medan vektor",
+            "formula": "\\nabla \\cdot \\mathbf{F} = \\sum_i \\frac{\\partial F_i}{\\partial x_i}",
+            "variables": [
+                "F",
+                "x",
+                "y",
+                "z"
+            ],
+            "unit": "unit medan / unit panjang",
+            "example": "\\nabla \\cdot (x\\hat{x}) = 1",
+            "related_symbols": [
+                "calc.grad",
+                "calc.curl"
+            ],
+            "related_concepts": [
+                "divergensi",
+                "medan vektor",
+                "sumber"
+            ],
+            "common_misunderstanding": "Mengira divergensi sama dengan gradien; gradien dari skalar, divergensi dari vektor.",
+            "keywords": [
+                "divergensi",
+                "div",
+                "nabla dot",
+                "medan vektor"
+            ],
+            "retrieval_text": "divergensi nabla dot medan vektor sumber sink"
+        },
+        {
+            "id": "calc.curl",
+            "domain": "kalkulus",
+            "category": "Vektor",
+            "subcategory": "Curl",
+            "symbol": "∇×",
+            "latex": "\\nabla \\times \\mathbf{F}",
+            "name": "Curl (Rotasi)",
+            "definition": "Vektor yang mengukur kecenderungan medan vektor berputar mengelilingi suatu titik.",
+            "meaning": "Sifat_rotasi medan (mis. medan magnet)",
+            "formula": "\\nabla \\times \\mathbf{F} = \\left(\\frac{\\partial F_z}{\\partial y} - \\frac{\\partial F_y}{\\partial z}, \\ldots\\right)",
+            "variables": [
+                "F",
+                "x",
+                "y",
+                "z"
+            ],
+            "unit": "unit medan / unit panjang",
+            "example": "\\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} (hukum Ampere)",
+            "related_symbols": [
+                "calc.div",
+                "calc.grad"
+            ],
+            "related_concepts": [
+                "curl",
+                "rotasi",
+                "medan magnet"
+            ],
+            "common_misunderstanding": "Menyamakan curl dengan rotasi kaku; curl bukan putaran kaku melainkan circulation medan lokal.",
+            "keywords": [
+                "curl",
+                "rotasi",
+                "nabla cross",
+                "medan magnet",
+                "ampere"
+            ],
+            "retrieval_text": "curl rotasi nabla cross medan vektor putar ampere"
+        },
+        {
+            "id": "calc.limit.def",
+            "domain": "kalkulus",
+            "category": "Limit",
+            "subcategory": "Limit",
+            "symbol": "lim",
+            "latex": "\\lim_{x \\to a} f(x)",
+            "name": "Limit",
+            "definition": "Nilai yang mendekati fungsi f(x) saat x mendekati a (tidak harus sama dengan f(a)).",
+            "meaning": "Nilai bentukan saat variabel mendekati suatu titik",
+            "formula": "\\lim_{x\\to a}f(x)=L \\text{ jika } f(x)\\to L \\text{ ketika } x\\to a",
+            "variables": [
+                "x",
+                "a",
+                "f(x)",
+                "L"
+            ],
+            "unit": "sama dengan unit f(x)",
+            "example": "\\lim_{x\\to 0}\\frac{\\sin x}{x} = 1",
+            "related_symbols": [
+                "calc.diff.symbol",
+                "calc.limit.inf"
+            ],
+            "related_concepts": [
+                "limit",
+                "kontinuitas",
+                "approach"
+            ],
+            "common_misunderstanding": "Mengira limit selalu sama dengan nilai fungsi; pada fungsi diskontinuitas (mis. 1/x di x=0) limit tak ada.",
+            "keywords": [
+                "limit",
+                "lim",
+                "x->a",
+                "mendekati",
+                "kontinuitas"
+            ],
+            "retrieval_text": "limit lim x->a f(x) nilai mendekati kontinuitas"
+        },
+        {
+            "id": "calc.limit.inf",
+            "domain": "kalkulus",
+            "category": "Limit",
+            "subcategory": "Limit",
+            "symbol": "lim x→∞",
+            "latex": "\\lim_{x \\to \\infty} f(x)",
+            "name": "Limit Tak Tertentu (x → ∞)",
+            "definition": "Limit saat variabel mendekati tak hingga, berguna untuk menentukan konvergensi deret dan limit horizontal.",
+            "meaning": "Perilaku asimtotik saat x sangat besar",
+            "formula": "\\lim_{x\\to\\infty}\\frac{1}{x} = 0, \\quad \\lim_{x\\to\\infty}\\left(1+\\tfrac{1}{x}\\right)^x = e",
+            "variables": [
+                "x",
+                "f(x)",
+                "e"
+            ],
+            "unit": "tak bersatuan",
+            "example": "\\lim_{n\\to\\infty}\\left(1+\\frac{1}{n}\\right)^n = e",
+            "related_symbols": [
+                "calc.limit.def",
+                "math.const.e"
+            ],
+            "related_concepts": [
+                "limit tak hingga",
+                "asimtot",
+                "limit horizontal",
+                "e"
+            ],
+            "common_misunderstanding": "Mengira limit x→∞ selalu tak ada; beberapa fungsi punya limit horizontal finite (mis. 1/x → 0).",
+            "keywords": [
+                "limit",
+                "tak hingga",
+                "infty",
+                "asimtot",
+                "euler"
+            ],
+            "retrieval_text": "limit x->infty tak hingga asimtot limit horizontal bilangan e"
+        },
+        {
+            "id": "calc.sigma",
+            "domain": "kalkulus",
+            "category": "Deret",
+            "subcategory": "Sigma",
+            "symbol": "∑",
+            "latex": "\\sum_{i=1}^{n} a_i",
+            "name": "Sigma (Jumlah Berindeks)",
+            "definition": "Notasi penjumlahan berindeks dari i=1 sampai n.",
+            "meaning": "Penjumlahan sekumpulan suku",
+            "formula": "\\sum_{i=1}^{n} a_i = a_1 + a_2 + \\cdots + a_n",
+            "variables": [
+                "i",
+                "n",
+                "a_i"
+            ],
+            "unit": "sama dengan unit suku",
+            "example": "\\sum_{i=1}^{100} i = \\frac{100\\cdot101}{2} = 5050",
+            "related_symbols": [
+                "calc.prod.symbol",
+                "calc.arith.series"
+            ],
+            "related_concepts": [
+                "sigma",
+                "penjumlahan",
+                "deret",
+                "indeks"
+            ],
+            "common_misunderstanding": "Salah membaca batas; Sigma adalah penjumlahan berindeks, bukan operasi matriks.",
+            "keywords": [
+                "sigma",
+                "sum",
+                "penjumlahan",
+                "deret",
+                "indeks"
+            ],
+            "retrieval_text": "sigma sum penjumlahan berindeks i=1 n a_i deret"
+        },
+        {
+            "id": "calc.prod.symbol",
+            "domain": "kalkulus",
+            "category": "Deret",
+            "subcategory": "Produk",
+            "symbol": "∏",
+            "latex": "\\prod_{i=1}^{n} a_i",
+            "name": "Pi (Produk Berindeks)",
+            "definition": "Notasi perkalian berindeks dari i=1 sampai n.",
+            "meaning": "Perkalian sekumpulan suku",
+            "formula": "\\prod_{i=1}^{n} a_i = a_1 \\cdot a_2 \\cdots a_n",
+            "variables": [
+                "i",
+                "n",
+                "a_i"
+            ],
+            "unit": "sama dengan unit suku",
+            "example": "\\prod_{i=1}^{5} i = 120 = 5!",
+            "related_symbols": [
+                "calc.sigma",
+                "math.comb.factorial"
+            ],
+            "related_concepts": [
+                "produk",
+                "perkalian",
+                "faktorial",
+                "indeks"
+            ],
+            "common_misunderstanding": "Mengira ∏ adalah sigma; ∏ perkalian, ∑ penjumlahan.",
+            "keywords": [
+                "produk",
+                "pi",
+                "perkalian",
+                "faktorial",
+                "indeks"
+            ],
+            "retrieval_text": "produk pi perkalian berindeks i=1 n a_i"
+        },
+        {
+            "id": "calc.arith.series",
+            "domain": "kalkulus",
+            "category": "Deret",
+            "subcategory": "Deret Aritmatika",
+            "symbol": "Sn",
+            "latex": "S_n = \\frac{n}{2}\\left(2a + (n-1)d\\right)",
+            "name": "Jumlah Deret Aritmatika",
+            "definition": "Jumlah n suku pertama deret aritmatika dengan beda d.",
+            "meaning": "Total penjumlahan deret konstan beda",
+            "formula": "S_n = \\frac{n}{2}(2a + (n-1)d) = \\frac{n}{2}(a + U_n)",
+            "variables": [
+                "a",
+                "d",
+                "n",
+                "S_n",
+                "U_n"
+            ],
+            "unit": "sama dengan unit suku",
+            "example": "Deret 1+3+5+... (9 suku): S_9 = \\tfrac{9}{2}(2\\cdot1+8\\cdot2) = 81",
+            "related_symbols": [
+                "calc.sigma",
+                "calc.arith.geom"
+            ],
+            "related_concepts": [
+                "deret aritmatika",
+                "beda",
+                "jumlah suku"
+            ],
+            "common_misunderstanding": "Mengira deret aritmatika sama dengan geometri; aritmatika beda konstan, geometri rasio konstan.",
+            "keywords": [
+                "deret aritmatika",
+                "jumlah",
+                "S_n",
+                "beda",
+                "d"
+            ],
+            "retrieval_text": "deret aritmatika jumlah S_n n/2(2a+(n-1)d) beda"
+        },
+        {
+            "id": "calc.arith.geom",
+            "domain": "kalkulus",
+            "category": "Deret",
+            "subcategory": "Deret Geometri",
+            "symbol": "Sn geo",
+            "latex": "S_n = a\\frac{r^n - 1}{r - 1}",
+            "name": "Jumlah Deret Geometri",
+            "definition": "Jumlah n suku pertama deret geometri dengan rasio r.",
+            "meaning": "Total deret perkalian konstan rasio",
+            "formula": "S_n = a\\frac{r^n - 1}{r - 1} = a\\frac{1 - r^n}{1 - r}",
+            "variables": [
+                "a",
+                "r",
+                "n",
+                "S_n"
+            ],
+            "unit": "sama dengan unit suku",
+            "example": "1+2+4+... (6 suku, r=2): S_6 = 1\\cdot\\frac{2^6-1}{2-1} = 63",
+            "related_symbols": [
+                "calc.arith.series",
+                "math.const.e"
+            ],
+            "related_concepts": [
+                "deret geometri",
+                "rasio",
+                "infinite sum"
+            ],
+            "common_misunderstanding": "Untuk r<1 konvergen (jumlah tak hingga = a/(1-r)), tapi untuk r≥1 divergen (nilai tak hingga).",
+            "keywords": [
+                "deret geometri",
+                "rasio",
+                "r",
+                "jumlah",
+                "konvergen"
+            ],
+            "retrieval_text": "deret geometri jumlah a(r^n-1)/(r-1) rasio konvergen"
+        }
+    ]
+}

@@ -1,0 +1,435 @@
+{
+  "metadata": {
+    "dataset_name": "Bloom Taxonomy Knowledge Base",
+    "version": "1.0.0",
+    "language": "id-ID",
+    "description": "Dataset Taksonomi Bloom Revisi untuk AI Tutor, question generation, assessment classification, adaptive learning, dan RAG.",
+    "framework": "Revised Bloom's Taxonomy"
+  },
+  "levels": [
+    {
+      "code": "C1",
+      "name": "Remember",
+      "name_id": "Mengingat",
+      "order": 1,
+      "definition": "Kemampuan mengambil kembali fakta, istilah, definisi, konsep dasar, atau informasi yang telah dipelajari.",
+      "cognitive_processes": ["recognizing", "recalling"],
+      "cognitive_processes_id": ["mengenali", "mengingat kembali"],
+      "operational_verbs": [
+        "menyebutkan", "mengidentifikasi", "mengingat", "mendefinisikan", "menuliskan",
+        "mencatat", "memilih", "menunjukkan", "menyatakan", "menghafalkan", "mendaftar", "menamai"
+      ],
+      "question_patterns": [
+        "Apa yang dimaksud dengan ...?",
+        "Sebutkan ...",
+        "Tuliskan ...",
+        "Siapa yang ...?",
+        "Kapan ...?",
+        "Di mana ...?",
+        "Manakah yang merupakan ...?",
+        "Apa nama dari ...?",
+        "Definisikan ...",
+        "Sebutkan unsur-unsur ..."
+      ],
+      "activity_examples": [
+        "menghafalkan definisi",
+        "menyebutkan istilah",
+        "mengenali simbol",
+        "mengingat rumus",
+        "menuliskan fakta",
+        "mengidentifikasi informasi yang telah dipelajari"
+      ],
+      "assessment_examples": [
+        "pilihan ganda berbasis fakta",
+        "isian singkat",
+        "benar atau salah",
+        "mencocokkan istilah",
+        "menyebutkan daftar"
+      ],
+      "assessment_focus": ["fakta", "istilah", "definisi", "nama", "simbol", "informasi dasar"],
+      "keywords": ["ingat", "hafal", "sebutkan", "tuliskan", "definisi", "nama", "fakta", "identifikasi"],
+      "classification_guidance": "Gunakan C1 apabila peserta didik terutama diminta mengambil kembali informasi yang telah diketahui tanpa perlu menjelaskan hubungan, menerapkan prosedur, menganalisis informasi, mengevaluasi alternatif, atau menghasilkan solusi baru.",
+      "common_misunderstanding": "Kata kerja seperti mengidentifikasi tidak otomatis berarti C1. Jika identifikasi membutuhkan analisis terhadap hubungan, pola, atau bukti, tuntutan kognitifnya dapat lebih tinggi.",
+      "retrieval_text": "C1 atau Mengingat adalah kemampuan mengambil kembali fakta, istilah, definisi, nama, simbol, atau informasi yang telah dipelajari. Proses kognitif utamanya adalah mengenali dan mengingat kembali."
+    },
+    {
+      "code": "C2",
+      "name": "Understand",
+      "name_id": "Memahami",
+      "order": 2,
+      "definition": "Kemampuan membangun makna dari informasi yang diterima dengan menjelaskan, menginterpretasikan, mengklasifikasikan, membandingkan, atau menyimpulkan.",
+      "cognitive_processes": [
+        "interpreting", "exemplifying", "classifying", "summarizing", "inferring", "comparing", "explaining"
+      ],
+      "cognitive_processes_id": [
+        "menafsirkan", "memberi contoh", "mengklasifikasikan", "meringkas", "menyimpulkan", "membandingkan", "menjelaskan"
+      ],
+      "operational_verbs": [
+        "menjelaskan", "menguraikan", "menginterpretasikan", "memberikan contoh", "mengklasifikasikan",
+        "mengelompokkan", "merangkum", "menyimpulkan", "membandingkan", "membedakan", "menghubungkan", "menafsirkan"
+      ],
+      "question_patterns": [
+        "Jelaskan dengan kata-kata sendiri ...",
+        "Apa makna dari ...?",
+        "Mengapa ...?",
+        "Berikan contoh ...",
+        "Kelompokkan ... berdasarkan ...",
+        "Bandingkan ...",
+        "Apa kesimpulan dari ...?",
+        "Jelaskan hubungan antara ...",
+        "Apa perbedaan antara ...?",
+        "Ringkaslah ..."
+      ],
+      "activity_examples": [
+        "menjelaskan konsep dengan bahasa sendiri",
+        "memberikan contoh konsep",
+        "mengelompokkan objek berdasarkan karakteristik",
+        "membandingkan dua konsep",
+        "merangkum materi",
+        "menafsirkan informasi atau grafik sederhana"
+      ],
+      "assessment_examples": [
+        "soal penjelasan konsep",
+        "perbandingan konsep",
+        "klasifikasi",
+        "interpretasi sederhana",
+        "ringkasan",
+        "soal sebab-akibat sederhana"
+      ],
+      "assessment_focus": [
+        "pemahaman konsep", "makna", "interpretasi", "hubungan sederhana", "perbandingan", "klasifikasi"
+      ],
+      "keywords": ["jelaskan", "uraikan", "mengapa", "contoh", "bandingkan", "simpulkan", "makna", "kelompokkan"],
+      "classification_guidance": "Gunakan C2 ketika peserta didik harus menunjukkan bahwa mereka memahami makna informasi, bukan sekadar mengingatnya.",
+      "common_misunderstanding": "Kata kerja menjelaskan biasanya mengarah ke C2, tetapi jika penjelasan membutuhkan analisis hubungan yang kompleks atau evaluasi bukti, levelnya dapat lebih tinggi.",
+      "retrieval_text": "C2 atau Memahami menunjukkan kemampuan membangun makna dari materi yang dipelajari. Peserta didik dapat menafsirkan, memberi contoh, mengklasifikasikan, merangkum, menyimpulkan, membandingkan, dan menjelaskan."
+    },
+    {
+      "code": "C3",
+      "name": "Apply",
+      "name_id": "Menerapkan",
+      "order": 3,
+      "definition": "Kemampuan menggunakan prosedur, aturan, rumus, metode, atau konsep yang telah dipelajari untuk menyelesaikan masalah atau situasi tertentu.",
+      "cognitive_processes": ["executing", "implementing"],
+      "cognitive_processes_id": ["menjalankan prosedur", "mengimplementasikan"],
+      "operational_verbs": [
+        "menggunakan", "menerapkan", "menghitung", "menentukan", "menyelesaikan", "mengoperasikan",
+        "mengimplementasikan", "mempraktikkan", "mendemonstrasikan", "menggunakan rumus", "melaksanakan prosedur"
+      ],
+      "question_patterns": [
+        "Hitunglah ...",
+        "Tentukan ... berdasarkan ...",
+        "Gunakan rumus ... untuk ...",
+        "Terapkan metode ...",
+        "Bagaimana cara menggunakan ...?",
+        "Selesaikan masalah berikut menggunakan ...",
+        "Lakukan prosedur ...",
+        "Gunakan konsep ... untuk menyelesaikan ..."
+      ],
+      "activity_examples": [
+        "menggunakan rumus matematika",
+        "menerapkan prosedur laboratorium",
+        "menggunakan algoritma untuk menyelesaikan masalah",
+        "menghitung nilai berdasarkan data",
+        "menerapkan konsep dalam situasi baru yang terstruktur",
+        "melaksanakan langkah penyelesaian masalah"
+      ],
+      "assessment_examples": [
+        "soal perhitungan",
+        "soal prosedural",
+        "studi kasus sederhana",
+        "praktik menggunakan metode",
+        "pemecahan masalah terstruktur",
+        "implementasi algoritma"
+      ],
+      "assessment_focus": [
+        "penerapan konsep", "prosedur", "rumus", "algoritma", "metode", "pemecahan masalah"
+      ],
+      "keywords": ["gunakan", "terapkan", "hitung", "tentukan", "selesaikan", "praktikkan", "implementasikan", "rumus"],
+      "classification_guidance": "Gunakan C3 apabila peserta didik harus menggunakan pengetahuan atau prosedur yang telah dipelajari untuk menyelesaikan tugas atau masalah.",
+      "common_misunderstanding": "Kata menentukan tidak otomatis C3. Menentukan berdasarkan fakta dapat C1, menggunakan prosedur dapat C3, berdasarkan analisis dapat C4, dan berdasarkan kriteria dapat C5.",
+      "retrieval_text": "C3 atau Menerapkan adalah kemampuan menggunakan prosedur, rumus, aturan, metode, konsep, atau algoritma yang telah dipelajari untuk menyelesaikan masalah atau situasi tertentu."
+    },
+    {
+      "code": "C4",
+      "name": "Analyze",
+      "name_id": "Menganalisis",
+      "order": 4,
+      "definition": "Kemampuan memecah informasi menjadi bagian-bagian, menentukan hubungan antarbagian, serta mengidentifikasi struktur, pola, penyebab, asumsi, atau bukti.",
+      "cognitive_processes": ["differentiating", "organizing", "attributing"],
+      "cognitive_processes_id": ["membedakan", "mengorganisasi", "mengatribusikan"],
+      "operational_verbs": [
+        "menganalisis", "menguraikan", "membedakan", "mengidentifikasi hubungan", "mengorganisasi",
+        "menghubungkan", "menelaah", "memeriksa", "menemukan pola", "menentukan sebab", "mengidentifikasi asumsi"
+      ],
+      "question_patterns": [
+        "Analisislah ...",
+        "Apa hubungan antara ...?",
+        "Identifikasi faktor penyebab ...",
+        "Bagaimana bagian-bagian ... saling berhubungan?",
+        "Temukan pola pada data berikut ...",
+        "Apa perbedaan penting antara ...?",
+        "Uraikan struktur ...",
+        "Identifikasi asumsi yang digunakan ...",
+        "Analisis penyebab terjadinya ..."
+      ],
+      "activity_examples": [
+        "menganalisis data",
+        "menemukan pola",
+        "mengidentifikasi sebab-akibat",
+        "menganalisis struktur teks",
+        "membandingkan komponen berdasarkan hubungan",
+        "mengidentifikasi asumsi",
+        "memisahkan fakta dan opini berdasarkan karakteristik"
+      ],
+      "assessment_examples": [
+        "analisis studi kasus",
+        "analisis data atau grafik",
+        "analisis sebab-akibat",
+        "analisis struktur",
+        "identifikasi pola",
+        "analisis argumen"
+      ],
+      "assessment_focus": [
+        "hubungan antarbagian", "pola", "sebab-akibat", "struktur", "asumsi", "bukti", "argumen"
+      ],
+      "keywords": ["analisis", "hubungan", "pola", "sebab", "akibat", "struktur", "asumsi", "bukti"],
+      "classification_guidance": "Gunakan C4 ketika peserta didik harus memecah informasi, mencari hubungan antarbagian, menemukan pola, menentukan struktur, atau mengidentifikasi alasan dan asumsi.",
+      "common_misunderstanding": "Kata mengidentifikasi dapat muncul pada beberapa level. Identifikasi menjadi C4 apabila peserta didik harus menemukan bagian, hubungan, pola, atau struktur berdasarkan analisis.",
+      "retrieval_text": "C4 atau Menganalisis adalah kemampuan memecah informasi menjadi komponen dan menentukan bagaimana komponen tersebut saling berhubungan. Soal C4 dapat meminta analisis data, pola, struktur, sebab-akibat, hubungan, asumsi, atau argumen."
+    },
+    {
+      "code": "C5",
+      "name": "Evaluate",
+      "name_id": "Mengevaluasi",
+      "order": 5,
+      "definition": "Kemampuan membuat penilaian berdasarkan kriteria atau standar tertentu terhadap kualitas, ketepatan, efektivitas, validitas, atau kelayakan suatu gagasan, metode, solusi, atau hasil.",
+      "cognitive_processes": ["checking", "critiquing"],
+      "cognitive_processes_id": ["memeriksa", "mengkritisi"],
+      "operational_verbs": [
+        "mengevaluasi", "menilai", "memeriksa", "mengkritik", "memvalidasi", "memverifikasi",
+        "menentukan kelebihan dan kekurangan", "mempertimbangkan", "memilih berdasarkan kriteria", "memberikan justifikasi"
+      ],
+      "question_patterns": [
+        "Nilailah apakah ...",
+        "Apakah metode tersebut efektif? Jelaskan alasannya.",
+        "Manakah solusi yang paling sesuai berdasarkan kriteria ...?",
+        "Evaluasi kelebihan dan kekurangan ...",
+        "Apakah argumen tersebut valid? Jelaskan.",
+        "Periksa apakah hasil tersebut benar berdasarkan ...",
+        "Berikan alasan untuk menerima atau menolak ...",
+        "Bandingkan alternatif berdasarkan kriteria ..."
+      ],
+      "activity_examples": [
+        "menilai solusi berdasarkan kriteria",
+        "memeriksa validitas argumen",
+        "mengevaluasi efektivitas metode",
+        "memberikan kritik terhadap suatu rancangan",
+        "memvalidasi hasil",
+        "memilih alternatif berdasarkan kriteria dan memberikan alasan"
+      ],
+      "assessment_examples": [
+        "evaluasi studi kasus",
+        "kritik terhadap argumen",
+        "penilaian solusi",
+        "validasi hasil",
+        "perbandingan alternatif berdasarkan kriteria",
+        "justifikasi keputusan"
+      ],
+      "assessment_focus": [
+        "kriteria", "standar", "validitas", "efektivitas", "kelayakan", "kualitas", "justifikasi"
+      ],
+      "keywords": [
+        "nilai", "evaluasi", "kritik", "valid", "efektif", "layak", "alasan", "justifikasi", "kriteria"
+      ],
+      "classification_guidance": "Gunakan C5 ketika peserta didik membuat penilaian berdasarkan kriteria atau standar dan memberikan alasan yang mendukung penilaiannya.",
+      "common_misunderstanding": "Kata memilih tidak otomatis C5. Menjadi C5 ketika pilihan dibuat dengan membandingkan alternatif menggunakan kriteria dan memberikan justifikasi.",
+      "retrieval_text": "C5 atau Mengevaluasi adalah kemampuan membuat penilaian berdasarkan kriteria atau standar. Peserta didik memeriksa, mengkritisi, memvalidasi, menilai efektivitas, menentukan kelayakan, membandingkan alternatif, dan memberikan justifikasi."
+    },
+    {
+      "code": "C6",
+      "name": "Create",
+      "name_id": "Mencipta",
+      "order": 6,
+      "definition": "Kemampuan menggabungkan berbagai unsur pengetahuan untuk menghasilkan rancangan, produk, solusi, hipotesis, prosedur, karya, atau gagasan baru.",
+      "cognitive_processes": ["generating", "planning", "producing"],
+      "cognitive_processes_id": ["menghasilkan gagasan", "merencanakan", "memproduksi"],
+      "operational_verbs": [
+        "menciptakan", "merancang", "membuat", "mengembangkan", "menghasilkan", "menyusun",
+        "merencanakan", "mendesain", "memformulasikan", "mengonstruksi", "mengembangkan solusi", "menghasilkan produk"
+      ],
+      "question_patterns": [
+        "Rancanglah ...",
+        "Buatlah ...",
+        "Kembangkan sebuah solusi untuk ...",
+        "Desainlah ...",
+        "Susunlah rancangan ...",
+        "Buat produk yang dapat ...",
+        "Formulasikan strategi untuk ...",
+        "Rencanakan eksperimen untuk ...",
+        "Kembangkan metode baru untuk ..."
+      ],
+      "activity_examples": [
+        "merancang proyek",
+        "membuat produk",
+        "mengembangkan solusi",
+        "mendesain eksperimen",
+        "menyusun proposal",
+        "membuat algoritma",
+        "menghasilkan karya berdasarkan beberapa konsep"
+      ],
+      "assessment_examples": [
+        "proyek",
+        "produk",
+        "rancangan",
+        "prototipe",
+        "proposal",
+        "desain eksperimen",
+        "pengembangan solusi"
+      ],
+      "assessment_focus": ["produk", "rancangan", "solusi", "gagasan", "prototipe", "strategi", "karya"],
+      "keywords": [
+        "buat", "rancang", "desain", "kembangkan", "ciptakan", "susun", "hasilkan", "formulasikan", "prototipe"
+      ],
+      "classification_guidance": "Gunakan C6 ketika peserta didik harus menghasilkan sesuatu yang baru melalui proses menghasilkan gagasan, merencanakan, dan atau memproduksi.",
+      "common_misunderstanding": "Kata membuat atau menyusun tidak otomatis C6. Jika peserta didik hanya mengikuti prosedur yang sudah ditentukan, tuntutan dapat C3. C6 membutuhkan konstruksi atau rancangan yang membutuhkan keputusan peserta didik.",
+      "retrieval_text": "C6 atau Mencipta adalah tingkat kognitif tertinggi pada Taksonomi Bloom Revisi. Peserta didik menghasilkan gagasan, merencanakan, dan memproduksi suatu rancangan, produk, solusi, prosedur, strategi, atau karya."
+    }
+  ],
+  "classification_guidelines": {
+    "primary_rule": "Klasifikasi Bloom harus didasarkan pada tuntutan kognitif utama dari tugas atau pertanyaan, bukan hanya pada kata kerja operasional.",
+    "context_matters": true,
+    "verb_alone_is_insufficient": true,
+    "difficulty_is_not_bloom_level": true,
+    "rules": [
+      "Identifikasi proses berpikir yang benar-benar harus dilakukan peserta didik.",
+      "Jangan menentukan level hanya berdasarkan kata kerja.",
+      "Pertimbangkan konteks mata pelajaran.",
+      "Pertimbangkan bentuk tugas dan informasi yang diberikan.",
+      "Tingkat kesulitan soal tidak sama dengan tingkat kognitif.",
+      "Jika soal memiliki beberapa proses kognitif, gunakan proses kognitif utama sebagai dasar klasifikasi."
+    ]
+  },
+  "verb_disambiguation": [
+    {
+      "verb": "mengidentifikasi",
+      "possible_levels": ["C1", "C2", "C3", "C4"],
+      "guidance": "Tentukan level berdasarkan objek yang diidentifikasi dan proses berpikir yang dibutuhkan."
+    },
+    {
+      "verb": "menentukan",
+      "possible_levels": ["C1", "C2", "C3", "C4", "C5"],
+      "guidance": "Menentukan berdasarkan fakta dapat C1, menggunakan prosedur dapat C3, berdasarkan analisis dapat C4, dan berdasarkan kriteria dapat C5."
+    },
+    {
+      "verb": "membandingkan",
+      "possible_levels": ["C2", "C4", "C5"],
+      "guidance": "Perbandingan sederhana dapat C2, analisis hubungan dapat C4, dan perbandingan alternatif berdasarkan kriteria dapat C5."
+    },
+    {
+      "verb": "membuat",
+      "possible_levels": ["C3", "C6"],
+      "guidance": "Mengikuti prosedur yang telah ditentukan dapat C3, sedangkan menghasilkan rancangan atau produk baru dapat C6."
+    },
+    {
+      "verb": "menjelaskan",
+      "possible_levels": ["C2", "C4", "C5"],
+      "guidance": "Penjelasan konsep dapat C2, penjelasan hubungan atau struktur dapat C4, sedangkan penjelasan untuk membenarkan evaluasi dapat menjadi bagian dari C5."
+    }
+  ],
+  "question_classification_examples": [
+    {
+      "subject": "Fisika",
+      "question": "Apa yang dimaksud dengan gaya?",
+      "bloom_code": "C1",
+      "reason": "Peserta didik diminta mengingat definisi."
+    },
+    {
+      "subject": "Fisika",
+      "question": "Jelaskan hubungan antara gaya dan percepatan dengan kata-katamu sendiri.",
+      "bloom_code": "C2",
+      "reason": "Peserta didik harus menjelaskan hubungan konsep."
+    },
+    {
+      "subject": "Fisika",
+      "question": "Sebuah benda bermassa 2 kg diberi gaya 10 N. Hitung percepatannya.",
+      "bloom_code": "C3",
+      "reason": "Peserta didik menerapkan rumus yang telah dipelajari."
+    },
+    {
+      "subject": "Fisika",
+      "question": "Analisislah faktor yang menyebabkan percepatan benda berbeda pada dua kondisi berikut.",
+      "bloom_code": "C4",
+      "reason": "Peserta didik harus menganalisis hubungan antarvariabel."
+    },
+    {
+      "subject": "Fisika",
+      "question": "Nilai apakah metode pengukuran tersebut cukup akurat berdasarkan data dan kriteria ketelitian.",
+      "bloom_code": "C5",
+      "reason": "Peserta didik membuat penilaian berdasarkan kriteria."
+    },
+    {
+      "subject": "Fisika",
+      "question": "Rancanglah eksperimen untuk mengetahui pengaruh massa terhadap percepatan benda.",
+      "bloom_code": "C6",
+      "reason": "Peserta didik menghasilkan rancangan eksperimen."
+    },
+    {
+      "subject": "Matematika",
+      "question": "Sebutkan rumus luas lingkaran.",
+      "bloom_code": "C1",
+      "reason": "Peserta didik mengingat rumus."
+    },
+    {
+      "subject": "Matematika",
+      "question": "Jelaskan mengapa luas lingkaran dapat dinyatakan dengan πr².",
+      "bloom_code": "C2",
+      "reason": "Peserta didik menjelaskan konsep."
+    },
+    {
+      "subject": "Matematika",
+      "question": "Hitung luas lingkaran dengan jari-jari 7 cm.",
+      "bloom_code": "C3",
+      "reason": "Peserta didik menerapkan rumus."
+    },
+    {
+      "subject": "Matematika",
+      "question": "Analisis kesalahan langkah penyelesaian persamaan berikut.",
+      "bloom_code": "C4",
+      "reason": "Peserta didik menemukan bagian yang menyebabkan kesalahan."
+    },
+    {
+      "subject": "Matematika",
+      "question": "Nilai apakah metode A atau metode B lebih efisien berdasarkan jumlah langkah dan waktu pengerjaan.",
+      "bloom_code": "C5",
+      "reason": "Peserta didik menilai alternatif berdasarkan kriteria."
+    },
+    {
+      "subject": "Matematika",
+      "question": "Rancanglah metode untuk memperkirakan biaya perjalanan berdasarkan jarak dan konsumsi bahan bakar.",
+      "bloom_code": "C6",
+      "reason": "Peserta didik merancang solusi berdasarkan beberapa variabel."
+    }
+  ],
+  "ai_tutor_guidance": {
+    "classification_output_fields": ["bloom_code", "bloom_name", "cognitive_process", "reason", "evidence"],
+    "question_generation_rules": [
+      "Gunakan bloom_code sebagai batasan proses kognitif.",
+      "Gunakan kata kerja operasional sebagai panduan, bukan sebagai satu-satunya dasar klasifikasi.",
+      "Pastikan pertanyaan sesuai dengan materi pembelajaran.",
+      "Validasi kembali level Bloom setelah pertanyaan dibuat.",
+      "Untuk C3 gunakan prosedur, rumus, metode, atau konsep yang harus diterapkan.",
+      "Untuk C4 berikan data, hubungan, pola, struktur, atau sebab-akibat yang perlu dianalisis.",
+      "Untuk C5 berikan kriteria atau standar yang menjadi dasar penilaian.",
+      "Untuk C6 berikan tujuan, kebutuhan, masalah, atau batasan yang memungkinkan peserta didik menghasilkan rancangan atau produk."
+    ],
+    "adaptive_learning_use": {
+      "C1": "Penguatan fakta, istilah, dan konsep dasar.",
+      "C2": "Penguatan pemahaman dan hubungan konsep.",
+      "C3": "Latihan penerapan konsep dan prosedur.",
+      "C4": "Latihan analisis pola, hubungan, struktur, dan sebab-akibat.",
+      "C5": "Latihan evaluasi, argumentasi, dan pengambilan keputusan berbasis kriteria.",
+      "C6": "Latihan perancangan, produksi, dan pemecahan masalah terbuka."
+    }
+  }
+}

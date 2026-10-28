@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Guru;
+
+use App\Http\Requests\Guru\Concerns\ValidatesMateriUtama;
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateKuisRequest extends FormRequest
+{
+    use ValidatesMateriUtama;
+
+     
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+     
+    public function rules(): array
+    {
+        return [
+            'judul' => 'required|string|max:255',
+            'kelas_id' => 'required|exists:kelas,id',
+            'pertemuan_id' => 'nullable|exists:pertemuan,id',
+            'soal' => 'required|json',
+            'durasi_menit' => 'required|integer|min:1',
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date|after:tanggal_mulai',
+            'is_aktif' => 'boolean',
+        ] + $this->materiUtamaRules();
+    }
+}
+

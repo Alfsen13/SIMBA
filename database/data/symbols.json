@@ -1,0 +1,24 @@
+{
+  "records": [
+    {
+      "id": "math.art.plus",
+      "domain": "matematika",
+      "category": "Aritmetika",
+      "subcategory": null,
+      "symbol": "+",
+      "latex": "+",
+      "name": "Tanda Tambah",
+      "definition": "Operasi penjumlahan dua bilangan a dan b menghasilkan jumlah a+b.",
+      "meaning": "Suhu naik / penambahan nilai",
+      "formula": "a + b = c",
+      "variables": ["a", "b", "c"],
+      "unit": null,
+      "example": "2 + 3 = 5",
+      "related_symbols": ["math.art.minus"],
+      "related_concepts": ["penjumlahan", "operasi"],
+      "common_misunderstanding": "Mengira + selalu berarti lebih besar",
+      "keywords": ["tambah", "plus", "jumlah"],
+      "retrieval_text": "tambah plus jumlah penjumlahan operasi"
+    }
+  ]
+}

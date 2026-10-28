@@ -1,0 +1,56 @@
+<?php
+
+return [
+    'app_tagline' => 'Sistem Manajemen Pembelajaran',
+    'all_rights_reserved' => 'Hak cipta dilindungi.',
+
+    // Bahasa
+    'language' => 'Bahasa',
+    'choose_language' => 'Pilih bahasa',
+    'language_changed' => 'Bahasa berhasil diubah.',
+    'toggle_theme' => 'Ubah mode terang/gelap',
+
+    // Aksi umum
+    'save' => 'Simpan',
+    'save_changes' => 'Simpan Perubahan',
+    'cancel' => 'Batal',
+    'delete' => 'Hapus',
+    'edit' => 'Ubah',
+    'create' => 'Tambah',
+    'update' => 'Perbarui',
+    'back' => 'Kembali',
+    'search' => 'Cari',
+    'actions' => 'Aksi',
+    'confirm' => 'Konfirmasi',
+    'yes' => 'Ya',
+    'no' => 'Tidak',
+    'close' => 'Tutup',
+    'loading' => 'Memuat...',
+    'all' => 'Semua',
+    'none' => 'Tidak ada',
+    'optional' => 'Opsional',
+    'detail' => 'Detail',
+    'filter' => 'Filter',
+    'reset' => 'Reset',
+    'print' => 'Cetak',
+    'download' => 'Unduh',
+    'export' => 'Ekspor',
+    'status' => 'Status',
+    'label_aturan_kelayakan' => 'Aturan Bergabung Kelas',
+    'aturan_sesuai_profil' => 'Sesuai profil pendidikan',
+    'aturan_sesuai_jenjang' => 'Sesuai jenjang (lintas tingkat)',
+    'aturan_terbuka' => 'Terbuka untuk semua pelajar',
+    'aturan_khusus' => 'Khusus (perlu persetujuan operator)',
+    'active' => 'Aktif',
+    'inactive' => 'Tidak Aktif',
+    'success' => 'Berhasil',
+    'failed' => 'Gagal',
+    'no_data' => 'Belum ada data',
+    'logout' => 'Keluar',
+    'login' => 'Masuk',
+
+    // Peringatan / pesan sistem
+    'attention' => 'Perhatian:',
+    'import_errors' => 'Kesalahan import:',
+    'fix_errors' => 'Mohon perbaiki kesalahan berikut:',
+];

@@ -1,0 +1,56 @@
+<?php
+
+return [
+    'app_tagline' => 'Learning Management System',
+    'all_rights_reserved' => 'All rights reserved.',
+
+    // Language
+    'language' => 'Language',
+    'choose_language' => 'Choose language',
+    'language_changed' => 'Language changed successfully.',
+    'toggle_theme' => 'Toggle light/dark mode',
+
+    // Common actions
+    'save' => 'Save',
+    'save_changes' => 'Save Changes',
+    'cancel' => 'Cancel',
+    'delete' => 'Delete',
+    'edit' => 'Edit',
+    'create' => 'Create',
+    'update' => 'Update',
+    'back' => 'Back',
+    'search' => 'Search',
+    'actions' => 'Actions',
+    'confirm' => 'Confirm',
+    'yes' => 'Yes',
+    'no' => 'No',
+    'close' => 'Close',
+    'loading' => 'Loading...',
+    'all' => 'All',
+    'none' => 'None',
+    'optional' => 'Optional',
+    'detail' => 'Detail',
+    'filter' => 'Filter',
+    'reset' => 'Reset',
+    'print' => 'Print',
+    'download' => 'Download',
+    'export' => 'Export',
+    'status' => 'Status',
+    'label_aturan_kelayakan' => 'Class Join Rule',
+    'aturan_sesuai_profil' => 'Matches education profile',
+    'aturan_sesuai_jenjang' => 'Matches education level (cross-grade)',
+    'aturan_terbuka' => 'Open to all students',
+    'aturan_khusus' => 'Special (operator approval required)',
+    'active' => 'Active',
+    'inactive' => 'Inactive',
+    'success' => 'Success',
+    'failed' => 'Failed',
+    'no_data' => 'No data yet',
+    'logout' => 'Logout',
+    'login' => 'Login',
+
+    // Alerts / system messages
+    'attention' => 'Attention:',
+    'import_errors' => 'Import errors:',
+    'fix_errors' => 'Please fix the following errors:',
+];
