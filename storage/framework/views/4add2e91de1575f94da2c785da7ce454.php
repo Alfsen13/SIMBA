@@ -16,6 +16,7 @@
         </div>
 
         <script type="application/json" id="reg-master"><?php echo json_encode($regMaster, 15, 512) ?></script>
+        <script type="application/json" id="mapel-by-kategori"><?php echo json_encode($mapelByKategori, 15, 512) ?></script>
 
         <form
             action="<?php echo e(route('register')); ?>"
@@ -28,6 +29,7 @@
                 jenjangId: '<?php echo e(preg_replace('/[^0-9]/', '', (string) old('jenjang_id'))); ?>',
                 tingkatId: '<?php echo e(preg_replace('/[^0-9]/', '', (string) old('tingkat_id'))); ?>',
                 mapelInput: '',
+                mapel: <?php echo json_encode(old('mata_pelajaran', []), 512) ?>,
                 ...JSON.parse(document.getElementById('reg-master').textContent),
                 get jenjangList() { return this.jenjang[this.jalurId] || [] },
                 get tingkatList() { return this.tingkat[this.jenjangId] || [] },
@@ -269,13 +271,14 @@ unset($__errorArgs, $__bag); ?>
 <?php unset($__componentOriginalcc0154580828f80bdab5d7fe416ed74a); ?>
 <?php endif; ?>
 
-                    <div class="mb-3">
+                    <div class="mb-3" x-data="mapelPreview">
                         <label for="kategori_mapel" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
                             <?php echo e(__('auth.kategori_mapel_label')); ?> <span class="text-red-500">*</span>
                         </label>
                         <select
                             name="kategori_mapel"
                             id="kategori_mapel"
+                            x-model="kategori"
                             class="w-full px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 <?php $__errorArgs = ['kategori_mapel'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -295,16 +298,23 @@ unset($__errorArgs, $__bag); ?>"
                             <?php echo e(__('auth.kategori_mapel_hint')); ?>
 
                         </p>
-                        <div id="mapel-preview" class="mt-2">
+                        <div class="mt-2" x-show="kategori && mapelByKategori[kategori]?.length > 0" x-transition.opacity>
                             <p class="text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1.5">
                                 <?php echo e(__('auth.kategori_mapel_preview_label')); ?>
 
                             </p>
-                            <div class="flex flex-wrap gap-1.5" id="mapel-preview-list"></div>
-                            <p class="mt-1 text-[10px] text-slate-500 dark:text-slate-400" id="mapel-preview-empty">
-                                <?php echo e(__('auth.kategori_mapel_preview_empty')); ?>
-
-                            </p>
+                            <div class="flex flex-wrap gap-1.5">
+                                <template x-for="mapel in mapelByKategori[kategori]">
+                                    <span
+                                        class="px-2 py-0.5 text-[11px] rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-800 transition"
+                                        @click="tambahDariPreview(mapel)"
+                                        x-text="mapel"
+                                    ></span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="mt-2" x-show="!kategori || !mapelByKategori[kategori]?.length" x-transition.opacity>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400" x-text="__('auth.kategori_mapel_preview_empty')"></p>
                         </div>
                         <?php $__errorArgs = ['kategori_mapel'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -446,6 +456,18 @@ unset($__errorArgs, $__bag); ?>
 <?php unset($__componentOriginalb95fb6157a10b6449458ef38a3dd045c); ?>
 <?php endif; ?>
             </template>
+
+            <script>
+                document.addEventListener('alpine:init', () => {
+                    Alpine.data('mapelPreview', () => {
+                        const data = JSON.parse(document.getElementById('mapel-by-kategori').textContent);
+                        return {
+                            kategori: <?php echo json_encode(old('kategori_mapel'), 15, 512) ?>,
+                            mapelByKategori: data || {},
+                        };
+                    });
+                });
+            </script>
 
             <div
                 x-show="role === 'pelajar'"
@@ -782,81 +804,6 @@ unset($__errorArgs, $__bag); ?>
 <?php $component = $__componentOriginal490cf816fa75abeeb835565b23a9eae8; ?>
 <?php unset($__componentOriginal490cf816fa75abeeb835565b23a9eae8); ?>
 <?php endif; ?>
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    const kategoriSelect = document.getElementById('kategori_mapel');
-                    const preview = document.getElementById('mapel-preview');
-                    const list = document.getElementById('mapel-preview-list');
-                    const empty = document.getElementById('mapel-preview-empty');
-                    const mapelByKategori = <?php echo json_encode($mapelByKategori, 15, 512) ?>;
-
-                    function tambahKeDaftar(namaMapel) {
-                        // Hindari duplikat: cek hidden input yang sudah ada
-                        const existing = document.querySelectorAll('input[name="mata_pelajaran[]"]');
-                        const sudahAda = Array.from(existing).some(el => el.value === namaMapel);
-                        if (sudahAda) return;
-
-                        // Tambah hidden input baru
-                        const hidden = document.createElement('input');
-                        hidden.type = 'hidden';
-                        hidden.name = 'mata_pelajaran[]';
-                        hidden.value = namaMapel;
-                        document.querySelector('form').appendChild(hidden);
-
-                        // Render chip UI manual (sync ke daftar tampilan)
-                        renderChip(namaMapel);
-                    }
-
-                    function renderChip(namaMapel) {
-                        const list = document.getElementById('mapel-preview-list');
-                        if (!list) return;
-                        // Hindari duplikat chip
-                        const existing = list.querySelector('span[data-mapel="' + namaMapel.replace(/"/g, '"') + '"]');
-                        if (existing) return;
-
-                        const badge = document.createElement('span');
-                        badge.className = 'inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
-                        badge.dataset.mapel = namaMapel;
-                        badge.innerHTML = '<span>' + namaMapel + '</span>' +
-                            '<button type="button" @click="mapel.splice(i, 1)" class="w-4 h-4 rounded-full flex items-center justify-center text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-800" aria-label="Hapus">×</button>';
-                        badge.querySelector('button').onclick = function() {
-                            // Hapus hidden input
-                            const hidden = document.querySelector('input[name="mata_pelajaran[]"][value="' + namaMapel.replace(/"/g, '\\"') + '"]');
-                            if (hidden) hidden.remove();
-                            // Hapus chip
-                            badge.remove();
-                        };
-                        document.getElementById('mapel-preview-list').appendChild(badge);
-                    }
-
-                    function renderPreview(kategori) {
-                        if (!preview || !list || !empty) return;
-                        list.innerHTML = '';
-                        if (!kategori || !mapelByKategori[kategori] || mapelByKategori[kategori].length === 0) {
-                            preview.classList.add('hidden');
-                            empty.classList.remove('hidden');
-                            return;
-                        }
-                        empty.classList.add('hidden');
-                        preview.classList.remove('hidden');
-                        mapelByKategori[kategori].forEach(function (mapel) {
-                            const badge = document.createElement('span');
-                            badge.className = 'px-2 py-0.5 text-[11px] rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-800 transition';
-                            badge.textContent = mapel;
-                            badge.title = __('auth.klik_untuk_tambah', { mapel: mapel });
-                            badge.onclick = function () { tambahKeDaftar(mapel); };
-                            list.appendChild(badge);
-                        });
-                    }
-
-                    if (kategoriSelect) {
-                        kategoriSelect.addEventListener('change', function () {
-                            renderPreview(this.value);
-                        });
-                        renderPreview(kategoriSelect.value);
-                    }
-                });
-            </script>
         </form>
 
         <div class="border-t border-slate-200 dark:border-slate-800 my-5"></div>
