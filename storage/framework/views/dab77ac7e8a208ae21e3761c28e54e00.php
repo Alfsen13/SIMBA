@@ -17,4 +17,4 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
     </svg>
 </button>
-<?php /**PATH C:\xampp\htdocs\SIMBA(1)\resources\views/components/theme-toggle.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\SIMBA\resources\views/components/theme-toggle.blade.php ENDPATH**/ ?>

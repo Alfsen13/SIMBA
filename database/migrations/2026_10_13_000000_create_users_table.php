@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->enum('role', ['pengajar', 'pelajar', 'operator', 'pengelola_operator'])->default('pelajar');
-            $table->string('kategori_mapel')->nullable()->after('role');
+            $table->string('kategori_mapel')->nullable();
             $table->enum('status', ['pending', 'verified', 'rejected'])->default('pending');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

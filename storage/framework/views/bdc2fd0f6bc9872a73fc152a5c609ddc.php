@@ -2,9 +2,8 @@
 
 $__newAttributes = [];
 $__propNames = \Illuminate\View\ComponentAttributeBag::extractPropNames(([
-    'title' => '',
-    'subtitle' => '',
-    'actions' => null,
+    'title',
+    'hint' => null,
 ]));
 
 foreach ($attributes->all() as $__key => $__value) {
@@ -21,9 +20,8 @@ unset($__propNames);
 unset($__newAttributes);
 
 foreach (array_filter(([
-    'title' => '',
-    'subtitle' => '',
-    'actions' => null,
+    'title',
+    'hint' => null,
 ]), 'is_string', ARRAY_FILTER_USE_KEY) as $__key => $__value) {
     $$__key = $$__key ?? $__value;
 }
@@ -36,18 +34,16 @@ foreach ($attributes->all() as $__key => $__value) {
 
 unset($__defined_vars, $__key, $__value); ?>
 
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-    <div>
-        <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-white"><?php echo e($title); ?></h1>
-        <?php if($subtitle): ?>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"><?php echo e($subtitle); ?></p>
+
+<div <?php echo e($attributes->merge(['class' => 'pt-1'])); ?>>
+    <div class="mb-3">
+        <p class="text-xs font-semibold text-slate-600 dark:text-slate-300"><?php echo e($title); ?></p>
+        <?php if($hint): ?>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5"><?php echo e($hint); ?></p>
         <?php endif; ?>
     </div>
-    <?php if($actions): ?>
-        <div class="flex items-center gap-2 shrink-0">
-            <?php echo e($actions); ?>
 
-        </div>
-    <?php endif; ?>
+    <?php echo e($slot); ?>
+
 </div>
-<?php /**PATH C:\xampp\htdocs\SIMBA(1)\resources\views/components/page-header.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\SIMBA\resources\views/components/form-section.blade.php ENDPATH**/ ?>

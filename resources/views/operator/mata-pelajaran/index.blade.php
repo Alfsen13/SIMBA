@@ -14,14 +14,18 @@
         </x-slot>
     </x-page-header>
 
+@php
+    $headers = [
+        __('operator.mata_pelajaran.kode'),
+        __('operator.mata_pelajaran.nama'),
+        __('operator.mata_pelajaran.kategori'),
+        __('common.actions'),
+    ];
+@endphp
+
     <x-card :padding="false">
         <div class="overflow-x-auto">
-            <x-table :headers=[
-                __('operator.mata_pelajaran.kode'),
-                __('operator.mata_pelajaran.nama'),
-                __('operator.mata_pelajaran.kategori'),
-                __('common.actions'),
-            ]>
+            <x-table :headers="$headers">
                 @forelse($mataPelajaran as $mapel)
                     <x-tr>
                         <x-td class="font-mono text-xs">{{ $mapel->kode }}</x-td>

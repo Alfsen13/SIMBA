@@ -52,4 +52,4 @@
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
 </div>
-<?php /**PATH C:\xampp\htdocs\SIMBA(1)\resources\views/components/locale-switcher.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\SIMBA\resources\views/components/locale-switcher.blade.php ENDPATH**/ ?>

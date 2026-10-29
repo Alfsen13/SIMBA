@@ -17,11 +17,18 @@ class KelasController extends Controller
 {
     public function index(): View
     {
-        $kelasList = Kelas::with('guru')
+        $user = auth()->user();
+        $query = Kelas::with('guru')
             // Jumlah pengajuan mengajar yang masih menunggu tinjauan operator.
             ->withCount(['pengajuan as pengajuan_pending_count' => fn ($q) => $q->where('status', 'pending')])
-            ->latest()
-            ->paginate(15);
+            ->latest();
+
+        // Operator hanya melihat kelas di kategori yang dikelolanya.
+        if ($user->role === 'operator' && $user->kategori_mapel) {
+            $query->where('kategori', $user->kategori_mapel);
+        }
+
+        $kelasList = $query->paginate(15);
 
         return view('admin.kelas.index', compact('kelasList'));
     }
@@ -45,11 +52,14 @@ class KelasController extends Controller
 
     public function edit(Kelas $kelas): View
     {
+        $this->authorize('update', $kelas);
+
         return view('admin.kelas.edit', ['kelas' => $kelas] + $this->dataForm());
     }
 
     public function update(KelasRequest $request, Kelas $kelas): RedirectResponse
     {
+        $this->authorize('update', $kelas);
         $validated = $request->validated();
         // Kolom status & aturan_kelayakan NOT NULL (MySQL): kosong berarti
         // pertahankan nilai sekarang, jangan pernah menulis NULL.
@@ -63,9 +73,24 @@ class KelasController extends Controller
 
     public function destroy(Kelas $kelas): RedirectResponse
     {
+        $this->authorize('delete', $kelas);
+
         $kelas->delete();
 
         return redirect()->route('operator.kelas.index')->with('success', 'Kelas berhasil dihapus.');
+    }
+
+    /**
+     * Cabut guru dari kelas (guru_id dikosongkan), sehingga kelas dapat
+     * diampu oleh operator lain atau diajukan kembali lewat pengajuan mengajar.
+     */
+    public function lepasGuru(Kelas $kelas): RedirectResponse
+    {
+        $this->authorize('lepasGuru', $kelas);
+
+        $kelas->update(['guru_id' => null]);
+
+        return redirect()->route('operator.kelas.index')->with('success', 'Hak ajar kelas berhasil dicabut.');
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AplikasiPengajar;
+use App\Models\Kelas;
 use App\Models\MataPelajaran;
 use App\Models\PengajarKompetensi;
 use App\Models\User;
@@ -19,7 +20,23 @@ class DatabaseSeeder extends Seeder
         $this->call(MataPelajaranSeeder::class);
         $this->call(KelasAwalSeeder::class);
 
+        $this->createPengelolaOperator();
         $this->createOperatorsPerKategori();
+        $this->assignKelasKeOperator();
+    }
+
+    private function createPengelolaOperator(): void
+    {
+        User::firstOrCreate(
+            ['email' => 'pengelola_operator@simba.test'],
+            [
+                'name' => 'Pengelola Operator',
+                'password' => Hash::make('password'),
+                'role' => 'pengelola_operator',
+                'status' => 'verified',
+                'verified_at' => now(),
+            ]
+        );
     }
 
     private function createOperatorsPerKategori(): void
@@ -42,7 +59,6 @@ class DatabaseSeeder extends Seeder
             ->get()
             ->groupBy('kategori');
 
-        $urutan = 0;
         foreach ($mapelByKategori as $kategori => $mapels) {
             $slug = Str::slug($kategori);
             $email = "operator.{$slug}@simba.test";
@@ -91,8 +107,39 @@ class DatabaseSeeder extends Seeder
                     ]
                 );
             }
+        }
+    }
 
-            $urutan++;
+    private function assignKelasKeOperator(): void
+    {
+        // Ambil semua operator yang memiliki kategori_mapel, indekskan per kategori.
+        $operatorsByKategori = User::where('role', 'operator')
+            ->whereNotNull('kategori_mapel')
+            ->get()
+            ->groupBy('kategori_mapel');
+
+        // Kelas yang belum punya guru, di-assign ke operator yang kategori_mapel-nya
+        // cocok dengan kategori mata pelajarannya.
+        $kelasTanpaGuru = Kelas::whereNull('guru_id')->get();
+
+        $dipakai = [];
+        foreach ($kelasTanpaGuru as $kelas) {
+            if (!$kelas->mata_pelajaran_id) {
+                continue;
+            }
+
+            $mapel = MataPelajaran::find($kelas->mata_pelajaran_id);
+            if (!$mapel || !$mapel->kategori) {
+                continue;
+            }
+
+            $operator = $operatorsByKategori->get($mapel->kategori)?->first();
+            if (!$operator) {
+                continue;
+            }
+
+            $kelas->update(['guru_id' => $operator->id]);
+            $dipakai[$operator->id] = true;
         }
     }
 }

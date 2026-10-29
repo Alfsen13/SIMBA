@@ -81,4 +81,7 @@ return [
     'cv_label' => 'CV',
     'ijazah_label' => 'Last Diploma',
     'file_hint' => 'PDF/DOC, max 5 MB',
+    'kategori_mapel_preview_label' => 'Subjects available in this category:',
+    'kategori_mapel_preview_empty' => 'No subjects in this category yet.',
+    'klik_untuk_tambah' => 'Click to add ":mapel" to your subject list.',
 ];

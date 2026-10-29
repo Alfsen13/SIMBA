@@ -12,7 +12,17 @@ class KelasPolicy
      
     public function view(User $user, Kelas $kelas): bool
     {
-        return $user->id === $kelas->guru_id;
+        // Guru kelas selalu dapat melihat kelasnya.
+        if ($user->id === $kelas->guru_id) {
+            return true;
+        }
+
+        // Operator hanya melihat kelas di kategorinya.
+        if ($user->kategori_mapel && $kelas->kategori) {
+            return $user->kategori_mapel === $kelas->kategori;
+        }
+
+        return false;
     }
 
      
@@ -24,13 +34,49 @@ class KelasPolicy
      
     public function update(User $user, Kelas $kelas): bool
     {
-        return $user->id === $kelas->guru_id;
+        // Guru kelas selalu dapat mengedit kelasnya.
+        if ($user->id === $kelas->guru_id) {
+            return true;
+        }
+
+        // Operator hanya mengedit kelas di kategorinya.
+        if ($user->kategori_mapel && $kelas->kategori) {
+            return $user->kategori_mapel === $kelas->kategori;
+        }
+
+        return false;
     }
 
      
     public function delete(User $user, Kelas $kelas): bool
     {
-        return $user->id === $kelas->guru_id;
+        // Guru kelas selalu dapat menghapus kelasnya.
+        if ($user->id === $kelas->guru_id) {
+            return true;
+        }
+
+        // Operator hanya menghapus kelas di kategorinya.
+        if ($user->kategori_mapel && $kelas->kategori) {
+            return $user->kategori_mapel === $kelas->kategori;
+        }
+
+        return false;
+    }
+
+     
+    public function lepasGuru(User $user, Kelas $kelas): bool
+    {
+        // Hanya guru kelas atau operator dengan kategori yang sama yang
+        // boleh mencabut hak ajar dari kelas.
+        if ($user->id === $kelas->guru_id) {
+            return true;
+        }
+
+        if ($user->kategori_mapel && $kelas->kategori) {
+            return $user->kategori_mapel === $kelas->kategori;
+        }
+
+        return false;
     }
 
      

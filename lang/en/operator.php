@@ -204,6 +204,11 @@ return [
     'th_submitted' => 'Submitted',
     'approve' => 'Approve',
     'konfirmasi_hapus_kelas' => 'Delete this class?',
+    'cabut_hak_ajar' => 'Revoke Teaching Right',
+    'konfirmasi_lepas_guru' => 'Remove teacher from this class? The class will be available for other operators to take over.',
+    'kategori_mapel_preview_label' => 'Subjects available in this category:',
+    'kategori_mapel_preview_empty' => 'No subjects in this category yet.',
+    'klik_untuk_tambah' => 'Click to add ":mapel" to your subject list.',
 
     // Teaching applications (lesson-plan material from applicant teachers)
     'pengajuan_mengajar' => [

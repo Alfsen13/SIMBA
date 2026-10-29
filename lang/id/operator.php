@@ -204,6 +204,11 @@ return [
     'th_submitted' => 'Diajukan',
     'approve' => 'Setujui',
     'konfirmasi_hapus_kelas' => 'Hapus kelas ini?',
+    'cabut_hak_ajar' => 'Cabut Hak Ajar',
+    'konfirmasi_lepas_guru' => 'Cabut guru dari kelas ini? Kelas akan kembali tersedia untuk diampu operator lain.',
+    'kategori_mapel_preview_label' => 'Mata pelajaran yang tersedia di kategori ini:',
+    'kategori_mapel_preview_empty' => 'Belum ada mata pelajaran dalam kategori ini.',
+    'klik_untuk_tambah' => 'Klik untuk menambahkan ":mapel" ke daftar mata pelajaran.',
 
     // Pengajuan mengajar kelas (bahan rencana ajar dari calon pengajar)
     'pengajuan_mengajar' => [

@@ -22,8 +22,12 @@ class UserController extends Controller
 
         if ($auth->role === 'operator' && $auth->kategori_mapel) {
             $userQuery->whereIn('role', ['pengajar', 'pelajar'])
-                ->whereHas('aplikasiPengajar', function ($q) use ($auth) {
-                    $q->where('kategori_mapel', $auth->kategori_mapel);
+                ->where(function ($q) use ($auth) {
+                    // Pelajar dapat dilihat oleh semua operator (tidak dibatasi kategori).
+                    $q->where('role', 'pelajar')
+                        ->orWhereHas('aplikasiPengajar', function ($sub) use ($auth) {
+                            $sub->where('kategori_mapel', $auth->kategori_mapel);
+                        });
                 });
         }
 
@@ -190,7 +194,9 @@ class UserController extends Controller
     {
         $auth = auth()->user();
 
-        if ($auth->role === 'operator' && $auth->kategori_mapel) {
+        // Operator hanya dibatasi kategori untuk verifikasi pengajar/operator dalam kategori yang sama.
+        // Pelajar dapat diverifikasi oleh semua operator.
+        if ($auth->role === 'operator' && $auth->kategori_mapel && $user->role !== 'pelajar') {
             $kategori = $user->aplikasiPengajar?->kategori_mapel;
             abort_unless($kategori && $kategori === $auth->kategori_mapel, 403, 'Tidak berwenang memverifikasi akun pada kategori ini.');
         }
@@ -209,7 +215,9 @@ class UserController extends Controller
     {
         $auth = auth()->user();
 
-        if ($auth->role === 'operator' && $auth->kategori_mapel) {
+        // Operator hanya dibatasi kategori untuk penolakan pengajar/operator dalam kategori yang sama.
+        // Pelajar dapat ditolak oleh semua operator.
+        if ($auth->role === 'operator' && $auth->kategori_mapel && $user->role !== 'pelajar') {
             $kategori = $user->aplikasiPengajar?->kategori_mapel;
             abort_unless($kategori && $kategori === $auth->kategori_mapel, 403, 'Tidak berwenang menolak akun pada kategori ini.');
         }

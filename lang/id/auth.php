@@ -81,4 +81,7 @@ return [
     'cv_label' => 'CV',
     'ijazah_label' => 'Ijazah Terakhir',
     'file_hint' => 'PDF/DOC, maks. 5 MB',
+    'kategori_mapel_preview_label' => 'Mata pelajaran yang tersedia di kategori ini:',
+    'kategori_mapel_preview_empty' => 'Belum ada mata pelajaran dalam kategori ini.',
+    'klik_untuk_tambah' => 'Klik untuk menambahkan ":mapel" ke daftar mata pelajaran.',
 ];

@@ -36,14 +36,18 @@
                     return j ? j.kode : null;
                 },
                 get butuhInstitusi() { return this.jalurId !== '' && this.jalurKode !== 'self_learning' },
-                tambahMapel() {
-                    const t = this.mapelInput.trim();
+                tambahMapel(nama = null) {
+                    const t = (nama || this.mapelInput).trim();
                     if (t && !this.mapel.some(m => m.toLowerCase() === t.toLowerCase())) {
                         this.mapel.push(t);
                     }
                     this.mapelInput = '';
+                },
+                tambahDariPreview(nama) {
+                    this.tambahMapel(nama);
                 }
             }"
+            x-init="window.__simmaTambahMapel = (nama) => this.tambahDariPreview(nama)"
         >
             @csrf
 
@@ -206,9 +210,14 @@
                         <p class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                             {{ __('auth.kategori_mapel_hint') }}
                         </p>
-                        <div id="mapel-preview" class="mt-2 hidden">
-                            <p class="text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1.5">Mata pelajaran yang tersedia di kategori ini:</p>
+                        <div id="mapel-preview" class="mt-2">
+                            <p class="text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                                {{ __('auth.kategori_mapel_preview_label') }}
+                            </p>
                             <div class="flex flex-wrap gap-1.5" id="mapel-preview-list"></div>
+                            <p class="mt-1 text-[10px] text-slate-500 dark:text-slate-400" id="mapel-preview-empty">
+                                {{ __('auth.kategori_mapel_preview_empty') }}
+                            </p>
                         </div>
                         @error('kategori_mapel')
                             <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -486,22 +495,66 @@
                     const kategoriSelect = document.getElementById('kategori_mapel');
                     const preview = document.getElementById('mapel-preview');
                     const list = document.getElementById('mapel-preview-list');
+                    const empty = document.getElementById('mapel-preview-empty');
                     const mapelByKategori = @json($mapelByKategori);
 
+                    function tambahKeDaftar(namaMapel) {
+                        // Hindari duplikat: cek hidden input yang sudah ada
+                        const existing = document.querySelectorAll('input[name="mata_pelajaran[]"]');
+                        const sudahAda = Array.from(existing).some(el => el.value === namaMapel);
+                        if (sudahAda) return;
+
+                        // Tambah hidden input baru
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'mata_pelajaran[]';
+                        hidden.value = namaMapel;
+                        document.querySelector('form').appendChild(hidden);
+
+                        // Render chip UI manual (sync ke daftar tampilan)
+                        renderChip(namaMapel);
+                    }
+
+                    function renderChip(namaMapel) {
+                        const list = document.getElementById('mapel-preview-list');
+                        if (!list) return;
+                        // Hindari duplikat chip
+                        const existing = list.querySelector('span[data-mapel="' + namaMapel.replace(/"/g, '"') + '"]');
+                        if (existing) return;
+
+                        const badge = document.createElement('span');
+                        badge.className = 'inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
+                        badge.dataset.mapel = namaMapel;
+                        badge.innerHTML = '<span>' + namaMapel + '</span>' +
+                            '<button type="button" @click="mapel.splice(i, 1)" class="w-4 h-4 rounded-full flex items-center justify-center text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-800" aria-label="Hapus">×</button>';
+                        badge.querySelector('button').onclick = function() {
+                            // Hapus hidden input
+                            const hidden = document.querySelector('input[name="mata_pelajaran[]"][value="' + namaMapel.replace(/"/g, '\\"') + '"]');
+                            if (hidden) hidden.remove();
+                            // Hapus chip
+                            badge.remove();
+                        };
+                        document.getElementById('mapel-preview-list').appendChild(badge);
+                    }
+
                     function renderPreview(kategori) {
-                        if (!preview || !list) return;
+                        if (!preview || !list || !empty) return;
                         list.innerHTML = '';
                         if (!kategori || !mapelByKategori[kategori] || mapelByKategori[kategori].length === 0) {
                             preview.classList.add('hidden');
+                            empty.classList.remove('hidden');
                             return;
                         }
+                        empty.classList.add('hidden');
+                        preview.classList.remove('hidden');
                         mapelByKategori[kategori].forEach(function (mapel) {
                             const badge = document.createElement('span');
-                            badge.className = 'px-2 py-0.5 text-[11px] rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
+                            badge.className = 'px-2 py-0.5 text-[11px] rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-800 transition';
                             badge.textContent = mapel;
+                            badge.title = __('auth.klik_untuk_tambah', { mapel: mapel });
+                            badge.onclick = function () { tambahKeDaftar(mapel); };
                             list.appendChild(badge);
                         });
-                        preview.classList.remove('hidden');
                     }
 
                     if (kategoriSelect) {

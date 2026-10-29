@@ -108,4 +108,4 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>
 </div>
-<?php /**PATH C:\xampp\htdocs\SIMBA(1)\resources\views/components/form-password.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\SIMBA\resources\views/components/form-password.blade.php ENDPATH**/ ?>

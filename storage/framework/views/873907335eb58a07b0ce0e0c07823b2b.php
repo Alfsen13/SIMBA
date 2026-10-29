@@ -61,4 +61,4 @@ unset($__defined_vars, $__key, $__value); ?>
 
     </button>
 <?php endif; ?>
-<?php /**PATH C:\xampp\htdocs\SIMBA(1)\resources\views/components/btn-primary.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\SIMBA\resources\views/components/btn-primary.blade.php ENDPATH**/ ?>

@@ -3,14 +3,11 @@
 $__newAttributes = [];
 $__propNames = \Illuminate\View\ComponentAttributeBag::extractPropNames(([
     'name' => '',
-    'type' => 'text',
     'label' => '',
     'value' => '',
     'placeholder' => '',
+    'rows' => 4,
     'required' => false,
-    'disabled' => false,
-    'icon' => null,
-    'accept' => null,
 ]));
 
 foreach ($attributes->all() as $__key => $__value) {
@@ -28,14 +25,11 @@ unset($__newAttributes);
 
 foreach (array_filter(([
     'name' => '',
-    'type' => 'text',
     'label' => '',
     'value' => '',
     'placeholder' => '',
+    'rows' => 4,
     'required' => false,
-    'disabled' => false,
-    'icon' => null,
-    'accept' => null,
 ]), 'is_string', ARRAY_FILTER_USE_KEY) as $__key => $__value) {
     $$__key = $$__key ?? $__value;
 }
@@ -57,32 +51,20 @@ unset($__defined_vars, $__key, $__value); ?>
         </label>
     <?php endif; ?>
 
-    <div class="relative">
-        <?php if($icon): ?>
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <?php echo $icon; ?>
-
-            </div>
-        <?php endif; ?>
-
-        <input
-            type="<?php echo e($type); ?>"
-            name="<?php echo e($name); ?>"
-            id="<?php echo e($name); ?>"
-            value="<?php echo e(old($name, $value)); ?>"
-            placeholder="<?php echo e($placeholder); ?>"
-            <?php if($accept): ?> accept="<?php echo e($accept); ?>" <?php endif; ?>
-            <?php if($required): ?> required <?php endif; ?>
-            <?php if($disabled): ?> disabled <?php endif; ?>
-            class="w-full <?php echo e($icon ? 'pl-9' : 'px-3'); ?> pr-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 <?php $__errorArgs = [$name];
+    <textarea
+        name="<?php echo e($name); ?>"
+        id="<?php echo e($name); ?>"
+        rows="<?php echo e($rows); ?>"
+        placeholder="<?php echo e($placeholder); ?>"
+        <?php if($required): ?> required <?php endif; ?>
+        class="w-full px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 <?php $__errorArgs = [$name];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?> border-red-400 <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
-unset($__errorArgs, $__bag); ?> disabled:opacity-50 disabled:cursor-not-allowed">
-    </div>
+unset($__errorArgs, $__bag); ?> disabled:opacity-50 disabled:cursor-not-allowed"><?php echo e(old($name, $value)); ?></textarea>
 
     <?php $__errorArgs = [$name];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -101,4 +83,4 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>
 </div>
-<?php /**PATH C:\xampp\htdocs\SIMBA(1)\resources\views/components/form-input.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\SIMBA\resources\views/components/form-textarea.blade.php ENDPATH**/ ?>

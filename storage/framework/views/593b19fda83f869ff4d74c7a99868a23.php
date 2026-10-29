@@ -123,4 +123,4 @@
         </button>
     </div>
 <?php endif; ?>
-<?php /**PATH C:\xampp\htdocs\SIMBA(1)\resources\views/components/alert.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\SIMBA\resources\views/components/alert.blade.php ENDPATH**/ ?>

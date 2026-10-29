@@ -11,4 +11,4 @@
         }
     })();
 </script>
-<?php /**PATH C:\xampp\htdocs\SIMBA(1)\resources\views/components/theme-script.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\SIMBA\resources\views/components/theme-script.blade.php ENDPATH**/ ?>

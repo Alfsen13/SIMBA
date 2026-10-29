@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('kode', 50)->unique();
             $table->string('nama');
-            $table->string('kategori', 100)->nullable()->after('nama');
+            $table->string('kategori', 100)->nullable();
             $table->text('deskripsi')->nullable();
             $table->boolean('aktif')->default(true);
             $table->timestamps();

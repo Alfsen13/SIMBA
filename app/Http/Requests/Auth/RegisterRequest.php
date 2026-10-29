@@ -43,7 +43,7 @@ class RegisterRequest extends FormRequest
         ];
 
         if ($this->input('role') === 'pengajar') {
-            $rules['nip'] = ['required', 'string', 'unique:users'];
+            $rules['nip'] = ['nullable', 'string', 'unique:users'];
             $rules['kategori_mapel'] = ['required', 'string', 'max:100', Rule::in(self::kategoriMapelTersedia())];
         } elseif ($this->input('role') === 'pelajar') {
             $rules['nisn'] = ['required', 'string', 'unique:users'];

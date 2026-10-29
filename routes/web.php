@@ -173,6 +173,7 @@ Route::prefix('operator')->name('operator.')->middleware(['auth', 'role:operator
     Route::get('users/{user}/berkas/{jenis}', [AdminUser::class, 'berkas'])->name('users.berkas');
     Route::resource('mata-pelajaran', OperatorMataPelajaran::class);
     Route::resource('kelas', AdminKelas::class)->parameters(['kelas' => 'kelas'])->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+    Route::post('kelas/{kelas}/lepas-guru', [AdminKelas::class, 'lepasGuru'])->name('kelas.lepas-guru');
     Route::get('pengajuan-mengajar/{kelas}', [OperatorPengajuan::class, 'show'])->name('pengajuan-mengajar.show');
     Route::post('pengajuan-mengajar/{pengajuan}/setujui', [OperatorPengajuan::class, 'setujui'])->name('pengajuan-mengajar.setujui');
     Route::post('pengajuan-mengajar/{pengajuan}/tolak', [OperatorPengajuan::class, 'tolak'])->name('pengajuan-mengajar.tolak');

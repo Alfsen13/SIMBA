@@ -86,4 +86,4 @@
 
     <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
-<?php /**PATH C:\xampp\htdocs\SIMBA(1)\resources\views/layouts/guest.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\SIMBA\resources\views/layouts/guest.blade.php ENDPATH**/ ?>
