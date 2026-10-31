@@ -7,7 +7,7 @@ Dockerfile*
 docker-compose*
 .dockerignore
 # Caddyfile*  <- needed for FrankenPHP config
-docker-entrypoint*
+# docker-entrypoint*  <- needed for custom entrypoint
 
 # Laravel
 vendor/

@@ -11,8 +11,11 @@
 :8000 {
     root * /app/public
 
-    # FrankenPHP PHP handler
-    php_server
+    # FrankenPHP PHP handler - using frankenphp directive
+    frankenphp {
+        worker 2
+        max_workers 4
+    }
 
     # Enable compression
     encode zstd gzip

@@ -4,7 +4,7 @@
 # =============================================================================
 # STAGE 1: Base FrankenPHP + Node.js + Python
 # =============================================================================
-FROM dunglas/frankenphp:1.4-php8.4 AS base
+FROM dunglas/frankenphp:1.3-php8.3 AS base
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -165,13 +165,13 @@ RUN php artisan config:clear && php artisan route:clear || true
 # =============================================================================
 FROM app AS production
 
-# Copy FrankenPHP config
-COPY Caddyfile /etc/caddy/Caddyfile
+# Copy custom entrypoint
+COPY docker-entrypoint.frankenphp.sh /usr/local/bin/docker-entrypoint.frankenphp.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.frankenphp.sh
 
 # Set production env
 ENV APP_ENV=production \
     APP_DEBUG=false \
-    FRANKENPHP_CONFIG="/etc/caddy/Caddyfile" \
     SERVER_NAME=":8000" \
     PHP_INI_SCAN_DIR="/usr/local/etc/php/conf.d" \
     # Python path for DocumentExtractorService
@@ -185,8 +185,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/up || exit 1
 
-# Default command runs FrankenPHP with workers
-CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+# Default command runs FrankenPHP directly
+ENTRYPOINT ["docker-entrypoint.frankenphp.sh"]
 
 # =============================================================================
 # STAGE 5: Development Image (with Vite HMR)
