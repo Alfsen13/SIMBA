@@ -77,6 +77,8 @@ services:
       # Session
       SESSION_DRIVER: redis
       SESSION_LIFETIME: 120
+      SESSION_CONNECTION: default
+      SESSION_STORE: ""
       # Cache
       CACHE_STORE: redis
       # Mail (configure as needed)
@@ -157,7 +159,7 @@ services:
       args:
         INSTALL_DEV: "false"
     container_name: simba-queue-ai-soal
-    command: php artisan queue:work --queue=ai-soal --tries=1 --timeout=600 --sleep=1 --memory=512
+    entrypoint: ["php", "artisan", "queue:work", "--queue=ai-soal", "--tries=1", "--timeout=600", "--sleep=1", "--memory=512"]
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
@@ -216,7 +218,7 @@ services:
       args:
         INSTALL_DEV: "false"
     container_name: simba-queue-pertemuan
-    command: php artisan queue:work --queue=pertemuan --tries=2 --timeout=300 --sleep=1 --memory=256
+    entrypoint: ["php", "artisan", "queue:work", "--queue=pertemuan", "--tries=2", "--timeout=300", "--sleep=1", "--memory=256"]
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
@@ -256,7 +258,7 @@ services:
       args:
         INSTALL_DEV: "false"
     container_name: simba-queue-default
-    command: php artisan queue:work --queue=default --tries=1 --timeout=600 --sleep=1 --memory=256
+    entrypoint: ["php", "artisan", "queue:work", "--queue=default", "--tries=1", "--timeout=600", "--sleep=1", "--memory=256"]
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
@@ -299,7 +301,7 @@ services:
       args:
         INSTALL_DEV: "false"
     container_name: simba-scheduler
-    command: php artisan schedule:work
+    entrypoint: ["php", "artisan", "schedule:work"]
     environment:
       APP_ENV: production
       APP_DEBUG: "false"

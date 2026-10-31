@@ -213,7 +213,7 @@ These are real and reproducible; do not "fix" them by accident while doing an un
 
 ## Docs to keep in sync
 
-- `docs/dokumentasi-simba.json` — single consolidated documentation: project docs, architecture, 8 core flows, flowchart_sistem_detail, rumus_machine_learning, known defects, catatan_penting. Covers master-data pendidikan / pendaftaran flows (profil, pengajuan mengajar, pendaftaran kelas, pengelola_operator). Update it whenever a flow or formula changes, copying formulas from the actual source (`MLService`, `FiturPertemuanService`, `PrediksiMendatangService`, `EmbeddingService`), never from memory.
-- This file (`AGENTS.md`) — re-verify the headline counts and the "Known open defects" list whenever a defect is fixed or a migration/model/service is added; they were last reconciled against the tree on 2026-10-29 (29 migrations, 36 models, 42 controllers, 28 services, 73 tests).
+- `docs/` — split documentation: `arsitektur.md` (architecture), `alur-project.md` (8 project flows), `rumus-ml.md` (ML formulas), `known-defects.md`, `catatan-penting.md`. Update these when flows/formulas change, copying formulas from actual source (`MLService`, `FiturPertemuanService`, `PrediksiMendatangService`, `EmbeddingService`), never from memory.
+- This file (`AGENTS.md`) — re-verify headline counts and "Known open defects" when a defect is fixed or a migration/model/service is added; last reconciled 2026-10-29 (29 migrations, 36 models, 42 controllers, 28 services, 73 tests).
 - `.agents/skills/` — skills registered in `boost.json`: `laravel-best-practices`, `pest-testing`, `tailwindcss-development`. Activate with the `skill` tool.
 

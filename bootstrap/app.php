@@ -22,7 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
-        $middleware->web(append: [
+        $middleware->web(replace: [
+            \Illuminate\Cookie\Middleware\EncryptCookies::class => \App\Http\Middleware\EncryptCookies::class,
             SetLocale::class,
         ]);
         $middleware->api(prepend: [

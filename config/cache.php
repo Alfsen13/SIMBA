@@ -105,6 +105,14 @@ return [
             ],
         ],
 
+        // Session store using Redis (for CacheBasedSessionHandler with session driver 'redis')
+        'session' => [
+            'driver' => 'redis',
+            'connection' => env('REDIS_CACHE_CONNECTION', 'cache'),
+            'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
+            'prefix' => env('CACHE_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-cache-') . 'session-',
+        ],
+
     ],
 
     /*
