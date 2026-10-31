@@ -45,6 +45,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/berita/{beritum}', [HomeController::class, 'show'])->name('berita.show');
 
+// Health check endpoint for Docker
+Route::get('/up', function () {
+    return response('OK', 200);
+});
+
 Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 Route::get('/login', [LoginController::class, 'showForm'])->name('login');

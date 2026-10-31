@@ -120,6 +120,10 @@ services:
       WEB_SEARCH_ENABLED: "false"
       # Filesystem
       FILESYSTEM_DISK: public
+      # FrankenPHP Worker configuration (for php_server directive)
+      FRANKENPHP_WORKER: "/app/public/index.php"
+      FRANKENPHP_NUM_WORKERS: "2"
+      FRANKENPHP_MAX_WORKERS: "4"
     volumes:
       - ./storage:/app/storage
       - ./bootstrap/cache:/app/bootstrap/cache

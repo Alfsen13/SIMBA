@@ -4,7 +4,7 @@
 # =============================================================================
 # STAGE 1: Base FrankenPHP + Node.js + Python
 # =============================================================================
-FROM dunglas/frankenphp:1.3-php8.3 AS base
+FROM dunglas/frankenphp:1.4-php8.4 AS base
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -71,6 +71,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     pcntl \
     sockets
 
+# Install Redis extension via PECL
+RUN pecl install redis && docker-php-ext-enable redis
+
 # Install Composer
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
@@ -128,12 +131,15 @@ COPY bootstrap/app.php bootstrap/app.php
 # Create bootstrap/cache directory for package:discover
 RUN mkdir -p bootstrap/cache
 
+# Update composer.lock for PHP 8.3 compatibility (regenerate lock file)
+RUN rm -f composer.lock && composer update --no-interaction --prefer-dist --optimize-autoloader --no-scripts --ignore-platform-req=php
+
 # Install PHP dependencies (without dev for production, skip scripts for now)
 ARG INSTALL_DEV=true
 RUN if [ "$INSTALL_DEV" = "true" ]; then \
-        composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
+        composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts --ignore-platform-req=php; \
     else \
-        composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts; \
+        composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts --ignore-platform-req=php; \
     fi
 
 # Copy package.json for npm caching
@@ -145,20 +151,8 @@ RUN npm ci --ignore-scripts
 # Copy application code
 COPY . .
 
-# Run composer scripts (package:discover) now that full app is available
-RUN composer run-script post-autoload-dump || true
-
-# Build frontend assets
+# Build frontend assets (skip package:discover during build to avoid cache corruption)
 RUN npm run build
-
-# Generate Laravel key (will be overridden by env in production)
-RUN php artisan key:generate --force || true
-
-# Storage link
-RUN php artisan storage:link || true
-
-# Clear config and route cache (view cache cleared at runtime)
-RUN php artisan config:clear && php artisan route:clear || true
 
 # =============================================================================
 # STAGE 4: Production Image (FrankenPHP worker)
@@ -168,6 +162,9 @@ FROM app AS production
 # Copy custom entrypoint
 COPY docker-entrypoint.frankenphp.sh /usr/local/bin/docker-entrypoint.frankenphp.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.frankenphp.sh
+
+# Copy Caddyfile for production
+COPY Caddyfile /etc/caddy/Caddyfile
 
 # Set production env
 ENV APP_ENV=production \
@@ -185,7 +182,7 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/up || exit 1
 
-# Default command runs FrankenPHP directly
+# Default command runs FrankenPHP with Caddyfile
 ENTRYPOINT ["docker-entrypoint.frankenphp.sh"]
 
 # =============================================================================
