@@ -14,9 +14,9 @@ class RunPrediksiJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 180;
+    public $timeout = 180;
 
-    public int $tries = 2;
+    public $tries = 2;
 
     public function __construct()
     {

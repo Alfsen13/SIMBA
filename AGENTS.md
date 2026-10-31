@@ -16,6 +16,23 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF, pendi
 | `php artisan chat:flush` | Closure in `routes/console.php` shadows class but calls by FQCN. |
 | `php artisan latih:seed-data [--train] [--purge] [--dry-run] [--force]` | Demo data; derives predictions via services. `--purge` won't delete snapshot/artifacts. |
 
+### Docker Commands
+
+| Command | Notes |
+|---|---|
+| `docker compose up -d` | Production stack: app (FrankenPHP), 3 queue workers, scheduler, MySQL, Redis, Ollama. Port 8000. |
+| `docker compose --profile dev up -d` | Development stack: adds Vite HMR (port 5173) + app-dev with `QUEUE_CONNECTION=sync`. |
+| `docker compose build --no-cache` | Rebuild images (needed after `composer.lock`/`package-lock.json` changes). |
+| `docker compose logs -f app` | Follow app logs. Use service name: `app`, `queue-ai-soal`, `queue-pertemuan`, `queue-default`, `scheduler`, `ollama`, `vite`. |
+| `docker compose exec app php artisan <cmd>` | Run artisan commands inside container (migrate, test, ml:train, etc). |
+| `docker compose down -v` | Stop and remove volumes (database, Redis, Ollama data). |
+| `APP_KEY=... docker compose up -d` | `APP_KEY` **required** in `.env` or passed inline for production stack. |
+
+### Docker Entrypoints
+
+- **Production** (`docker-entrypoint.frankenphp.sh`): key:generate, storage:link, migrate, clear caches, package:discover, then `frankenphp run --config /etc/caddy/Caddyfile` (uses `php_server` directive with `FRANKENPHP_NUM_WORKERS`/`MAX_WORKERS`).
+- **Development** (`docker-entrypoint.dev.sh`): waits for DB/Redis/Ollama health, migrate, `optimize:clear`, starts Vite in background, then FrankenPHP with `Caddyfile.dev`.
+
 ## Critical Gotchas
 
 - **Tests + caches:** With `config:cache`, tests may hit real MySQL and `RefreshDatabase` wipes data; route cache hides new routes. `composer test` clears optimizations first. `view:cache` alone is OK.
@@ -33,6 +50,18 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF, pendi
 - **ML/RF/SVR:** 4 features only. RF is comparison layer (labels from baseline), never retrains from itself. SVR uses grouped split by student. Training snapshot in `ml/dataset_latih.json` must match feature lists or training refused. `ml:train` must not be redeclared in `routes/console.php`. `prediksi_mendatang` keeps only latest forecast per student.
 - **RAG/PDF:** Synchronous ingestion via `ProcessDocument::dispatchSync()`. `DocumentExtractorService` now enforces `services.pdf.timeout` with `proc_open`/`stream_select` (terminates on timeout). OCR/Tesseract/Pix2tex details matter. Kategori scoping via `kategori` on documents/chunks.
 - **Remedial:** Single trigger via `PrediksiController::remedial()` per student (not mass loop). Global and per-pertemuan remedial have separate idempotency; `GenerateRemedialPertemuanAI` has `ShouldBeUnique`. Real-time triggers in controllers only (not in services called by tests). `MateriRemedial` needs all pertemuan columns fillable.
+
+### Docker-Specific Gotchas
+
+- **Production uses `QUEUE_CONNECTION=redis`** (not `sync`). The 3 queue workers (`queue-ai-soal`, `queue-pertemuan`, `queue-default`) and `scheduler` run as separate containers. `composer franken`/`dev` run workers inline — Docker runs them as services.
+- **`APP_KEY` is mandatory** for production stack — container will fail without it. Generate via `php artisan key:generate --show` and put in `.env` or pass inline: `APP_KEY=base64:xxx docker compose up -d`.
+- **Ollama GPU support** requires NVIDIA Container Toolkit and uncommenting `deploy.resources.reservations.devices` in `docker-compose.yml` (driver: nvidia). Without GPU, `qwen2.5:7b` runs on CPU (slow, offloads to RAM).
+- **Python symlink:** Dockerfile installs Python 3.11 but symlinks as `python3.14` for `DocumentExtractorService` compatibility. `PYTHON_PATH=python3.14` in compose.
+- **Volumes:** `./storage:/app/storage` and `./bootstrap/cache:/app/bootstrap/cache` are bind-mounted in all services. `node_modules` is a named volume for dev. Don't commit `storage/*` or `bootstrap/cache/*` to git.
+- **Healthchecks:** Database, Redis, Ollama have healthchecks. App depends on them with `condition: service_healthy`. First startup takes 60-90s while Ollama pulls models.
+- **FrankenPHP workers:** Production uses `php_server` directive in Caddyfile with `FRANKENPHP_NUM_WORKERS=2` / `FRANKENPHP_MAX_WORKERS=4`. Not the same as queue workers.
+- **Dev profile:** `docker compose --profile dev up` starts `vite` + `app-dev` (with `QUEUE_CONNECTION=sync`, no separate queue containers). Vite HMR on port 5173 accessible from host.
+- **Rebuild needed** after `composer.lock` or `package-lock.json` changes — `docker compose build --no-cache` before `up`.
 
 ## AI providers (`app/Services/AIProviderService.php`)
 

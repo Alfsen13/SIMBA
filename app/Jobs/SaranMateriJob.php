@@ -16,9 +16,9 @@ class SaranMateriJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 90;
+    public $timeout = 90;
 
-    public int $tries = 2;
+    public $tries = 2;
 
     public function __construct(
         public int $kelasId,

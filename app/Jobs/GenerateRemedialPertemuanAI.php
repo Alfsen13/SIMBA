@@ -14,16 +14,16 @@ class GenerateRemedialPertemuanAI implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, Queueable;
 
-    public int $tries = 1;
+    public $tries = 1;
 
-    public int $timeout = 600;
+    public $timeout = 600;
 
     /**
      * Kunci keunikan mengikat lock sampai job selesai, sehingga klik "Jalankan
      * Prediksi" berulang tidak menumpuk job untuk (siswa, pertemuan) yang sama.
      * Kedaluwarsa 1 jam supaya lock tidak nyangkut bila worker mati mendadak.
      */
-    public int $uniqueFor = 3600;
+    public $uniqueFor = 3600;
 
     public function uniqueId(): string
     {

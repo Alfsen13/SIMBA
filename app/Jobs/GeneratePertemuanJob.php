@@ -17,18 +17,18 @@ class GeneratePertemuanJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 300;
+    public $timeout = 300;
 
-    public int $tries = 2;
-
-    public string $queue = 'pertemuan';
+    public $tries = 2;
 
     public function __construct(
         public int $kelasId,
         public string $materiTopics,
         public int $jumlahPertemuan,
         public ?string $catatan = null,
-    ) {}
+    ) {
+        $this->onQueue('pertemuan');
+    }
 
     public function handle(AIProviderService $aiService): int
     {

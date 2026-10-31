@@ -12,7 +12,7 @@ class PeriksaJawabanTugasAI implements ShouldQueue
 {
     use Dispatchable, Queueable;
 
-    public int $tries = 1;
+    public $tries = 1;
 
      
     public function __construct(

@@ -17,11 +17,11 @@ class GenerateSoalTugasAI implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 1;
+    public $tries = 1;
 
-    public int $timeout = 600;
+    public $timeout = 600;
 
-    public string $queue = 'ai-soal';
+    public $queue = 'ai-soal';
 
     public function __construct(
         public int $userId,

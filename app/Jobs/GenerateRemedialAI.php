@@ -15,11 +15,11 @@ class GenerateRemedialAI implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, Queueable;
 
-    public int $tries = 1;
+    public $tries = 1;
 
-    public int $timeout = 600;
+    public $timeout = 600;
 
-    public int $uniqueFor = 3600;
+    public $uniqueFor = 3600;
 
     public function uniqueId(): string
     {
