@@ -1,0 +1,458 @@
+# SIMBA Laravel LMS - Docker Compose
+# Services: app (FrankenPHP), queue workers, database, redis, vite (dev)
+
+services:
+  # =========================================================================
+  # Database (MySQL 8.0 - production compatible)
+  # =========================================================================
+  database:
+    image: mysql:8.0
+    container_name: simba-db
+    environment:
+      MYSQL_DATABASE: simba
+      MYSQL_USER: simba
+      MYSQL_PASSWORD: "${DB_PASSWORD:-simba_secret}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root_secret}"
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - simba-network
+
+  # =========================================================================
+  # Redis (untuk cache, session, queue)
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: simba-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - simba-network
+
+  # =========================================================================
+  # Application (FrankenPHP) - Production
+  # =========================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        INSTALL_DEV: "false"
+    container_name: simba-app
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: "http://localhost:8000"
+      APP_KEY: "${APP_KEY}"
+      # Database
+      DB_CONNECTION: mysql
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_DATABASE: simba
+      DB_USERNAME: simba
+      DB_PASSWORD: "${DB_PASSWORD:-simba_secret}"
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
+      # Queue
+      QUEUE_CONNECTION: redis
+      # Session
+      SESSION_DRIVER: redis
+      SESSION_LIFETIME: 120
+      # Cache
+      CACHE_STORE: redis
+      # Mail (configure as needed)
+      MAIL_MAILER: log
+      # AI / ML Services
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_MODEL: "qwen2.5:7b"
+      OLLAMA_MODEL_FALLBACK_1: "qwen2.5:1.5b"
+      OLLAMA_MODEL_FALLBACK_2: "simba-tutor-slim"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+      GEMINI_SHORT_TIMEOUT: "8"
+      PYTHON_PATH: "python3.14"
+      PDF_EXTRACT_TIMEOUT: "600"
+      # Symbols / RAG
+      SYMBOLS_ENABLED: "true"
+      SYMBOLS_TOP_K: "6"
+      SYMBOLS_MIN_SCORE: "1.0"
+      # Remedial
+      REMEDIAL_COOLDOWN_HARI: "7"
+      REMEDIAL_AMBANG_PERTEMUAN: "75"
+      REMEDIAL_BOBOT_TUGAS: "0.8"
+      REMEDIAL_BOBOT_KUIS: "0.2"
+      # Prediksi
+      PREDIKSI_AMBANG_AMAN: "20"
+      PREDIKSI_AMBANG_PANTAU: "40"
+      # Bloom
+      BLOOM_ENABLED: "true"
+      BLOOM_MIN_CONFIDENCE: "0.34"
+      # Kuis RAG
+      KUIS_RAG_ENABLED: "true"
+      KUIS_RAG_TOP_K: "6"
+      KUIS_RAG_MIN_SCORE: "0.35"
+      KUIS_RAG_MAX_CHARS: "8000"
+      # RAG
+      RAG_CHUNK_SIZE: "1000"
+      RAG_CHUNK_OVERLAP: "200"
+      RAG_TOP_K: "3"
+      RAG_MIN_SCORE: "0.4"
+      # Web Search
+      WEB_SEARCH_ENABLED: "false"
+      # Filesystem
+      FILESYSTEM_DISK: public
+    volumes:
+      - ./storage:/app/storage
+      - ./bootstrap/cache:/app/bootstrap/cache
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    networks:
+      - simba-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  # =========================================================================
+  # Queue Workers (3 queues: ai-soal, pertemuan, default)
+  # =========================================================================
+  queue-ai-soal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        INSTALL_DEV: "false"
+    container_name: simba-queue-ai-soal
+    command: php artisan queue:work --queue=ai-soal --tries=1 --timeout=600 --sleep=1 --memory=512
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: "${APP_KEY}"
+      DB_CONNECTION: mysql
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_DATABASE: simba
+      DB_USERNAME: simba
+      DB_PASSWORD: "${DB_PASSWORD:-simba_secret}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_MODEL: "qwen2.5:7b"
+      OLLAMA_MODEL_FALLBACK_1: "qwen2.5:1.5b"
+      OLLAMA_MODEL_FALLBACK_2: "simba-tutor-slim"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+      GEMINI_SHORT_TIMEOUT: "8"
+      PYTHON_PATH: "python3.14"
+      PDF_EXTRACT_TIMEOUT: "600"
+      SYMBOLS_ENABLED: "true"
+      BLOOM_ENABLED: "true"
+      BLOOM_MIN_CONFIDENCE: "0.34"
+      KUIS_RAG_ENABLED: "true"
+      REMEDIAL_COOLDOWN_HARI: "7"
+      REMEDIAL_AMBANG_PERTEMUAN: "75"
+      PREDIKSI_AMBANG_AMAN: "20"
+      PREDIKSI_AMBANG_PANTAU: "40"
+    volumes:
+      - ./storage:/app/storage
+      - ./bootstrap/cache:/app/bootstrap/cache
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    networks:
+      - simba-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  queue-pertemuan:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        INSTALL_DEV: "false"
+    container_name: simba-queue-pertemuan
+    command: php artisan queue:work --queue=pertemuan --tries=2 --timeout=300 --sleep=1 --memory=256
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: "${APP_KEY}"
+      DB_CONNECTION: mysql
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_DATABASE: simba
+      DB_USERNAME: simba
+      DB_PASSWORD: "${DB_PASSWORD:-simba_secret}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+    volumes:
+      - ./storage:/app/storage
+      - ./bootstrap/cache:/app/bootstrap/cache
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - simba-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  queue-default:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        INSTALL_DEV: "false"
+    container_name: simba-queue-default
+    command: php artisan queue:work --queue=default --tries=1 --timeout=600 --sleep=1 --memory=256
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: "${APP_KEY}"
+      DB_CONNECTION: mysql
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_DATABASE: simba
+      DB_USERNAME: simba
+      DB_PASSWORD: "${DB_PASSWORD:-simba_secret}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+    volumes:
+      - ./storage:/app/storage
+      - ./bootstrap/cache:/app/bootstrap/cache
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - simba-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # =========================================================================
+  # Scheduler (Laravel cron)
+  # =========================================================================
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        INSTALL_DEV: "false"
+    container_name: simba-scheduler
+    command: php artisan schedule:work
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: "${APP_KEY}"
+      DB_CONNECTION: mysql
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_DATABASE: simba
+      DB_USERNAME: simba
+      DB_PASSWORD: "${DB_PASSWORD:-simba_secret}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+    volumes:
+      - ./storage:/app/storage
+      - ./bootstrap/cache:/app/bootstrap/cache
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - simba-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # =========================================================================
+  # Ollama (Local LLM) - GPU required for qwen2.5:7b
+  # =========================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: simba-ollama
+    # Untuk GPU support, uncomment deploy section below
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - simba-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # =========================================================================
+  # Development Services (profile: dev)
+  # =========================================================================
+  vite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: simba-vite
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      VITE_APP_URL: "http://localhost:8000"
+    volumes:
+      - ./resources:/app/resources
+      - ./public:/app/public
+      - ./vite.config.js:/app/vite.config.js
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+      - node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    networks:
+      - simba-network
+    profiles:
+      - dev
+
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: simba-app-dev
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:8000"
+      APP_KEY: "${APP_KEY}"
+      DB_CONNECTION: mysql
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_DATABASE: simba
+      DB_USERNAME: simba
+      DB_PASSWORD: "${DB_PASSWORD:-simba_secret}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_MODEL: "qwen2.5:7b"
+      OLLAMA_MODEL_FALLBACK_1: "qwen2.5:1.5b"
+      OLLAMA_MODEL_FALLBACK_2: "simba-tutor-slim"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+      GEMINI_SHORT_TIMEOUT: "8"
+      PYTHON_PATH: "python3.14"
+      PDF_EXTRACT_TIMEOUT: "600"
+      SYMBOLS_ENABLED: "true"
+      BLOOM_ENABLED: "true"
+      BLOOM_MIN_CONFIDENCE: "0.34"
+      KUIS_RAG_ENABLED: "true"
+      REMEDIAL_COOLDOWN_HARI: "7"
+      REMEDIAL_AMBANG_PERTEMUAN: "75"
+      PREDIKSI_AMBANG_AMAN: "20"
+      PREDIKSI_AMBANG_PANTAU: "40"
+    volumes:
+      - ./:/app
+      - ./storage:/app/storage
+      - ./bootstrap/cache:/app/bootstrap/cache
+      - node_modules:/app/node_modules
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+      vite:
+        condition: service_started
+    networks:
+      - simba-network
+    profiles:
+      - dev
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  db_data:
+  redis_data:
+  ollama_data:
+  node_modules:
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  simba-network:
+    driver: bridge

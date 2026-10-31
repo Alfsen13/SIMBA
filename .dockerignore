@@ -1,0 +1,80 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+# Caddyfile*  <- needed for FrankenPHP config
+docker-entrypoint*
+
+# Laravel
+vendor/
+node_modules/
+bootstrap/cache/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+storage/framework/testing/
+storage/logs/*.log
+storage/app/public/*
+!storage/app/public/.gitkeep
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.docker
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+phpunit.xml
+phpunit.xml.dist
+tests/_output/
+coverage/
+
+# Build artifacts
+public/build/
+public/hot
+public/storage
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ML Models (large files)
+ml/*.ser
+ml/*.json
+ml/*.bin
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.pytype/
+.mypy_cache/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Documentation (optional - keep if needed in container)
+# docs/
+# README.md

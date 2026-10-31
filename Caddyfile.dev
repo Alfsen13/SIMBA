@@ -1,0 +1,47 @@
+# FrankenPHP Caddyfile for Development
+# Dengan Vite HMR di port 5173
+
+{
+    admin off
+    auto_https off
+}
+
+:8000 {
+    root * /app/public
+    php_server
+    encode zstd gzip
+
+    # Proxy Vite HMR ke port 5173
+    @vite_hmr {
+        path /@vite/client
+        path /@react-refresh
+        path /*.hot-update.*
+    }
+    reverse_proxy @vite_hmr http://[::1]:5173 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Proxy WebSocket untuk HMR
+    @ws {
+        path /ws
+    }
+    reverse_proxy @ws http://[::1]:5173 {
+        header_up Host {host}
+        header_up Upgrade {http.request.header.Upgrade}
+        header_up Connection "upgrade"
+    }
+
+    try_files {path} {path}/ /index.php?{query}
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}
