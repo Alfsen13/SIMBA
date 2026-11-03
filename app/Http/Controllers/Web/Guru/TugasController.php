@@ -24,6 +24,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -125,25 +126,30 @@ class TugasController extends Controller
         $this->authorize('create', [Tugas::class, $pertemuan->kelas]);
 
         $sumber = $request->sumberKonteks();
-        $userId = (int) Auth::id();
-        $cacheKey = 'ai-soal:tugas:'.$userId.':'.Str::uuid();
 
-        Cache::put($cacheKey, ['status' => 'processing'], now()->addMinutes(15));
+        set_time_limit(0);
 
-        GenerateSoalTugasAI::dispatch(
-            $userId,
-            (int) $pertemuan->id,
-            $validated['tipe'],
-            (int) $validated['jumlah'],
-            $validated['kesulitan'] ?? null,
-            $validated['topik'] ?? null,
-            $sumber,
-            $cacheKey
-        );
+        try {
+            $generator = app(KuisGeneratorService::class);
+            $soal = $validated['tipe'] === 'essai'
+                ? $generator->generateEssai($pertemuan, (int) $validated['jumlah'], $validated['topik'] ?? null, $sumber)
+                : $generator->generate($pertemuan, (int) $validated['jumlah'], $validated['kesulitan'] ?? 'sedang', $validated['topik'] ?? null, $sumber);
+        } catch (\Throwable $e) {
+            Log::error('GenerateSoalTugasAI gagal', [
+                'user_id' => (int) Auth::id(),
+                'pertemuan_id' => (int) $pertemuan->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
 
         return response()->json([
-            'status' => 'queued',
-            'key' => $cacheKey,
+            'success' => true,
+            'soal' => $soal,
         ]);
     }
 

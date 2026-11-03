@@ -106,6 +106,11 @@ class User extends Authenticatable
         return $this->hasOne(FiturHybridSiswa::class, 'siswa_id');
     }
 
+    public function aiSetting(): HasOne
+    {
+        return $this->hasOne(UserAiSetting::class);
+    }
+
     public function profilPendidikan(): HasOne
     {
         return $this->hasOne(ProfilPendidikan::class);

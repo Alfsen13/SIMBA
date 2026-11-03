@@ -17,6 +17,7 @@ use App\Http\Controllers\Web\Guru\PertemuanController;
 use App\Http\Controllers\Web\Guru\PrediksiController;
 use App\Http\Controllers\Web\Guru\RemedialController as GuruRemedial;
 use App\Http\Controllers\Web\Guru\TugasController;
+use App\Http\Controllers\Web\Guru\AiSettingController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\LocaleController;
 use App\Http\Controllers\Web\NotifikasiController;
@@ -99,9 +100,9 @@ Route::prefix('pengajar')->name('pengajar.')->middleware(['auth', 'role:pengajar
     Route::post('pertemuan/{pertemuan}/buka', [PertemuanController::class, 'buka'])->name('pertemuan.buka');
     Route::post('pertemuan/{pertemuan}/kunci', [PertemuanController::class, 'kunci'])->name('pertemuan.kunci');
     Route::resource('materi', MateriController::class)->except(['index']);
-    Route::resource('tugas', TugasController::class)->parameters(['tugas' => 'tugas']);
     Route::post('tugas/generate', [TugasController::class, 'generate'])->name('tugas.generate');
     Route::get('tugas/generate-status', [TugasController::class, 'generateStatus'])->name('tugas.generate-status');
+    Route::resource('tugas', TugasController::class)->parameters(['tugas' => 'tugas']);
     Route::post('tugas/{tugas}/penilaian', [TugasController::class, 'nilaiSubmit'])->name('tugas.nilai');
     Route::post('tugas/{tugas}/periksa-ai', [TugasController::class, 'periksaAI'])->name('tugas.periksa-ai');
     Route::get('tugas/{tugas}/penilaian', [TugasController::class, 'penilaian'])->name('tugas.penilaian');
@@ -125,6 +126,12 @@ Route::prefix('pengajar')->name('pengajar.')->middleware(['auth', 'role:pengajar
     Route::get('notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi');
     Route::post('notifikasi/{notifikasi}/read', [NotifikasiController::class, 'read'])->name('notifikasi.read');
     Route::post('notifikasi/read-all', [NotifikasiController::class, 'readAll'])->name('notifikasi.read-all');
+
+    Route::prefix('ai-settings')->name('ai-settings.')->group(function () {
+        Route::get('/', [AiSettingController::class, 'edit'])->name('edit');
+        Route::put('/', [AiSettingController::class, 'update'])->name('update');
+        Route::post('/test', [AiSettingController::class, 'test'])->name('test');
+    });
 });
 
 Route::prefix('pelajar')->name('pelajar.')->middleware(['auth', 'role:pelajar'])->group(function () {
@@ -159,6 +166,12 @@ Route::prefix('pelajar')->name('pelajar.')->middleware(['auth', 'role:pelajar'])
     Route::get('notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi');
     Route::post('notifikasi/{notifikasi}/read', [NotifikasiController::class, 'read'])->name('notifikasi.read');
     Route::post('notifikasi/read-all', [NotifikasiController::class, 'readAll'])->name('notifikasi.read-all');
+
+    Route::prefix('ai-settings')->name('ai-settings.')->group(function () {
+        Route::get('/', [AiSettingController::class, 'edit'])->name('edit');
+        Route::put('/', [AiSettingController::class, 'update'])->name('update');
+        Route::post('/test', [AiSettingController::class, 'test'])->name('test');
+    });
 });
 
 Route::prefix('pengelola-operator')->name('pengelola-operator.')->middleware(['auth', 'role:pengelola_operator'])->group(function () {

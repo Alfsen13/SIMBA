@@ -115,6 +115,18 @@ window.tugasBuilder = function (initial = {}, options = {}) {
                 }
 
                 if (!(res.ok && data && data.status === 'queued' && data.key)) {
+                    // Sync response (generate langsung mengembalikan soal)
+                    if (res.ok && data && data.success && Array.isArray(data.soal)) {
+                        const hasil = Array.isArray(data.soal) ? data.soal : [];
+                        if (this.tipe === 'essai') {
+                            hasil.map(normalisasiSoalEsai).forEach((s) => this.soal.push(s));
+                        } else {
+                            hasil.map(normalisasiSoalPG).forEach((q) => this.questions.push(q));
+                        }
+                        this.genMessage = 'Berhasil menambahkan ' + hasil.length + ' soal. Silakan periksa dan rapikan sebelum menyimpan.';
+                        this.generating = false;
+                        return;
+                    }
                     this.genError = (data && data.message) ? data.message : 'Gagal memulai proses generate soal. Silakan coba lagi.';
                     this.generating = false;
                     return;
@@ -122,7 +134,8 @@ window.tugasBuilder = function (initial = {}, options = {}) {
 
                 const statusUrl = this.generateUrl.replace('/generate', '/generate-status') + '?key=' + encodeURIComponent(data.key);
                 let attempts = 0;
-                const maxAttempts = 120;
+                const maxAttempts = 800; // ~20 menit (800 * 1.5s)
+                let consecutiveErrors = 0;
 
                 const poll = setInterval(async () => {
                     attempts++;
@@ -134,6 +147,7 @@ window.tugasBuilder = function (initial = {}, options = {}) {
                         });
 
                         const st = await r.json();
+                        consecutiveErrors = 0;
 
                         if (!st || st.status === 'processing') {
                             if (attempts >= maxAttempts) {
@@ -167,7 +181,8 @@ window.tugasBuilder = function (initial = {}, options = {}) {
                             return;
                         }
                     } catch {
-                        if (attempts >= maxAttempts) {
+                        consecutiveErrors++;
+                        if (consecutiveErrors >= 3 || attempts >= maxAttempts) {
                             clearInterval(poll);
                             this.genError = 'Terjadi kesalahan saat memantau proses generate. Silakan coba lagi.';
                             this.generating = false;

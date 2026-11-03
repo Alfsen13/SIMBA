@@ -120,9 +120,9 @@ return [
 
     'kuis_rag' => [
         'enabled' => env('KUIS_RAG_ENABLED', true),
-        'top_k' => env('KUIS_RAG_TOP_K', 6),
+        'top_k' => env('KUIS_RAG_TOP_K', 4),
         'min_score' => env('KUIS_RAG_MIN_SCORE', 0.35),
-        'max_chars' => env('KUIS_RAG_MAX_CHARS', 8000),
+        'max_chars' => env('KUIS_RAG_MAX_CHARS', 4000),
     ],
 
     /*

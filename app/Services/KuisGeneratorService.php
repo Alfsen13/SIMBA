@@ -68,20 +68,40 @@ Materi pembelajaran:
 {$konteks}
 PROMPT;
 
-        try {
-            $output = $this->ai->sendLocalPreferred($prompt, [], $system);
-        } catch (\Throwable) {
-            throw new RuntimeException('Layanan AI tidak dapat dihubungi saat ini. Silakan coba lagi.');
+        $soal = [];
+        $terakhirError = null;
+
+        for ($percobaan = 1; $percobaan <= 3; $percobaan++) {
+            try {
+                $output = $this->ai->send($prompt, [], $system);
+            } catch (\Throwable) {
+                throw new RuntimeException('Layanan AI tidak dapat dihubungi saat ini. Silakan coba lagi.');
+            }
+
+            try {
+                $soal = $this->parseSoal($output, $jumlah, $kesulitan);
+            } catch (\RuntimeException $e) {
+                $terakhirError = $e;
+                Log::warning('KuisGenerator: percobaan '.$percobaan.' gagal parsing JSON.', [
+                    'error' => $e->getMessage(),
+                    'raw' => mb_substr($output, 0, 300),
+                ]);
+
+                continue;
+            }
+
+            if (count($soal) > 0) {
+                break;
+            }
+
+            Log::warning('KuisGenerator: percobaan '.$percobaan.' menghasilkan 0 soal.', [
+                'diminta' => $jumlah,
+                'raw' => mb_substr($output, 0, 300),
+            ]);
         }
 
-        $soal = $this->parseSoal($output, $jumlah, $kesulitan);
         if (count($soal) === 0) {
-            Log::warning('KuisGenerator: JSON ter-parse tetapi tidak ada soal yang lolos validasi.', [
-                'diminta' => $jumlah,
-                'raw' => mb_substr($output, 0, 500),
-            ]);
-
-            throw new RuntimeException('AI tidak menghasilkan soal yang valid. Silakan coba lagi.');
+            throw $terakhirError ?? new RuntimeException('AI tidak menghasilkan soal yang valid. Silakan coba lagi.');
         }
 
         return $soal;
@@ -119,20 +139,40 @@ Materi pembelajaran:
 {$konteks}
 PROMPT;
 
-        try {
-            $output = $this->ai->sendLocalPreferred($prompt, [], $system);
-        } catch (\Throwable) {
-            throw new RuntimeException('Layanan AI tidak dapat dihubungi saat ini. Silakan coba lagi.');
+        $soal = [];
+        $terakhirError = null;
+
+        for ($percobaan = 1; $percobaan <= 3; $percobaan++) {
+            try {
+                $output = $this->ai->send($prompt, [], $system);
+            } catch (\Throwable) {
+                throw new RuntimeException('Layanan AI tidak dapat dihubungi saat ini. Silakan coba lagi.');
+            }
+
+            try {
+                $soal = $this->parseEssai($output, $jumlah);
+            } catch (\RuntimeException $e) {
+                $terakhirError = $e;
+                Log::warning('KuisGenerator: percobaan '.$percobaan.' gagal parsing esai.', [
+                    'error' => $e->getMessage(),
+                    'raw' => mb_substr($output, 0, 300),
+                ]);
+
+                continue;
+            }
+
+            if (count($soal) > 0) {
+                break;
+            }
+
+            Log::warning('KuisGenerator: percobaan '.$percobaan.' menghasilkan 0 esai.', [
+                'diminta' => $jumlah,
+                'raw' => mb_substr($output, 0, 300),
+            ]);
         }
 
-        $soal = $this->parseEssai($output, $jumlah);
         if (count($soal) === 0) {
-            Log::warning('KuisGenerator: JSON esai ter-parse tetapi tidak ada soal yang lolos validasi.', [
-                'diminta' => $jumlah,
-                'raw' => mb_substr($output, 0, 500),
-            ]);
-
-            throw new RuntimeException('AI tidak menghasilkan soal yang valid. Silakan coba lagi.');
+            throw $terakhirError ?? new RuntimeException('AI tidak menghasilkan soal yang valid. Silakan coba lagi.');
         }
 
         return $soal;

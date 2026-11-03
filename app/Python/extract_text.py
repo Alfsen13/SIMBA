@@ -8,6 +8,7 @@ import sys
 import os
 import json
 import re
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -18,17 +19,53 @@ if sys.platform == "win32":
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.buffer, "replace")
 
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
-TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-# Custom tessdata dir so Indonesian (ind) traineddata ships with the project.
 # Script lives at <project>/app/Python/extract_text.py
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-TESSDATA_DIR = os.path.join(PROJECT_DIR, "storage", "tessdata")
+BAWAAN_TESSERACT = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+
+def resolve_tesseract() -> str:
+    """Cari binary Tesseract: env TESSERACT_PATH, PATH, lalu lokasi umum.
+
+    Dulu path Windows di-hardcode sehingga OCR selalu gagal di container Linux.
+    """
+    dari_env = os.environ.get("TESSERACT_PATH")
+    if dari_env and os.path.exists(dari_env):
+        return dari_env
+
+    dari_path = shutil.which("tesseract")
+    if dari_path:
+        return dari_path
+
+    for kandidat in (BAWAAN_TESSERACT, "/usr/bin/tesseract", "/usr/local/bin/tesseract"):
+        if os.path.exists(kandidat):
+            return kandidat
+
+    return dari_env or "tesseract"
+
+
+def resolve_tessdata() -> str:
+    """Utamakan TESSDATA_PREFIX sistem, lalu storage/tessdata milik proyek."""
+    dari_env = os.environ.get("TESSDATA_PREFIX")
+    if dari_env and os.path.isdir(dari_env):
+        return dari_env
+
+    lokal = os.path.join(PROJECT_DIR, "storage", "tessdata")
+    if os.path.isdir(lokal):
+        return lokal
+
+    return dari_env or lokal
+
+
+TESSERACT_PATH = resolve_tesseract()
+TESSDATA_DIR = resolve_tessdata()
 TESSERACT_LANG = "ind+eng"  # Indonesian + English
 MIN_TEXT_LENGTH = 50          # Minimum extracted text to be considered valid
 GARBAGE_THRESHOLD = 0.15     # Max ratio of non-printable chars to be acceptable
 
-os.environ["TESSDATA_PREFIX"] = TESSDATA_DIR
+if TESSDATA_DIR:
+    os.environ["TESSDATA_PREFIX"] = TESSDATA_DIR
 
 
 def clean_text(text: str) -> str:

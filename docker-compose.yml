@@ -55,6 +55,9 @@ services:
       target: production
       args:
         INSTALL_DEV: "false"
+    # Satu image dipakai bersama app + semua worker, supaya kode tidak pernah
+    # berbeda antar container (penyebab 500 "class not found"/versi lama).
+    image: simba-app:latest
     container_name: simba-app
     environment:
       APP_ENV: production
@@ -84,10 +87,10 @@ services:
       # Mail (configure as needed)
       MAIL_MAILER: log
       # AI / ML Services
-      OLLAMA_BASE_URL: "http://ollama:11434"
-      OLLAMA_MODEL: "qwen2.5:7b"
-      OLLAMA_MODEL_FALLBACK_1: "qwen2.5:1.5b"
-      OLLAMA_MODEL_FALLBACK_2: "simba-tutor-slim"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
       GEMINI_SHORT_TIMEOUT: "8"
@@ -110,9 +113,9 @@ services:
       BLOOM_MIN_CONFIDENCE: "0.34"
       # Kuis RAG
       KUIS_RAG_ENABLED: "true"
-      KUIS_RAG_TOP_K: "6"
+      KUIS_RAG_TOP_K: "4"
       KUIS_RAG_MIN_SCORE: "0.35"
-      KUIS_RAG_MAX_CHARS: "8000"
+      KUIS_RAG_MAX_CHARS: "4000"
       # RAG
       RAG_CHUNK_SIZE: "1000"
       RAG_CHUNK_OVERLAP: "200"
@@ -158,7 +161,12 @@ services:
       target: production
       args:
         INSTALL_DEV: "false"
+    # Satu image dipakai bersama app + semua worker, supaya kode tidak pernah
+    # berbeda antar container (penyebab 500 "class not found"/versi lama).
+    image: simba-app:latest
     container_name: simba-queue-ai-soal
+    healthcheck:
+      disable: true
     entrypoint: ["php", "artisan", "queue:work", "--queue=ai-soal", "--tries=1", "--timeout=600", "--sleep=1", "--memory=512"]
     environment:
       APP_ENV: production
@@ -173,10 +181,11 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
-      OLLAMA_BASE_URL: "http://ollama:11434"
-      OLLAMA_MODEL: "qwen2.5:7b"
-      OLLAMA_MODEL_FALLBACK_1: "qwen2.5:1.5b"
-      OLLAMA_MODEL_FALLBACK_2: "simba-tutor-slim"
+      CACHE_STORE: redis
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
       GEMINI_SHORT_TIMEOUT: "8"
@@ -217,7 +226,12 @@ services:
       target: production
       args:
         INSTALL_DEV: "false"
+    # Satu image dipakai bersama app + semua worker, supaya kode tidak pernah
+    # berbeda antar container (penyebab 500 "class not found"/versi lama).
+    image: simba-app:latest
     container_name: simba-queue-pertemuan
+    healthcheck:
+      disable: true
     entrypoint: ["php", "artisan", "queue:work", "--queue=pertemuan", "--tries=2", "--timeout=300", "--sleep=1", "--memory=256"]
     environment:
       APP_ENV: production
@@ -232,6 +246,24 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+      GEMINI_SHORT_TIMEOUT: "8"
+      PYTHON_PATH: "python3.14"
+      PDF_EXTRACT_TIMEOUT: "600"
+      SYMBOLS_ENABLED: "true"
+      BLOOM_ENABLED: "true"
+      BLOOM_MIN_CONFIDENCE: "0.34"
+      KUIS_RAG_ENABLED: "true"
+      REMEDIAL_COOLDOWN_HARI: "7"
+      REMEDIAL_AMBANG_PERTEMUAN: "75"
+      PREDIKSI_AMBANG_AMAN: "20"
+      PREDIKSI_AMBANG_PANTAU: "40"
     volumes:
       - ./storage:/app/storage
       - ./bootstrap/cache:/app/bootstrap/cache
@@ -257,7 +289,12 @@ services:
       target: production
       args:
         INSTALL_DEV: "false"
+    # Satu image dipakai bersama app + semua worker, supaya kode tidak pernah
+    # berbeda antar container (penyebab 500 "class not found"/versi lama).
+    image: simba-app:latest
     container_name: simba-queue-default
+    healthcheck:
+      disable: true
     entrypoint: ["php", "artisan", "queue:work", "--queue=default", "--tries=1", "--timeout=600", "--sleep=1", "--memory=256"]
     environment:
       APP_ENV: production
@@ -272,6 +309,24 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+      GEMINI_SHORT_TIMEOUT: "8"
+      PYTHON_PATH: "python3.14"
+      PDF_EXTRACT_TIMEOUT: "600"
+      SYMBOLS_ENABLED: "true"
+      BLOOM_ENABLED: "true"
+      BLOOM_MIN_CONFIDENCE: "0.34"
+      KUIS_RAG_ENABLED: "true"
+      REMEDIAL_COOLDOWN_HARI: "7"
+      REMEDIAL_AMBANG_PERTEMUAN: "75"
+      PREDIKSI_AMBANG_AMAN: "20"
+      PREDIKSI_AMBANG_PANTAU: "40"
     volumes:
       - ./storage:/app/storage
       - ./bootstrap/cache:/app/bootstrap/cache
@@ -300,7 +355,12 @@ services:
       target: production
       args:
         INSTALL_DEV: "false"
+    # Satu image dipakai bersama app + semua worker, supaya kode tidak pernah
+    # berbeda antar container (penyebab 500 "class not found"/versi lama).
+    image: simba-app:latest
     container_name: simba-scheduler
+    healthcheck:
+      disable: true
     entrypoint: ["php", "artisan", "schedule:work"]
     environment:
       APP_ENV: production
@@ -315,6 +375,24 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+      GEMINI_SHORT_TIMEOUT: "8"
+      PYTHON_PATH: "python3.14"
+      PDF_EXTRACT_TIMEOUT: "600"
+      SYMBOLS_ENABLED: "true"
+      BLOOM_ENABLED: "true"
+      BLOOM_MIN_CONFIDENCE: "0.34"
+      KUIS_RAG_ENABLED: "true"
+      REMEDIAL_COOLDOWN_HARI: "7"
+      REMEDIAL_AMBANG_PERTEMUAN: "75"
+      PREDIKSI_AMBANG_AMAN: "20"
+      PREDIKSI_AMBANG_PANTAU: "40"
     volumes:
       - ./storage:/app/storage
       - ./bootstrap/cache:/app/bootstrap/cache
@@ -339,14 +417,11 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: simba-ollama
-    # Untuk GPU support, uncomment deploy section below
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    environment:
+      # Biarkan model tetap di memori antar request (default Ollama hanya 5m).
+      OLLAMA_KEEP_ALIVE: "30m"
+    # Untuk GPU support, pakai overlay: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+    # (butuh NVIDIA Container Toolkit / WSL2 GPU passthrough)
     volumes:
       - ollama_data:/root/.ollama
     ports:
@@ -409,10 +484,10 @@ services:
       QUEUE_CONNECTION: sync
       SESSION_DRIVER: file
       CACHE_STORE: file
-      OLLAMA_BASE_URL: "http://ollama:11434"
-      OLLAMA_MODEL: "qwen2.5:7b"
-      OLLAMA_MODEL_FALLBACK_1: "qwen2.5:1.5b"
-      OLLAMA_MODEL_FALLBACK_2: "simba-tutor-slim"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
       GEMINI_SHORT_TIMEOUT: "8"

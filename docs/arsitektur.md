@@ -4,10 +4,10 @@
 
 **MVC Laravel + Service layer.**
 
-- Generate soal kuis/tugas dan generate pertemuan berjalan **async** via queue terpisah (`ai-soal`, `pertemuan`).
+- Generate soal kuis/tugas berjalan **sinkron** di request HTTP (panggil langsung `KuisGeneratorService`, `set_time_limit(0)`, Gemini primary). Generate pertemuan tetap **async** via queue `pertemuan`.
 - Remedial massal berjalan **async** di queue `default`.
 - Ekstraksi/embedding dokumen RAG tetap **sinkron** via `ProcessDocument::dispatchSync`.
-- Generate soal/pertemuan AI tutor streaming/remedial manual per-siswa bisa tetap sinkron tergantung alur.
+- AI tutor streaming dan remedial manual per-siswa bisa tetap sinkron tergantung alur.
 - **Controller tipis.** Logika domain di `app/Services`.
 - **Tidak ada repository layer.**
 
@@ -20,7 +20,7 @@
 | **Form Request** | `app/Http/Requests/**` — validasi input, termasuk trait bersama `ValidatesKonteksSoal` & `ValidatesMateriUtama`. |
 | **Service (domain)** | `app/Services/**` — AI/RAG, ML, kuis/tugas, remedial, dokumen, chat, Bloom. Sebagian murni array (`SoalTugasService`) tanpa DB/HTTP. |
 | **Model (Eloquent)** | `app/Models/**` — relasi, casts, scope; dipakai service & controller untuk baca/tulis. |
-| **Job & Queue** | `app/Jobs/**` — `GenerateSoalKuisAI`/`GenerateSoalTugasAI` (queue `ai-soal`, prioritas), `GeneratePertemuanJob` (queue `pertemuan`), `GenerateRemedialAI`/`GenerateRemedialPertemuanAI`/`NilaiRemedialTugasAI`/`PeriksaJawabanTugasAI`/`SaranMateriJob`/`GenerateChatSummary`/`RunPrediksiJob` (queue `default`), `ProcessDocument::dispatchSync` untuk RAG. Queue driver database di dev (3 worker terpisah), sync di test. |
+| **Job & Queue** | `app/Jobs/**` — `GenerateSoalKuisAI`/`GenerateSoalTugasAI` (queue `ai-soal`, prioritas; secara default sekarang dipanggil **sinkron** dari controller, job hanya sebagai cadangan), `GeneratePertemuanJob` (queue `pertemuan`), `GenerateRemedialAI`/`GenerateRemedialPertemuanAI`/`NilaiRemedialTugasAI`/`PeriksaJawabanTugasAI`/`SaranMateriJob`/`GenerateChatSummary`/`RunPrediksiJob` (queue `default`), `ProcessDocument::dispatchSync` untuk RAG. Queue driver database di dev (3 worker terpisah), sync di test. |
 | **Observer** | `app/Observers/**` — efek samping lifecycle model (`MateriObserver` membuat `Document` + `ProcessDocument`; `KelasObserver` membuat `Berita`). |
 | **Policy** | `app/Policies/**` — otorisasi kepemilikan (guru pemilik kelas/kuis/tugas/materi, siswa pemilik notifikasi). |
 | **Notification (kustom)** | `app/Notifications/**` + `NotifikasiChannel`. **TIDAK** memakai tabel notifications Laravel; semua notifikasi disimpan di tabel `notifikasis`. |
@@ -65,7 +65,7 @@ Akun baru (register) status `pending` dan diarahkan ke `/verifikasi-pending`; `R
 | `app/Services` | Logika domain & integrasi AI |
 | `app/Services/Tugas` | 4 kelas domain tugas (`SoalTugasService`, `PengumpulanTugasService`, `TugasService`, `TugasPresenter`) |
 | `app/Models` | Eloquent |
-| `app/Jobs` | 11 job queue (`ai-soal`, `pertemuan`, `default`) |
+| `app/Jobs` | 11 job queue (`ai-soal` cadangan untuk soal/tugas sekarang sync, `pertemuan`, `default`) |
 | `app/Console/Commands` | 8 command artisan (`ml:train`, `ml:dataset-export`, `latih:seed-data`, `tes:data-dummy`, `materi:generate-summaries`, `kategori:fix`, `chat:flush`, `document:reembed`) |
 | `app/Notifications` | 6 notifikasi + `NotifikasiChannel` |
 | `app/Policies` | 7 policy |
@@ -109,6 +109,6 @@ Atas ke bawah = lapisan sistem dari aktor ke output. Garis putus-putus = jalur t
 ### Titik Keputusan
 
 1. Role menentukan prefix route dan panel yang tersedia (operator/pengajar/pelajar/pengelola_operator).
-2. Semua AI jalan sinkron di request, tidak ada antrean yang berjalan secara mandiri.
+2. Generate soal/tugas jalan sinkron di request (Gemini primary). Generate pertemuan dan remedial masih lewat antrean queue (`pertemuan`/`default`).
 3. Notifikasi selalu lewat `NotifikasiChannel` ke tabel `notifikasis` (bukan tabel notifications Laravel).
 4. Tailwind v4 dikonfigurasi via `@theme` di `resources/css/app.css`, tidak ada `tailwind.config.js`.

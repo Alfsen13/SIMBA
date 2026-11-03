@@ -1,0 +1,32 @@
+# Overlay GPU opsional untuk Ollama (+ pix2tex di app).
+#
+# Pemakaian:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+#
+# Prasyarat:
+#   - GPU NVIDIA + driver di host
+#   - NVIDIA Container Toolkit (Linux) atau WSL2 GPU passthrough (Docker Desktop)
+#   - Cek dulu: docker run --rm --gpus all alpine sh -c 'ls /dev/nvidia*'
+#     Kalau keluar "No such file or directory", GPU belum tembus ke container.
+#
+# Catatan VRAM: qwen2.5:1.5b (~1.5 GB) aman untuk GPU 4 GB.
+# qwen2.5:7b (~4.7 GB) melebihi 4 GB sehingga tetap di-offload ke CPU/ RAM.
+
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  app:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

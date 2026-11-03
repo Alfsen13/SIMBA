@@ -35,7 +35,7 @@ class OllamaService
     }
 
      
-    public function send(string $prompt, array $history = [], ?string $model = null, int $timeout = 600, ?int $numPredict = null): string
+    public function send(string $prompt, array $history = [], ?string $model = null, int $timeout = 1200, ?int $numPredict = null): string
     {
         $numPredict = $numPredict ?? (int) config('services.ollama.num_predict', 2048);
         $model = $model ?? $this->model;
@@ -143,7 +143,7 @@ class OllamaService
             throw new RuntimeException('Ollama API error: '.mb_substr($body, 0, 200));
         }
 
-        stream_set_timeout($fp, 600);
+        stream_set_timeout($fp, 1200);
 
         while (! feof($fp)) {
             $line = fgets($fp);

@@ -32,6 +32,7 @@ class GeneratePertemuanJob implements ShouldQueue
 
     public function handle(AIProviderService $aiService): int
     {
+        set_time_limit(0);
         $kelas = Kelas::findOrFail($this->kelasId);
 
         $kategori = $kelas->kategori ? "Kategori: {$kelas->kategori}" : 'Kategori tidak ditentukan';
@@ -60,12 +61,30 @@ Format JSON array of objects dengan key:
 Berikan hanya JSON array, tanpa teks lain.
 PROMPT;
 
-        $response = $aiService->sendLocalPreferred($prompt);
+        $pertemuanList = null;
+        $terakhirError = null;
 
-        $pertemuanList = $this->extractJsonArray($response);
+        for ($percobaan = 1; $percobaan <= 3; $percobaan++) {
+            try {
+                $response = $aiService->send($prompt);
+                $pertemuanList = $this->extractJsonArray($response);
+
+                if (! empty($pertemuanList) && isset($pertemuanList[0]['nama_pertemuan'])) {
+                    break;
+                }
+            } catch (\Throwable $e) {
+                $terakhirError = $e;
+                Log::warning('GeneratePertemuanJob: percobaan '.$percobaan.' gagal.', [
+                    'kelas' => $this->kelasId,
+                    'error' => $e->getMessage(),
+                ]);
+
+                continue;
+            }
+        }
 
         if (empty($pertemuanList) || ! isset($pertemuanList[0]['nama_pertemuan'])) {
-            throw new \RuntimeException('Respons AI tidak valid: '.substr($response, 0, 200));
+            throw $terakhirError ?? new \RuntimeException('Respons AI tidak valid: '.substr($response ?? '', 0, 200));
         }
 
         $now = now();

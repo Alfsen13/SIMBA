@@ -21,8 +21,6 @@ class GenerateSoalKuisAI implements ShouldQueue
 
     public $timeout = 600;
 
-    public $queue = 'ai-soal';
-
     public function __construct(
         public int $userId,
         public int $pertemuanId,
@@ -31,10 +29,13 @@ class GenerateSoalKuisAI implements ShouldQueue
         public ?string $topik,
         public array $sumber,
         public string $cacheKey,
-    ) {}
+    ) {
+        $this->onQueue('ai-soal');
+    }
 
     public function handle(KuisGeneratorService $generator): void
     {
+        set_time_limit(0);
         try {
             $pertemuan = Pertemuan::with('kelas')->findOrFail($this->pertemuanId);
 

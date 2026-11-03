@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Support\Bahasa;
+use App\Services\CustomAiService;
 use Generator;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -132,25 +134,53 @@ class AIProviderService
         $historyWithSystem = $this->prepareHistory($history, $systemPrompt);
         $geminiTimeout = min((int) config('services.gemini.short_timeout', 8), 15);
 
+        // Ollama primary
         try {
-            return $this->ollama->send($prompt, $historyWithSystem, $this->primaryModel, 600);
+            $out = $this->ollama->send($prompt, $historyWithSystem, $this->primaryModel, 600);
+            if (! empty(trim($out)) && ! $this->isRefusal($out)) {
+                return $out;
+            }
+            if ($this->isRefusal($out)) {
+                Log::warning('Ollama ({model}) refusal, try next.', ['model' => $this->primaryModel, 'response' => mb_substr($out, 0, 100)]);
+            }
         } catch (\Throwable $e) {
             Log::warning('Ollama ({model}) gagal: {msg}', ['model' => $this->primaryModel, 'msg' => $e->getMessage()]);
         }
 
+        // Ollama fallback 1
         try {
-            return $this->ollama->send($prompt, $historyWithSystem, $this->fallbackModel1, 600);
+            $out = $this->ollama->send($prompt, $historyWithSystem, $this->fallbackModel1, 600);
+            if (! empty(trim($out)) && ! $this->isRefusal($out)) {
+                return $out;
+            }
+            if ($this->isRefusal($out)) {
+                Log::warning('Ollama ({model}) refusal, try next.', ['model' => $this->fallbackModel1, 'response' => mb_substr($out, 0, 100)]);
+            }
         } catch (\Throwable $e) {
             Log::warning('Ollama ({model}) gagal: {msg}', ['model' => $this->fallbackModel1, 'msg' => $e->getMessage()]);
         }
 
+        // Gemini (cloud)
         try {
-            return $this->gemini->send($prompt, $historyWithSystem, $geminiTimeout);
+            $out = $this->gemini->send($prompt, $historyWithSystem, $geminiTimeout);
+            if (! empty(trim($out)) && ! $this->isRefusal($out)) {
+                return $out;
+            }
         } catch (\Throwable $e) {
             Log::warning('Gemini juga gagal: {msg}', ['msg' => $e->getMessage()]);
         }
 
-        throw new RuntimeException('Semua provider AI gagal.');
+        // Last resort: forced prompt (Gemini then Ollama fallback 1)
+        try {
+            $out = $this->retryWithForcedPrompt($prompt, $history, $systemPrompt);
+            if (! empty(trim($out)) && ! $this->isRefusal($out)) {
+                return $out;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('AIProvider: retry gagal total: {msg}', ['msg' => $e->getMessage()]);
+        }
+
+        throw new RuntimeException('Maaf, layanan AI tidak tersedia saat ini. Silakan coba lagi.');
     }
 
      
@@ -230,6 +260,67 @@ class AIProviderService
         ]);
 
         return $history;
+    }
+
+    /**
+     * Kirim chat menggunakan AI pribadi user (Bring Your Own AI).
+     * Jika user tidak punya setting enabled atau gagal, fallback ke provider global.
+     */
+    public function sendForUser(User $user, string $prompt, array $history = [], ?string $systemPrompt = null): string
+    {
+        $setting = $user->aiSetting;
+
+        if ($setting && $setting->enabled && $setting->isReady()) {
+            $custom = new CustomAiService(
+                provider: $setting->provider,
+                endpoint: $setting->endpoint,
+                apiKey: $setting->api_key,
+                model: $setting->model,
+                options: $setting->options ?? [],
+            );
+
+            $result = $custom->chat(
+                array_merge([['role' => 'user', 'content' => $prompt]], $this->prepareHistory($history, $systemPrompt))
+            );
+
+            if ($result !== null) {
+                return $result;
+            }
+
+            Log::warning('AIProvider: user AI failed, fallback global', [
+                'user_id' => $user->id,
+                'provider' => $setting->provider,
+            ]);
+        }
+
+        return $this->sendLocalPreferred($prompt, $history, $systemPrompt);
+    }
+
+    /**
+     * Stream chat menggunakan AI pribadi user. Fallback ke global jika gagal.
+     */
+    public function sendStreamForUser(User $user, string $prompt, array $history = [], ?string $systemPrompt = null): Generator
+    {
+        $setting = $user->aiSetting;
+
+        if ($setting && $setting->enabled && $setting->isReady()) {
+            $custom = new CustomAiService(
+                provider: $setting->provider,
+                endpoint: $setting->endpoint,
+                apiKey: $setting->api_key,
+                model: $setting->model,
+                options: $setting->options ?? [],
+            );
+
+            $custom->chatStream(
+                array_merge([['role' => 'user', 'content' => $prompt]], $this->prepareHistory($history, $systemPrompt)),
+                fn (string $chunk) => yield $chunk
+            );
+
+            return;
+        }
+
+        yield from $this->sendStreamLocalPreferred($prompt, $history, $systemPrompt);
     }
 }
 
