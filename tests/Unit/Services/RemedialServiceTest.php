@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\ChatLog;
 use App\Models\Kelas;
 use App\Models\Kuis;
 use App\Models\KuisHasil;
@@ -100,7 +99,6 @@ test('setiap kolom yang dipakai pencarian topik lemah benar-benar ada di skema',
         'kuis' => ['id', 'pertemuan_id', 'materi_id'],
         'pengumpulan_tugas' => ['siswa_id', 'tugas_id', 'nilai'],
         'tugas' => ['id', 'pertemuan_id', 'materi_id'],
-        'chat_logs' => ['user_id', 'materi_id', 'id'],
         'materi' => ['id', 'judul'],
         'pertemuan' => ['id', 'nama_pertemuan'],
         'kuis_materi' => ['kuis_id', 'materi_id'],
@@ -215,7 +213,7 @@ test('getWeakTopics memadukan nilai tugas yang sudah dinilai', function () {
         ->and($hasil)->toContain('55');
 });
 
-test('getWeakTopics jatuh ke materi yang dibahas saat belum ada nilai', function () {
+test('getWeakTopics mengembalikan fallback saat belum ada nilai dan tidak ada chat history', function () {
     $pertemuan = remedialBuatPertemuan($this->kelas, 'Pertemuan Seismic');
     $materi = Materi::factory()->create([
         'judul' => 'Gelombang Seismik',
@@ -224,16 +222,9 @@ test('getWeakTopics jatuh ke materi yang dibahas saat belum ada nilai', function
         'pertemuan_id' => $pertemuan->id,
     ]);
 
-    ChatLog::create([
-        'user_id' => $this->siswa->id,
-        'materi_id' => $materi->id,
-        'role' => 'user',
-        'message' => 'Jelaskan gelombang P.',
-    ]);
-
     $hasil = remedialPanggilGetWeakTopics($this->remedial, $this->siswa->id);
 
-    expect($hasil)->toBe('Gelombang Seismik');
+    expect($hasil)->toBe('Belum teridentifikasi');
 });
 
 test('getWeakTopics memprioritaskan atribusi per materi saat materi_id terisi', function () {

@@ -64,6 +64,7 @@ services:
       APP_DEBUG: "false"
       APP_URL: "http://localhost:8000"
       APP_KEY: "${APP_KEY}"
+      SANCTUM_STATEFUL_DOMAINS: "localhost:8000,127.0.0.1:8000,localhost,127.0.0.1,::1"
       # Database
       DB_CONNECTION: mysql
       DB_HOST: database
@@ -80,8 +81,12 @@ services:
       # Session
       SESSION_DRIVER: redis
       SESSION_LIFETIME: 120
-      SESSION_CONNECTION: default
-      SESSION_STORE: ""
+      SESSION_CONNECTION: cache
+      SESSION_STORE: session
+      SESSION_DOMAIN: "localhost"
+      SESSION_SECURE_COOKIE: "false"
+      SESSION_SAME_SITE: "lax"
+      SESSION_HTTP_ONLY: "true"
       # Cache
       CACHE_STORE: redis
       # Mail (configure as needed)

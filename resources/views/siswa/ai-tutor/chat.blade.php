@@ -1,20 +1,9 @@
-@php $title = 'AI Tutor — Chat'; @endphp
+@php $title = 'AI Tutor — ' . $pertemuan->nama_pertemuan; @endphp
 
 @extends('layouts.app')
 
 @section('content')
-
-<script>
-    window.apiChatStartUrl = @json(route('api.chat.start'));
-    window.apiChatSendUrl = @json(route('api.chat.send'));
-    window.chatPertemuanId = {{ $pertemuan->id }};
-    // Kunci dinormalisasi di server (huruf kecil, tanpa tanda baca/label halaman)
-    // agar sitasi [[Judul Materi]] dari AI tetap cocok walau beda kapitalisasi.
-    window.materiUrlMap = @json($materiUrlMap);
-</script>
-
-<div class="py-6" x-data="aiTutor()" x-init="init()">
-
+<div class="py-6" x-data="aiTutorChat()" x-init="init()">
     {{-- Header --}}
     <div class="flex items-center justify-between mb-4">
         <div>
@@ -114,7 +103,7 @@
                     </div>
                 </template>
 
-                <template x-if="isStreaming">
+                <template x-if="isLoading">
                     <div class="flex gap-3 msg-fade-in">
                         <div class="shrink-0 mt-1">
                             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-purple-600 flex items-center justify-center shadow-sm">
@@ -122,22 +111,17 @@
                             </div>
                         </div>
                         <div>
-                            <template x-if="streamingText">
-                                <div class="inline-block text-sm leading-relaxed px-4 py-2.5 rounded-lg rounded-bl-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-left render-md" x-ref="streaming" :data-raw="streamingText" x-html="renderMarkdown(streamingText)"></div>
-                            </template>
-                            <template x-if="!streamingText">
-                                <div class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg rounded-bl-md bg-slate-100 dark:bg-slate-800">
-                                    <span class="typing-dot"></span>
-                                    <span class="typing-dot"></span>
-                                    <span class="typing-dot"></span>
-                                </div>
-                            </template>
+                            <div class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg rounded-bl-md bg-slate-100 dark:bg-slate-800">
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                            </div>
                         </div>
                     </div>
                 </template>
             </div>
 
-            <div x-show="messages.length <= 1 && !isStreaming" class="px-6 pb-3">
+            <div x-show="messages.length === 0 && !isLoading" class="px-6 pb-3">
                 <div class="flex flex-wrap gap-2">
                     <template x-for="(q, i) in suggestedQuestions" :key="i">
                         <button
@@ -159,7 +143,7 @@
                             rows="1"
                             placeholder="{{ __('publik.ai_tutor.placeholder_tanya') }}"
                             class="w-full resize-none rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
-                            :disabled="isStreaming"
+                            :disabled="isLoading"
                             @input="autoResize($event.target)"
                             style="max-height: 120px;"
                         ></textarea>
@@ -167,9 +151,9 @@
                     </div>
                     <button
                         type="submit"
-                        :disabled="!input.trim() || isStreaming"
+                        :disabled="!input.trim() || isLoading"
                         class="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all"
-                        :class="input.trim() && !isStreaming ? 'bg-emerald-700 text-white hover:bg-emerald-800 shadow-sm' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                        :class="input.trim() && !isLoading ? 'bg-emerald-700 text-white hover:bg-emerald-800 shadow-sm' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
                     >
                         <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                     </button>
@@ -179,4 +163,128 @@
     </div>
 </div>
 
+<?php
+    $suggestedQuestions = [
+        'Jelaskan konsep utama pada pertemuan ini',
+        'Berikan contoh soal latihan',
+        'Ringkas materi ini',
+    ];
+    $suggestedQuestionsJson = json_encode($suggestedQuestions);
+?>
+
+<script>
+    window.aiTutorConfig = {
+        pertemuanId: {{ $pertemuan->id }},
+        apiAskUrl: @json(route('pelajar.ai-tutor.ask')),
+        materiUrlMap: @json($materiUrlMap),
+        suggestedQuestions: {!! $suggestedQuestionsJson !!},
+    };
+</script>
+
+@pushOnce('scripts')
+<script>
+    function aiTutorChat() {
+        return {
+            messages: [],
+            input: '',
+            isLoading: false,
+            sidebarOpen: false,
+            summaryOpen: false,
+            suggestedQuestions: window.aiTutorConfig?.suggestedQuestions || [],
+
+            init() {
+                this.$nextTick(() => this.scrollToBottom());
+            },
+
+            async sendMessage() {
+                if (!this.input.trim() || this.isLoading) return;
+
+                const userMsg = this.input.trim();
+                this.input = '';
+                this.isLoading = true;
+
+                this.messages.push({
+                    role: 'user',
+                    content: userMsg,
+                    timestamp: new Date().toISOString()
+                });
+
+                this.$nextTick(() => this.scrollToBottom());
+
+                try {
+                    const formData = new FormData();
+                    formData.append('pertemuan_id', window.aiTutorConfig.pertemuanId);
+                    formData.append('question', userMsg);
+
+                    const response = await fetch(window.aiTutorConfig.apiAskUrl, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                            'Accept': 'application/json',
+                        },
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Gagal memproses pertanyaan');
+                    }
+
+                    const data = await response.json();
+
+                    this.messages.push({
+                        role: 'assistant',
+                        content: data.answer,
+                        timestamp: new Date().toISOString(),
+                        references: data.references || []
+                    });
+
+                } catch (error) {
+                    console.error(error);
+                    this.messages.push({
+                        role: 'assistant',
+                        content: 'Maaf, terjadi kesalahan. Silakan coba lagi.',
+                        timestamp: new Date().toISOString()
+                    });
+                } finally {
+                    this.isLoading = false;
+                    this.$nextTick(() => this.scrollToBottom());
+                }
+            },
+
+            handleKeydown(event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    this.sendMessage();
+                }
+            },
+
+            autoResize(textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+            },
+
+            scrollToBottom() {
+                const el = this.$refs.messages;
+                if (el) {
+                    el.scrollTop = el.scrollHeight;
+                }
+            },
+
+            formatTime(iso) {
+                const date = new Date(iso);
+                return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            },
+
+            renderMarkdown(text) {
+                if (!text) return '';
+                return text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-xs">$1</code>')
+                    .replace(/\n/g, '<br>');
+            },
+        };
+    }
+</script>
+@endpushOnce
 @endsection

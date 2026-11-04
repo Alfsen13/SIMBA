@@ -33,6 +33,15 @@ window.aiTutor = function () {
 
         init() {
             this.pertemuanId = window.chatPertemuanId || null;
+            if (!this.pertemuanId) {
+                console.error('pertemuanId not set! Check window.chatPertemuanId');
+                this.messages = [{
+                    role: 'assistant',
+                    content: '⚠️ Error: ID pertemuan tidak ditemukan. Silakan muat ulang halaman.',
+                    timestamp: Date.now()
+                }];
+                return;
+            }
             this.messages = [{
                 role: 'assistant',
                 content: 'Halo! Semua materi dalam pertemuan ini sudah menjadi sumber referensi saya. Silakan ajukan pertanyaan apa saja tentang materi tersebut.',
@@ -177,12 +186,21 @@ window.aiTutor = function () {
 
         async startSession() {
             if (!this.pertemuanId) return;
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (!csrfToken) {
+                const msg = 'CSRF token tidak ditemukan. Pastikan meta tag csrf-token ada di layout.';
+                console.error(msg);
+                this.showError(msg);
+                throw new Error(msg);
+            }
+
             try {
                 const res = await fetch(window.apiChatStartUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     credentials: 'same-origin',
                     body: JSON.stringify({
@@ -190,17 +208,42 @@ window.aiTutor = function () {
                     })
                 });
                 const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || `HTTP ${res.status}: ${res.statusText}`);
+                }
                 if (data.success) {
                     this.sesiId = data.data.sesi_id;
+                } else {
+                    throw new Error(data.message || 'Gagal memulai sesi chat');
                 }
             } catch (e) {
                 console.error('Failed to start session:', e);
+                this.showError('Gagal memulai sesi: ' + e.message);
+                throw e;
             }
+        },
+
+        showError(message) {
+            this.messages.push({
+                role: 'assistant',
+                content: `⚠️ ${message}`,
+                timestamp: Date.now()
+            });
+            this.isStreaming = false;
+            this.streamingText = '';
+            this.scrollToBottom();
         },
 
         async sendMessage() {
             if (!this.input.trim() || this.isStreaming || !this.pertemuanId) return;
-            if (!this.sesiId) await this.startSession();
+
+            if (!this.sesiId) {
+                try {
+                    await this.startSession();
+                } catch (e) {
+                    return; // Error already shown by startSession
+                }
+            }
             if (!this.sesiId) return;
 
             const userMsg = this.input.trim();
@@ -211,11 +254,16 @@ window.aiTutor = function () {
             this.scrollToBottom();
 
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                if (!csrfToken) {
+                    throw new Error('CSRF token tidak ditemukan');
+                }
+
                 const response = await fetch(window.apiChatSendUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     credentials: 'same-origin',
                     body: JSON.stringify({
@@ -224,6 +272,11 @@ window.aiTutor = function () {
                         pesan: userMsg
                     })
                 });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.message || `HTTP ${response.status}: ${response.statusText}`);
+                }
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
@@ -251,13 +304,8 @@ window.aiTutor = function () {
                     }
                 }
             } catch (e) {
-                this.streamingText = '';
-                this.isStreaming = false;
-                this.messages.push({
-                    role: 'assistant',
-                    content: 'Koneksi terputus. Silakan coba lagi.',
-                    timestamp: Date.now()
-                });
+                console.error('Send message error:', e);
+                this.showError('Gagal mengirim pesan: ' + e.message);
             }
 
             this.scrollToBottom();

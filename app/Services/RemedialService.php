@@ -379,7 +379,6 @@ class RemedialService
         }
 
 
-
         $guru->notify(new RisikoTinggiDetected(
             $prediksi->siswa?->name ?: 'Siswa',
             (float) ($prediksi->skor_risiko ?? 0),
@@ -390,12 +389,6 @@ class RemedialService
      
     protected function guruPengampu(int $siswaId): ?User
     {
-
-
-
-
-
-
 
 
         $kelasIds = DB::table('kelas_siswa')
@@ -454,8 +447,6 @@ Buatkan materi remedial yang mencakup:
 Format JSON:
 {"ringkasan": "...", "latihan": "soal dan jawaban"}
 PROMPT;
-
-
 
 
 
@@ -724,7 +715,7 @@ PROMPT;
             }
         }
 
-        return $this->materiYangDibahas($siswaId);
+        return 'Belum teridentifikasi';
     }
 
      
@@ -862,28 +853,6 @@ PROMPT;
     }
 
      
-    protected function materiYangDibahas(int $siswaId): string
-    {
-        try {
-            $judul = DB::table('chat_logs')
-                ->join('materi', 'materi.id', '=', 'chat_logs.materi_id')
-                ->where('chat_logs.user_id', $siswaId)
-                ->whereNotNull('chat_logs.materi_id')
-                ->groupBy('chat_logs.materi_id', 'materi.judul')
-                ->orderByDesc(DB::raw('COUNT(chat_logs.id)'))
-                ->limit($this->maksTopikLemah)
-                ->pluck('materi.judul')
-                ->all();
-        } catch (\Throwable $e) {
-            Log::warning('RemedialService: gagal membaca materi yang dibahas: {msg}', ['msg' => $e->getMessage()]);
-
-            return 'Belum teridentifikasi';
-        }
-
-        return $judul !== [] ? implode(', ', $judul) : 'Belum teridentifikasi';
-    }
-
-     
     protected function buildContext(PrediksiAi $prediksi, string $topikLemah): array
     {
         $features = $prediksi->feature_vector ?? [];
@@ -985,4 +954,3 @@ PROMPT;
         return implode("\n", $bagian);
     }
 }
-

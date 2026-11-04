@@ -53,30 +53,12 @@ class User extends Authenticatable
     }
 
      
-    public function chatLog(): HasMany
-    {
-        return $this->hasMany(ChatLog::class, 'user_id');
-    }
-
-     
     public function notifikasi(): HasMany
     {
         return $this->hasMany(Notifikasi::class);
     }
 
-     
-    public function sesiSummary(): HasMany
-    {
-        return $this->hasMany(SesiSummary::class);
-    }
-
-     
-    public function chatSummary(): HasMany
-    {
-        return $this->hasMany(ChatSummary::class);
-    }
-
-     
+    
     public function prediksiAi(): HasMany
     {
         return $this->hasMany(PrediksiAi::class, 'siswa_id');

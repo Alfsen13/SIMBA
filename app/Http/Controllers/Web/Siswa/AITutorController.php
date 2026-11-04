@@ -4,7 +4,12 @@ namespace App\Http\Controllers\Web\Siswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kelas;
+use App\Models\Materi;
 use App\Models\Pertemuan;
+use App\Services\AIProviderService;
+use App\Services\RAGService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -83,6 +88,67 @@ class AITutorController extends Controller
         return view('siswa.ai-tutor.chat', compact('kelas', 'pertemuan', 'materis', 'materiData'))
             ->with('allMateriInPertemuan', $materis)
             ->with('materiUrlMap', $materiUrlMap);
+    }
+
+     
+    public function ask(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'pertemuan_id' => 'required|exists:pertemuan,id',
+            'materi_id' => 'nullable|exists:materi,id',
+            'question' => 'required|string|max:2000',
+        ]);
+
+        $user = Auth::user();
+        $pertemuan = Pertemuan::findOrFail($validated['pertemuan_id']);
+
+        if (! $user->kelasDiikuti()->where('kelas_id', $pertemuan->kelas_id)->exists()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if (! $pertemuan->dibuka) {
+            return response()->json(['error' => 'Pertemuan belum dibuka'], 403);
+        }
+
+        $materiId = $validated['materi_id'] ?? null;
+        if ($materiId) {
+            $materi = Materi::find($materiId);
+            if (! $materi || $materi->pertemuan_id !== $pertemuan->id) {
+                $materiId = null;
+            }
+        }
+
+        $kategori = $pertemuan->kelas?->kategori;
+        $rag = app(RAGService::class);
+        $context = $rag->buildContext($validated['question'], $kategori, $materiId, $pertemuan->id);
+
+        $prompt = '';
+        if ($context) {
+            $prompt = "Konteks dari materi pembelajaran:\n{$context}\n\nPertanyaan:\n{$validated['question']}";
+        } else {
+            $prompt = "TIDAK ADA INFORMASI TERSEDIA. Jawab dengan jujur bahwa kamu tidak memiliki informasi yang cukup untuk menjawab pertanyaan ini.\n\nPertanyaan:\n{$validated['question']}";
+        }
+
+        try {
+            $ai = app(AIProviderService::class);
+            $answer = $ai->sendLocalPreferred($prompt);
+        } catch (\Throwable $e) {
+            \Log::error('AI Tutor ask error', ['msg' => $e->getMessage()]);
+            return response()->json(['error' => 'Layanan AI tidak tersedia'], 503);
+        }
+
+        $references = $rag->getLastReferences();
+        foreach ($references as &$ref) {
+            if (isset($ref['materi_id']) && $ref['materi_id'] && ! isset($ref['url'])) {
+                $ref['url'] = route('pelajar.materi.show', $ref['materi_id']);
+            }
+        }
+        unset($ref);
+
+        return response()->json([
+            'answer' => $answer,
+            'references' => $references,
+        ]);
     }
 
      

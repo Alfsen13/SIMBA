@@ -80,12 +80,12 @@
                         :class="{ 'bg-slate-100 dark:bg-slate-800': mobileNav }"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <template x-if="!mobileNav">
+                            <g x-show="!mobileNav">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                            </template>
-                            <template x-if="mobileNav">
+                            </g>
+                            <g x-show="mobileNav">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </template>
+                            </g>
                         </svg>
                     </button>
                 </div>

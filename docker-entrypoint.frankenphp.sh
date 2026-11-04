@@ -3,6 +3,10 @@ set -e
 
 echo "=== Starting SIMBA LMS ==="
 
+# Remove stale cached config (fixes "Class BoostServiceProvider not found" from old builds)
+echo "Removing stale cache files..."
+rm -f /app/bootstrap/cache/config.php /app/bootstrap/cache/packages.php /app/bootstrap/cache/services.php 2>/dev/null || true
+
 # Generate Laravel key
 echo "Generating app key..."
 php artisan key:generate --force 2>&1 || true

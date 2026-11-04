@@ -154,6 +154,7 @@ Route::prefix('pelajar')->name('pelajar.')->middleware(['auth', 'role:pelajar'])
     Route::get('ai-tutor', [AITutorController::class, 'index'])->name('ai-tutor');
     Route::get('ai-tutor/kelas/{kelas}', [AITutorController::class, 'pertemuan'])->name('ai-tutor.pertemuan');
     Route::get('ai-tutor/kelas/{kelas}/pertemuan/{pertemuan}', [AITutorController::class, 'chat'])->name('ai-tutor.chat');
+    Route::post('ai-tutor/ask', [AITutorController::class, 'ask'])->name('ai-tutor.ask');
     Route::post('aktivitas/{aktivitas}/durasi', [SiswaAktivitas::class, 'durasi'])->name('aktivitas.durasi');
     Route::get('pengajuan-pendidikan', [SiswaPengajuanPerubahan::class, 'index'])->name('pengajuan-pendidikan.index');
     Route::get('pengajuan-pendidikan/ajukan', [SiswaPengajuanPerubahan::class, 'create'])->name('pengajuan-pendidikan.create');
@@ -202,6 +203,12 @@ Route::prefix('operator')->name('operator.')->middleware(['auth', 'role:operator
     Route::post('pengajuan-perubahan-pendidikan/{pengajuan}/setujui', [OperatorPengajuanPerubahan::class, 'setujui'])->name('pengajuan-perubahan-pendidikan.setujui');
     Route::post('pengajuan-perubahan-pendidikan/{pengajuan}/minta-revisi', [OperatorPengajuanPerubahan::class, 'mintaRevisi'])->name('pengajuan-perubahan-pendidikan.minta-revisi');
     Route::post('pengajuan-perubahan-pendidikan/{pengajuan}/tolak', [OperatorPengajuanPerubahan::class, 'tolak'])->name('pengajuan-perubahan-pendidikan.tolak');
+
+    // Pendaftaran Kelas (students joining classes)
+    Route::get('pendaftaran-kelas', [OperatorPendaftaran::class, 'index'])->name('pendaftaran-kelas.index');
+    Route::post('pendaftaran-kelas/{kelas}/setujui/{siswa}', [OperatorPendaftaran::class, 'setujui'])->name('pendaftaran-kelas.setujui');
+    Route::post('pendaftaran-kelas/{kelas}/tolak/{siswa}', [OperatorPendaftaran::class, 'tolak'])->name('pendaftaran-kelas.tolak');
+
     Route::get('documents', [AdminDocument::class, 'index'])->name('documents.index');
     Route::get('documents/create', [AdminDocument::class, 'create'])->name('documents.create');
     Route::post('documents', [AdminDocument::class, 'store'])->name('documents.store');
