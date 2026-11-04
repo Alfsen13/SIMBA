@@ -10,7 +10,7 @@
         <div class="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
         <div class="relative">
             <p class="text-emerald-200 text-xs font-medium">{{ __('guru_kelas.dashboard.subtitle') }}</p>
-            <h1 class="text-xl lg:text-xl font-bold text-white mt-0.5">{{ __('guru_kelas.dashboard.selamat_datang', ['nama' => auth()->user()->name]) }} 👋</h1>
+            <h1 class="text-xl lg:text-xl font-bold text-white mt-0.5">{{ __('guru_kelas.dashboard.selamat_datang', ['nama' => auth()->user()->name]) }}</h1>
             <p class="text-emerald-100/90 text-xs mt-1 max-w-2xl">{{ __('guru_kelas.dashboard.deskripsi') }}</p>
         </div>
     </div>

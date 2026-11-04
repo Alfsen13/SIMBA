@@ -2,7 +2,7 @@ window.trialChat = function () {
     return {
         messages: [{
             role: 'bot',
-            content: 'Halo! Saya AI Tutor SIMBA 👋\n\nSaya siap bantu kamu belajar. Coba tanya apa pun tentang pelajaran — Matematika, IPA, IPS, Bahasa, atau lainnya. Gratis, tanpa perlu daftar!',
+            content: 'Halo! Saya AI Tutor SIMBA\n\nSaya siap bantu kamu belajar. Coba tanya apa pun tentang pelajaran — Matematika, IPA, IPS, Bahasa, atau lainnya. Gratis, tanpa perlu daftar!',
             time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
         }],
         input: '',
@@ -63,7 +63,7 @@ window.trialChat = function () {
             if (this.loading) return;
             this.messages = [{
                 role: 'bot',
-            content: 'Halo! Saya AI Tutor SIMBA 👋\n\nSaya siap bantu kamu belajar. Coba tanya apa pun tentang pelajaran. Gratis, tanpa perlu daftar!',
+            content: 'Halo! Saya AI Tutor SIMBA\n\nSaya siap bantu kamu belajar. Coba tanya apa pun tentang pelajaran. Gratis, tanpa perlu daftar!',
                 time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
             }];
             this.sessionId = crypto.randomUUID();

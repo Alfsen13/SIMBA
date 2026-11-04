@@ -24,7 +24,7 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git 
 - **One image for app + workers:** All app-based services share `simba-app:latest`. Rebuild once to update web + all workers.
 - **Queue workers/scheduler healthcheck:** They inherit the image's HTTP `HEALTHCHECK` (`curl /up`) and would be marked unhealthy. Compose sets `healthcheck: disable: true` for them.
 - **Host `package:discover` pollutes bind mount:** Writes dev-only providers (Collision, Boost, MCP, Pail) into `bootstrap/cache/packages.php`. The `app` entrypoint rewrites it, but `queue-*`/`scheduler` bypass the entrypoint and can fail on first boot. If they crash: `docker compose exec app php artisan package:discover` then restart them.
-- **Route names vs dirs:** Route names are `pengajar.*`/`pelajar.*`/`operator.*`/`pengelola-operator.*` but controller dirs are `guru`/`siswa`. There is **no `admin` role** — the "admin panel" is nested under `operator` prefix gated by `role:operator`.
+- **Route names vs dirs:** `pengajar.*` → `app/Http/Controllers/Web/Guru`, `pelajar.*` → `Siswa`, `operator.*` → `Admin` (+ `Operator`), `pengelola-operator.*` → `PengelolaOperator`. There is **no `admin` role** — the "admin panel" is the `operator` prefix gated by `role:operator`.
 - **`expectsJson()` in `bootstrap/app.php`:** Required — defining `shouldRenderJsonWhen()` replaces Laravel's default check; without it JSON endpoints 302 instead of 422.
 - **`x-form-*` components don't forward `$attributes`:** Only declared props reach the DOM. `x-model`, `wire:*`, `x-on:*` are silently dropped. Fix components (`{{ $attributes }}`) before relying on Alpine bindings.
 - **`x-collapse` used in 3 views but `@alpinejs/collapse` not installed:** `x-show` toggles fine; height animation never runs.
@@ -38,6 +38,13 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git 
 - **`fitur_siswa_history.tanggal` is `date` cast:** Pass Carbon object (`now()->startOfDay()`), not string, to `where` — string brute-forces a new row under `UNIQUE(siswa_id, pertemuan_id)` in SQLite.
 - **`storage/` and `bootstrap/cache/` bind-mounted:** Don't commit them to git. `node_modules` is a named volume for dev.
 - **`public/hot` deleted:** Pages use built Vite bundle. `npm run dev` recreates `public/hot`. Vite only on IPv6 `[::1]:5173`.
+- **Serving is FrankenPHP, not Apache/XAMPP:** XAMPP ships PHP 8.2 (< required ^8.3). Use `composer franken`/`composer dev` or Docker. Binary path is hardcoded in `composer.json`.
+- **Timezone is UTC:** `now()` lands on the previous calendar day 00:00–06:59 WIB. Date-based tests/logic need explicit timezone or `startOfDay()`.
+- **`notifikasis` table, not `notifications`:** Custom `NotifikasiChannel`; a notification's `via()` must return only `[NotifikasiChannel::class]`.
+- **Array-cast model attributes:** assign a PHP array; the cast json_encodes. Do not pass `json_encode()`.
+- **Pivots `tugas_materi`/`kuis_materi` have no timestamps:** don't chain `->withTimestamps()`.
+- **Verify Blade syntax:** `php artisan view:cache` (compiles all views; surfaces compile errors).
+- **Dev queue:** database driver with 3 workers (`ai-soal`, `pertemuan`, `default`) via `composer dev`/`franken`; `sync` only in tests. Generate soal/tugas is sync in request; pertemuan + mass remedial go through queue.
 
 ## AI providers (`app/Services/AIProviderService.php`)
 
@@ -95,3 +102,12 @@ Pengajar dan pelajar dapat mengkonfigurasi API AI mereka sendiri (OpenAI, Nvidia
 - `Siswa\KuisController::show/submit/hasil` don't enforce `is_aktif`/`tanggal_mulai`/`tanggal_selesai` (only `index()` does).
 - `ChatService` persists augmented prompt as `user` message → context accumulates multiplicatively over turns.
 - `RemedialController::submit` marks `status='selesai'` before grading; `NilaiRemedianTugasAI` is `tries=1` no `set_time_limit`.
+- Full list: `docs/known-defects.md` (H/M/L). High-impact extras: `PengumpulanTugasService::submit` preserves old file on resubmission; `KuisGeneratorService` casts answer with `(int)` only (letter keys → 0); `MateriObserver` accepts doc/ppt/xls but `ProcessDocument` rejects `.doc`.
+
+## References
+
+- `docs/arsitektur.md` — layer/service map, roles, flowcharts.
+- `docs/known-defects.md` — open defects with severity.
+- `docs/catatan-penting.md` — operational notes.
+- `docs/alur-project.md` — feature flows (tugas, pendaftaran).
+- `README.md` — install/run (generic).

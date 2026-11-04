@@ -10,7 +10,7 @@
         <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
         <div class="relative">
             <p class="text-emerald-200 text-sm font-medium">{{ __('siswa.dashboard.selamat_datang') }}</p>
-            <h1 class="text-xl font-bold text-white mt-1">{{ auth()->user()->name }} 👋</h1>
+            <h1 class="text-xl font-bold text-white mt-1">{{ auth()->user()->name }}</h1>
             <p class="text-emerald-200 text-sm mt-2 max-w-xl">
                 {{ __('siswa.dashboard.deskripsi') }}
             </p>

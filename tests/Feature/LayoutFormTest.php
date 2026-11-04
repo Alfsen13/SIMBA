@@ -72,15 +72,15 @@ test('halaman buat tugas tidak lagi dibatasi max-w', function () {
         ->assertDontSee('max-w-2xl', escape: false);
 });
 
-test('halaman buat tugas punya tepat satu input deadline', function () {
-    // Field deadline sempat muncul dua kali saat dipindah ke kolom dua:
-    // form yang mengirim key sama dua kali itu ambigu once server baca.
+test('halaman buat tugas punya tepat satu input batas_jam', function () {
+    // Field batas_jam sempat muncul dua kali saat dipindah ke kolom dua:
+    // form yang mengirim key sama dua kali itu ambigu sekali server baca.
     $html = $this->actingAs($this->guru)
         ->get(route('pengajar.tugas.create', ['pertemuan_id' => $this->pertemuan->id]))
         ->assertOk()
         ->getContent();
 
-    expect(substr_count($html, 'name="deadline"'))->toBe(1);
+    expect(substr_count($html, 'name="batas_jam"'))->toBe(1);
 });
 
 test('halaman buat tugas tetap punya tombol simpan dan input soal', function () {

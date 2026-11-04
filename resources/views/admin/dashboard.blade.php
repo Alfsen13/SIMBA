@@ -10,7 +10,7 @@
         <div class="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
         <div class="relative">
             <p class="text-emerald-200 text-xs font-medium">{{ __('operator.dashboard_admin') }}</p>
-            <h1 class="text-xl font-bold text-white mt-0.5">{{ __('operator.welcome', ['name' => auth()->user()->name]) }} 👋</h1>
+            <h1 class="text-xl font-bold text-white mt-0.5">{{ __('operator.welcome', ['name' => auth()->user()->name]) }}</h1>
             <p class="text-emerald-100/90 text-xs mt-1 max-w-2xl">
                 {{ __('operator.dashboard_subtitle_admin') }}
             </p>

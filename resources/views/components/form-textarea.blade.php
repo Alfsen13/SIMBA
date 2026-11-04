@@ -21,7 +21,8 @@
         rows="{{ $rows }}"
         placeholder="{{ $placeholder }}"
         @if($required) required @endif
-        class="w-full px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 @error($name) border-red-400 @enderror disabled:opacity-50 disabled:cursor-not-allowed">{{ old($name, $value) }}</textarea>
+        class="w-full px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 @error($name) border-red-400 @enderror disabled:opacity-50 disabled:cursor-not-allowed"
+        {{ $attributes->except(['class', 'name', 'id', 'rows', 'placeholder', 'required']) }}>{{ old($name, $value) }}</textarea>
 
     @error($name)
         <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
