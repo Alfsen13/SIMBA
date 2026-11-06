@@ -13,7 +13,6 @@ use Illuminate\View\View;
 
 class PendaftaranKelasController extends Controller
 {
-     
     public function index(): View
     {
         $permintaan = DB::table('kelas_siswa')
@@ -37,9 +36,12 @@ class PendaftaranKelasController extends Controller
         return view('operator.pendaftaran-kelas.index', compact('permintaan'));
     }
 
-     
     public function setujui(Kelas $kelas, User $siswa): RedirectResponse
     {
+        if ($kelas->status !== 'dibuka') {
+            return back()->with('error', __('siswa.kelas.tidak_dibuka'));
+        }
+
         if ($this->ubahStatus($kelas, $siswa, 'active') === 0) {
             return back()->with('error', 'Pendaftaran tidak ditemukan atau sudah diproses.');
         }
@@ -49,7 +51,6 @@ class PendaftaranKelasController extends Controller
         return back()->with('success', "Pendaftaran {$siswa->name} ke kelas {$kelas->nama_kelas} disetujui.");
     }
 
-     
     public function tolak(Kelas $kelas, User $siswa): RedirectResponse
     {
         if ($this->ubahStatus($kelas, $siswa, 'rejected') === 0) {
@@ -61,7 +62,6 @@ class PendaftaranKelasController extends Controller
         return back()->with('success', "Pendaftaran {$siswa->name} ke kelas {$kelas->nama_kelas} ditolak.");
     }
 
-     
     private function ubahStatus(Kelas $kelas, User $siswa, string $status): int
     {
         return DB::table('kelas_siswa')
@@ -76,4 +76,3 @@ class PendaftaranKelasController extends Controller
             ]);
     }
 }
-

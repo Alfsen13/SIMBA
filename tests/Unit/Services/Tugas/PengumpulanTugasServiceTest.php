@@ -9,6 +9,7 @@ use App\Models\Pertemuan;
 use App\Models\Tugas;
 use App\Models\User;
 use App\Services\Tugas\PengumpulanTugasService;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
@@ -159,6 +160,20 @@ it('mengganti pengumpulan lama saat siswa mengumpulkan ulang', function () {
         ->and($kedua->jawaban)->toBe([0 => 'Versi 2']);
 });
 
+it('menolak pengumpulan duplikat untuk tugas dan siswa yang sama di tingkat database', function () {
+    $tugas = tugPjTugas();
+    $siswa = tugPjSiswa($tugas->kelas_id);
+    $data = [
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'jawaban' => ['jawaban'],
+    ];
+
+    PengumpulanTugas::create($data);
+
+    expect(fn () => PengumpulanTugas::create($data))->toThrow(QueryException::class);
+});
+
 it('menyimpan file upload dan mengosongkan jawaban', function () {
     Bus::fake();
     Storage::fake('public');
@@ -177,6 +192,112 @@ it('menyimpan file upload dan mengosongkan jawaban', function () {
     expect($p->file)->not->toBeNull()
         ->and($p->jawaban)->toBe([])
         ->and(Storage::disk('public')->exists($p->file))->toBeTrue();
+});
+
+it('menghapus file upload lama jika kiriman diganti tanpa berkas baru', function () {
+    Bus::fake();
+    Storage::fake('public');
+
+    $tugas = tugPjTugas(['tipe' => 'upload', 'soal' => null]);
+    $siswa = tugPjSiswa($tugas->kelas_id);
+    Storage::disk('public')->put('pengumpulan/lama.pdf', 'berkas lama');
+    $pengumpulan = PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'file' => 'pengumpulan/lama.pdf',
+        'jawaban' => [],
+    ]);
+
+    $diperbarui = app(PengumpulanTugasService::class)->submit($tugas, $siswa, null, null);
+
+    expect($diperbarui->id)->toBe($pengumpulan->id)
+        ->and($diperbarui->file)->toBeNull()
+        ->and(Storage::disk('public')->exists('pengumpulan/lama.pdf'))->toBeFalse();
+});
+
+it('menghapus file lama setelah berkas pengumpulan berhasil diganti', function () {
+    Bus::fake();
+    Storage::fake('public');
+
+    $tugas = tugPjTugas(['tipe' => 'upload', 'soal' => null]);
+    $siswa = tugPjSiswa($tugas->kelas_id);
+    Storage::disk('public')->put('pengumpulan/lama.pdf', 'berkas lama');
+    $pengumpulan = PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'file' => 'pengumpulan/lama.pdf',
+        'jawaban' => [],
+    ]);
+
+    $diperbarui = app(PengumpulanTugasService::class)->submit(
+        $tugas,
+        $siswa,
+        UploadedFile::fake()->create('baru.pdf', 20, 'application/pdf'),
+        null
+    );
+
+    expect($diperbarui->id)->toBe($pengumpulan->id)
+        ->and($diperbarui->file)->not->toBe('pengumpulan/lama.pdf')
+        ->and(Storage::disk('public')->exists($diperbarui->file))->toBeTrue()
+        ->and(Storage::disk('public')->exists('pengumpulan/lama.pdf'))->toBeFalse();
+});
+
+it('mempertahankan pengumpulan dan file lama jika penyimpanan file baru gagal', function () {
+    Storage::fake('public');
+    Bus::fake();
+
+    $tugas = tugPjTugas(['tipe' => 'upload', 'soal' => null]);
+    $siswa = tugPjSiswa($tugas->kelas_id);
+    Storage::disk('public')->put('pengumpulan/lama.pdf', 'berkas lama');
+    $pengumpulan = PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'file' => 'pengumpulan/lama.pdf',
+        'jawaban' => [],
+    ]);
+
+    $disk = Mockery::mock(Storage::disk('public'))->makePartial();
+    $disk->shouldReceive('putFileAs')->once()->andReturn(false);
+    Storage::shouldReceive('disk')->with('public')->andReturn($disk);
+
+    expect(fn () => app(PengumpulanTugasService::class)->submit(
+        $tugas,
+        $siswa,
+        UploadedFile::fake()->create('baru.pdf', 20, 'application/pdf'),
+        null
+    ))->toThrow(RuntimeException::class, 'Gagal menyimpan berkas pengumpulan tugas.');
+
+    expect($pengumpulan->fresh()->file)->toBe('pengumpulan/lama.pdf')
+        ->and(Storage::disk('public')->exists('pengumpulan/lama.pdf'))->toBeTrue();
+});
+
+it('mengosongkan hasil penilaian lama saat jawaban esai dikirim ulang', function () {
+    Bus::fake();
+
+    $tugas = tugPjTugas();
+    $siswa = tugPjSiswa($tugas->kelas_id);
+    $pengumpulan = PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'jawaban' => ['Versi lama'],
+        'nilai' => 80,
+        'nilai_ai' => 90,
+        'hasil_ai' => [['indeks' => 0, 'status' => 'benar']],
+        'koreksi_ai_at' => now(),
+    ]);
+
+    $diperbarui = app(PengumpulanTugasService::class)->submit(
+        $tugas,
+        $siswa,
+        null,
+        ['Versi baru']
+    );
+
+    expect($diperbarui->jawaban)->toBe(['Versi baru'])
+        ->and($diperbarui->nilai)->toBeNull()
+        ->and($diperbarui->nilai_ai)->toBeNull()
+        ->and($diperbarui->hasil_ai)->toBeNull()
+        ->and($diperbarui->koreksi_ai_at)->toBeNull();
 });
 
 it('menyimpan nilai guru untuk pengumpulan milik tugas itu', function () {

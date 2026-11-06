@@ -35,6 +35,11 @@
             @forelse($tugas->pengumpulan as $p)
                 @php $baris = $presenter->barisPenilaian($tugas->soal ?? [], $p); @endphp
                 <x-card class="mb-4">
+                    @if($p->koreksi_ai_gagal)
+                        <p class="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                            {{ __('guru_soal.pemeriksaan_ai_gagal') }}
+                        </p>
+                    @endif
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
                             <span class="font-semibold text-slate-900 dark:text-slate-100">{{ $p->siswa?->name ?? __('guru_soal.siswa') }}</span>
@@ -68,7 +73,9 @@
                                     @endif
                                 </div>
                             @else
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">{{ __('guru_soal.menunggu_pemeriksaan') }}</p>
+                                <p class="text-xs {{ $p->koreksi_ai_gagal ? 'text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400' }} mt-2 italic">
+                                    {{ $p->koreksi_ai_gagal ? __('guru_soal.pemeriksaan_ai_gagal') : __('guru_soal.menunggu_pemeriksaan') }}
+                                </p>
                             @endif
                         </div>
                     @endforeach

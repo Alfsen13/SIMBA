@@ -200,6 +200,10 @@
                 if (!this.input.trim() || this.isLoading) return;
 
                 const userMsg = this.input.trim();
+                const history = this.messages
+                    .filter(msg => msg.role === 'user' || msg.role === 'assistant')
+                    .slice(-10)
+                    .map(({ role, content }) => ({ role, content }));
                 this.input = '';
                 this.isLoading = true;
 
@@ -212,21 +216,23 @@
                 this.$nextTick(() => this.scrollToBottom());
 
                 try {
-                    const formData = new FormData();
-                    formData.append('pertemuan_id', window.aiTutorConfig.pertemuanId);
-                    formData.append('question', userMsg);
-
                     const response = await fetch(window.aiTutorConfig.apiAskUrl, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                             'Accept': 'application/json',
+                            'Content-Type': 'application/json',
                         },
-                        body: formData,
+                        body: JSON.stringify({
+                            pertemuan_id: window.aiTutorConfig.pertemuanId,
+                            question: userMsg,
+                            history,
+                        }),
                     });
 
                     if (!response.ok) {
-                        throw new Error('Gagal memproses pertanyaan');
+                        const error = await response.json().catch(() => ({}));
+                        throw new Error(error.error || error.message || 'Gagal memproses pertanyaan');
                     }
 
                     const data = await response.json();
@@ -277,11 +283,42 @@
 
             renderMarkdown(text) {
                 if (!text) return '';
-                return text
+                let html = this.escapeHtml(text);
+
+                html = html.replace(/\[\[([^\]]+)\]\]/g, (match, judul) => {
+                    const key = this.normalizeJudul(judul);
+                    const url = window.aiTutorConfig.materiUrlMap[key];
+                    const label = `<span class="inline-flex items-center gap-1 text-emerald-700 font-medium">${judul}</span>`;
+
+                    return url
+                        ? `<a href="${this.escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="underline">${label}</a>`
+                        : label;
+                });
+
+                return html
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     .replace(/\*(.*?)\*/g, '<em>$1</em>')
                     .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-xs">$1</code>')
                     .replace(/\n/g, '<br>');
+            },
+
+            escapeHtml(text) {
+                return String(text).replace(/[&<>"']/g, character => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;',
+                })[character]);
+            },
+
+            normalizeJudul(judul) {
+                return String(judul || '')
+                    .toLowerCase()
+                    .replace(/\bhlm\.?\s*\d+\s*(?:[-–]\s*\d+)?/g, ' ')
+                    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
             },
         };
     }

@@ -74,6 +74,7 @@ return [
         'kembali_ke_kelas' => 'Kembali ke Kelas',
         'info_belajar_mandiri' => 'Sebagai pelajar jalur belajar mandiri, hanya kelas yang dibuka untuk umum yang bisa kamu ikuti.',
         'ditolak_belajar_mandiri' => 'Kelas ini bukan kelas terbuka untuk umum, sehingga tidak bisa diikuti pelajar jalur belajar mandiri.',
+        'tidak_dibuka' => 'Pendaftaran tidak tersedia karena kelas ini tidak sedang dibuka.',
     ],
 
     'materi' => [
@@ -102,6 +103,7 @@ return [
         'tidak_dijawab' => 'Tidak dijawab',
         'skor_ai' => 'Skor AI: :skor',
         'menunggu_pemeriksaan' => 'Sedang menunggu pemeriksaan AI.',
+        'pemeriksaan_ai_gagal' => 'Pemeriksaan AI gagal setelah beberapa percobaan. Guru dapat memeriksa ulang atau menilai jawabanmu secara manual.',
         'nilai_saran_ai' => 'Nilai saran AI',
         'menunggu_konfirmasi_guru' => 'menunggu konfirmasi guru',
         'kumpulkan_tugas' => 'Kumpulkan Tugas',
@@ -153,6 +155,7 @@ return [
         'tujuan_belum_tercapai' => 'Belum mencapai tujuan pembelajaran',
         'dinilai_ai' => 'Dinilai AI • :tanggal • Konteks Taksonomi Bloom',
         'kerjakan_ulang' => 'Kerjakan Ulang',
+        'kirim_ulang_penilaian' => 'Kirim ulang untuk diperiksa',
         'skor' => 'Skor: :skor',
         'menunggu_pemeriksaan' => 'Jawabanmu sudah dikumpulkan dan sedang diperiksa AI. Silakan buka kembali halaman ini beberapa saat lagi.',
         'dibuat_oleh' => 'Dibuat oleh: :provider',

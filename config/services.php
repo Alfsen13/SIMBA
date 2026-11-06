@@ -53,6 +53,10 @@ return [
         'temperature' => env('OLLAMA_TEMPERATURE', 0.2),
     ],
 
+    'embedding' => [
+        'provider' => env('EMBEDDING_PROVIDER', 'ollama'),
+    ],
+
     'pdf' => [
         'python_path' => env('PYTHON_PATH', 'py -X utf8'),
         'timeout' => env('PDF_EXTRACT_TIMEOUT', 600),
@@ -65,7 +69,7 @@ return [
 
     'rag' => [
         'chunk_size' => env('RAG_CHUNK_SIZE', 1000),
-        'chunk_overlap' => env('RAG_CHUNK_OVERLAP', 100),
+        'chunk_overlap' => env('RAG_CHUNK_OVERLAP', 200),
         'top_k' => env('RAG_TOP_K', 3),
         'min_score' => env('RAG_MIN_SCORE', 0.4),
     ],

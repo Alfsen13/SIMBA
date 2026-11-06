@@ -280,7 +280,7 @@ class AIProviderService
             );
 
             $result = $custom->chat(
-                array_merge([['role' => 'user', 'content' => $prompt]], $this->prepareHistory($history, $systemPrompt))
+                array_merge($this->prepareHistory($history, $systemPrompt), [['role' => 'user', 'content' => $prompt]])
             );
 
             if ($result !== null) {
@@ -313,7 +313,7 @@ class AIProviderService
             );
 
             $custom->chatStream(
-                array_merge([['role' => 'user', 'content' => $prompt]], $this->prepareHistory($history, $systemPrompt)),
+                array_merge($this->prepareHistory($history, $systemPrompt), [['role' => 'user', 'content' => $prompt]]),
                 fn (string $chunk) => yield $chunk
             );
 
@@ -323,4 +323,3 @@ class AIProviderService
         yield from $this->sendStreamLocalPreferred($prompt, $history, $systemPrompt);
     }
 }
-

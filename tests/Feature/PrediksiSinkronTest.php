@@ -1,12 +1,10 @@
 <?php
 
 /*
- * Prediksi risiko (Skor Penyimpangan dari Baseline) dijalankan SINKRON dari
- * request HTTP, bukan lewat queue.
+ * Prediksi risiko (Skor Penyimpangan dari Baseline) dijalankan melalui queue,
+ * bukan di dalam request HTTP.
  *
- * Test di file ini menjaga keputusan itu supaya tidak diam-diam dikembalikan
- * ke `RunPrediksiJob::dispatch()` suatu saat nanti. Perhitungannya deterministik
- * (tanpa Random Forest), jadi satu siklus penuh hanya beberapa milidetik- detik.
+ * Test di file ini menjaga request tetap singkat dan hasil job tetap tercatat.
  *
  * Prefix helper: `predSync` (wajib unik - fungsi di file Pest bersifat global).
  */
@@ -21,7 +19,11 @@ use App\Models\PrediksiAi;
 use App\Models\PrediksiRisikoPertemuan;
 use App\Models\Tugas;
 use App\Models\User;
+use App\Services\KlasifikasiRisikoService;
+use App\Services\PrediksiMendatangService;
+use App\Services\PrediksiRisikoService;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
@@ -128,7 +130,7 @@ test('siswa yang sama tidak bisa punya dua baris prediksi', function () {
 
 test('jalankan dua kali untuk siswa yang sama tidak menambah baris prediksi', function () {
     predSyncSiswaLengkap($this->kelas, $this->pertemuan->id);
-    $svc = app(\App\Services\PrediksiRisikoService::class);
+    $svc = app(PrediksiRisikoService::class);
 
     $svc->jalankan();
     $svc->jalankan();
@@ -143,7 +145,7 @@ test('jalankan memperbarui baris yang sudah ada, bukan menyisipkan yang baru', f
         'siswa_id' => $siswa->id, 'hasil' => 'aman', 'skor_risiko' => 1,
     ]);
 
-    app(\App\Services\PrediksiRisikoService::class)->jalankan();
+    app(PrediksiRisikoService::class)->jalankan();
 
     expect(PrediksiAi::count())->toBe(1);
     expect(PrediksiAi::first()->id)->toBe($lama->id);
@@ -154,7 +156,7 @@ test('jalankan tidak menulis snapshot untuk data yang tidak lengkap', function (
     // Siswa tanpa kuis/tugas: semua parameter null -> status data_tidak_lengkap.
     predSyncSiswa($this->kelas);
 
-    app(\App\Services\PrediksiRisikoService::class)->jalankan();
+    app(PrediksiRisikoService::class)->jalankan();
 
     expect(PrediksiRisikoPertemuan::count())->toBe(1);
     expect(PrediksiRisikoPertemuan::first()->status_data)->toBe('data_tidak_lengkap');
@@ -165,27 +167,65 @@ test('jalankan tidak menulis snapshot untuk data yang tidak lengkap', function (
 // Controller sinkron
 // -------------------------------------------------------------------------
 
-test('route run tidak lagi mendispatch job ke queue', function () {
+test('route run menjadwalkan satu job dan menampilkan status antrean', function () {
     Queue::fake();
     predSyncSiswaLengkap($this->kelas, $this->pertemuan->id);
 
     $this->actingAs($this->guru)
         ->post(route('pengajar.prediksi.run'))
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertSessionHas('info');
 
-    Queue::assertNotPushed(RunPrediksiJob::class);
+    Queue::assertPushedTimes(RunPrediksiJob::class, 1);
+    expect(cache()->get(RunPrediksiJob::STATUS_CACHE_KEY)['status'])->toBe('queued');
 });
 
-test('route run langsung menulis prediksi di request yang sama', function () {
+test('route run tidak menghitung prediksi di dalam request', function () {
     $siswa = predSyncSiswaLengkap($this->kelas, $this->pertemuan->id);
+    Queue::fake();
 
     $this->actingAs($this->guru)
         ->post(route('pengajar.prediksi.run'))
         ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertSessionHas('info');
 
-    expect(PrediksiAi::where('siswa_id', $siswa->id)->exists())->toBeTrue();
-    expect(PrediksiRisikoPertemuan::where('siswa_id', $siswa->id)->exists())->toBeTrue();
+    expect(PrediksiAi::where('siswa_id', $siswa->id)->exists())->toBeFalse()
+        ->and(PrediksiRisikoPertemuan::where('siswa_id', $siswa->id)->exists())->toBeFalse();
+});
+
+test('route run tidak menjadwalkan prediksi duplikat saat proses masih aktif', function () {
+    Queue::fake();
+    Cache::put(RunPrediksiJob::STATUS_CACHE_KEY, ['status' => 'processing']);
+
+    $this->actingAs($this->guru)
+        ->post(route('pengajar.prediksi.run'))
+        ->assertRedirect()
+        ->assertSessionHas('info');
+
+    Queue::assertNothingPushed();
+});
+
+test('endpoint status hanya mengembalikan status prediksi saat ini', function () {
+    Cache::put(RunPrediksiJob::STATUS_CACHE_KEY, ['status' => 'processing']);
+
+    $this->actingAs($this->guru)
+        ->getJson(route('pengajar.prediksi.status'))
+        ->assertOk()
+        ->assertExactJson(['status' => 'processing']);
+});
+
+test('job menyimpan hasil dan menandai status prediksi selesai', function () {
+    predSyncSiswaLengkap($this->kelas, $this->pertemuan->id);
+
+    app(RunPrediksiJob::class)->handle(
+        app(PrediksiRisikoService::class),
+        app(KlasifikasiRisikoService::class),
+        app(PrediksiMendatangService::class)
+    );
+
+    expect(cache()->get(RunPrediksiJob::STATUS_CACHE_KEY)['status'])->toBe('completed')
+        ->and(PrediksiAi::count())->toBe(1)
+        ->and(PrediksiRisikoPertemuan::count())->toBe(1);
 });
 
 test('route latih-ulang tetap menghitung ulang tanpa error', function () {
@@ -219,7 +259,7 @@ test('user yang belum login diarahkan ke halaman login', function () {
 // View. Fokusnya: overlay harus di dalam scope Alpine yang sama dengan form-nya.
 // -------------------------------------------------------------------------
 
-test('overlay prediksi berada di dalam scope Alpine yang sama dengan form', function () {
+test('tombol prediksi menampilkan status penjadwalan di scope form', function () {
     $html = $this->actingAs($this->guru)->get(route('pengajar.prediksi'))->getContent();
 
     foreach (['generating'] as $state) {
@@ -251,8 +291,9 @@ test('tombol prediksi memakai x-bind disabled, bukan :disabled', function () {
     expect($html)->not->toMatch('/(?<!x-bind):disabled/');
 });
 
-test('halaman monitoring siswa juga sinkron tanpa perlu reload', function () {
+test('halaman monitoring siswa juga dapat menjadwalkan prediksi', function () {
     $siswa = predSyncSiswaLengkap($this->kelas, $this->pertemuan->id);
+    Queue::fake();
 
     $this->actingAs($this->guru)
         ->get(route('pengajar.prediksi.show', ['siswa' => $siswa->id]))
@@ -261,7 +302,8 @@ test('halaman monitoring siswa juga sinkron tanpa perlu reload', function () {
 
     $this->actingAs($this->guru)
         ->post(route('pengajar.prediksi.run'))
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertSessionHas('info');
 
-    expect(PrediksiAi::where('siswa_id', $siswa->id)->exists())->toBeTrue();
+    expect(PrediksiAi::where('siswa_id', $siswa->id)->exists())->toBeFalse();
 });

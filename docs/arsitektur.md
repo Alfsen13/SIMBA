@@ -5,6 +5,7 @@
 **MVC Laravel + Service layer.**
 
 - Generate soal kuis/tugas berjalan **sinkron** di request HTTP (panggil langsung `KuisGeneratorService`, `set_time_limit(0)`, Gemini primary). Generate pertemuan tetap **async** via queue `pertemuan`.
+- Jalankan Prediksi risiko berjalan **async** via job unik pada queue `default`; status dipantau melalui cache dan endpoint status, sementara input asesmen/fitur dihitung per kelas dan batch siswa.
 - Remedial massal berjalan **async** di queue `default`.
 - Ekstraksi/embedding dokumen RAG tetap **sinkron** via `ProcessDocument::dispatchSync`.
 - AI tutor streaming dan remedial manual per-siswa bisa tetap sinkron tergantung alur.
@@ -20,7 +21,7 @@
 | **Form Request** | `app/Http/Requests/**` — validasi input, termasuk trait bersama `ValidatesKonteksSoal` & `ValidatesMateriUtama`. |
 | **Service (domain)** | `app/Services/**` — AI/RAG, ML, kuis/tugas, remedial, dokumen, chat, Bloom. Sebagian murni array (`SoalTugasService`) tanpa DB/HTTP. |
 | **Model (Eloquent)** | `app/Models/**` — relasi, casts, scope; dipakai service & controller untuk baca/tulis. |
-| **Job & Queue** | `app/Jobs/**` — `GenerateSoalKuisAI`/`GenerateSoalTugasAI` (queue `ai-soal`, prioritas; secara default sekarang dipanggil **sinkron** dari controller, job hanya sebagai cadangan), `GeneratePertemuanJob` (queue `pertemuan`), `GenerateRemedialAI`/`GenerateRemedialPertemuanAI`/`NilaiRemedialTugasAI`/`PeriksaJawabanTugasAI`/`SaranMateriJob`/`GenerateChatSummary`/`RunPrediksiJob` (queue `default`), `ProcessDocument::dispatchSync` untuk RAG. Queue driver database di dev (3 worker terpisah), sync di test. |
+| **Job & Queue** | `app/Jobs/**` — `GenerateSoalKuisAI`/`GenerateSoalTugasAI` (queue `ai-soal`, prioritas; secara default sekarang dipanggil **sinkron** dari controller, job hanya sebagai cadangan), `GeneratePertemuanJob` (queue `pertemuan`), `RunPrediksiJob` (queue `default`, unik dan status cache), `GenerateRemedialAI`/`GenerateRemedialPertemuanAI`/`NilaiRemedialTugasAI`/`PeriksaJawabanTugasAI`/`SaranMateriJob`/`GenerateChatSummary` (queue `default`), `ProcessDocument::dispatchSync` untuk RAG. Queue driver database di dev (3 worker terpisah), sync di test. |
 | **Observer** | `app/Observers/**` — efek samping lifecycle model (`MateriObserver` membuat `Document` + `ProcessDocument`; `KelasObserver` membuat `Berita`). |
 | **Policy** | `app/Policies/**` — otorisasi kepemilikan (guru pemilik kelas/kuis/tugas/materi, siswa pemilik notifikasi). |
 | **Notification (kustom)** | `app/Notifications/**` + `NotifikasiChannel`. **TIDAK** memakai tabel notifications Laravel; semua notifikasi disimpan di tabel `notifikasis`. |
@@ -109,6 +110,6 @@ Atas ke bawah = lapisan sistem dari aktor ke output. Garis putus-putus = jalur t
 ### Titik Keputusan
 
 1. Role menentukan prefix route dan panel yang tersedia (operator/pengajar/pelajar/pengelola_operator).
-2. Generate soal/tugas jalan sinkron di request (Gemini primary). Generate pertemuan dan remedial masih lewat antrean queue (`pertemuan`/`default`).
+2. Generate soal/tugas jalan sinkron di request (Gemini primary). Generate pertemuan, prediksi risiko, dan remedial berjalan lewat antrean queue (`pertemuan`/`default`); job prediksi membatasi input per batch agar tidak memuat seluruh kelas sekaligus.
 3. Notifikasi selalu lewat `NotifikasiChannel` ke tabel `notifikasis` (bukan tabel notifications Laravel).
 4. Tailwind v4 dikonfigurasi via `@theme` di `resources/css/app.css`, tidak ada `tailwind.config.js`.

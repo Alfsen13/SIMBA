@@ -141,7 +141,7 @@ class UserController extends Controller
         }
 
         $auth = auth()->user();
-        if ($auth->role === 'operator' && $auth->kategori_mapel) {
+        if ($auth->role === 'operator' && $auth->kategori_mapel && $user->role !== 'pelajar') {
             $kategori = $user->aplikasiPengajar?->kategori_mapel;
             abort_unless($kategori && $kategori === $auth->kategori_mapel, 403, 'Tidak berwenang menghapus akun pada kategori ini.');
         }
@@ -167,9 +167,6 @@ class UserController extends Controller
             $user->kelasMenunggu()->detach();
             $user->semuaKelasDiikuti()->detach();
 
-            $user->chatLog()->delete();
-            $user->chatSummary()->delete();
-            $user->sesiSummary()->delete();
             $user->notifikasi()->delete();
             $user->prediksiAi()->delete();
             $user->aktivitasLog()->delete();

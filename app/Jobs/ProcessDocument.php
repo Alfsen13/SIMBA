@@ -82,12 +82,17 @@ class ProcessDocument implements ShouldQueue
                 }
             }
 
+            if (count($embeddings) !== count($chunks)
+                || collect($embeddings)->contains(fn ($vector) => ! is_array($vector) || $vector === [])) {
+                throw new RuntimeException('Hasil embedding tidak lengkap untuk seluruh chunk dokumen.');
+            }
+
             foreach ($chunks as $i => $chunk) {
                 $this->document->chunks()->create([
                     'content' => $chunk['content'],
                     'chunk_index' => $chunk['index'],
                     'kategori' => $this->document->kategori,
-                    'embedding' => $embeddings[$i] ?? [],
+                    'embedding' => $embeddings[$i],
                     'page_start' => $chunk['page_start'] ?? null,
                     'page_end' => $chunk['page_end'] ?? null,
                 ]);
@@ -116,6 +121,16 @@ class ProcessDocument implements ShouldQueue
             ]);
         } catch (\Throwable $e) {
             Log::error('ProcessDocument gagal: {msg}', ['msg' => $e->getMessage()]);
+
+            try {
+                $this->document->chunks()->delete();
+            } catch (\Throwable $cleanupException) {
+                Log::critical('ProcessDocument gagal membersihkan chunk parsial untuk dokumen {id}: {msg}', [
+                    'id' => $this->document->id,
+                    'msg' => $cleanupException->getMessage(),
+                ]);
+            }
+
             $this->document->update([
                 'status' => 'failed',
                 'error_message' => $e->getMessage(),

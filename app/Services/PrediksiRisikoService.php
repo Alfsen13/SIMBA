@@ -10,7 +10,7 @@ use App\Models\PrediksiAi;
 use App\Models\PrediksiRisikoPertemuan;
 use App\Models\Tugas;
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 
 /**
  * Skor Penyimpangan dari Baseline (Baseline Deviation Scoring).
@@ -41,6 +41,7 @@ class PrediksiRisikoService
     public const RENTANG_MIN = 0.0;
 
     public const RENTANG_MAKS = 100.0;
+
     public const PARAMETERS = [
         'rata_nilai',
         'persen_terlambat',
@@ -65,7 +66,9 @@ class PrediksiRisikoService
     ];
 
     public const STATUS_LENGKAP = 'lengkap';
+
     public const STATUS_TIDAK_LENGKAP = 'data_tidak_lengkap';
+
     public const STATUS_TIDAK_VALID = 'data_tidak_valid';
 
     public static function kategoriDariSkor(float $skor): string
@@ -208,6 +211,102 @@ class PrediksiRisikoService
         ];
     }
 
+    /**
+     * Hitung indikator risiko untuk seluruh pasangan siswa-pertemuan dalam
+     * satu kelas dengan mengambil asesmen dan nilai per batch.
+     *
+     * @param  array<int, int>  $siswaIds
+     * @param  array<int, Pertemuan>  $pertemuans
+     * @return array<int, array<int, array<string, ?float>>>
+     */
+    private function parameterPertemuanBatch(array $siswaIds, array $pertemuans): array
+    {
+        $pertemuanIds = array_map(fn (Pertemuan $pertemuan) => (int) $pertemuan->id, $pertemuans);
+        $now = now();
+
+        $kuis = Kuis::whereIn('pertemuan_id', $pertemuanIds)
+            ->where(fn ($query) => $query->where('is_aktif', false)
+                ->orWhere(fn ($query) => $query->whereNotNull('tanggal_selesai')
+                    ->where('tanggal_selesai', '<=', $now)))
+            ->get(['id', 'pertemuan_id']);
+        $kuisKePertemuan = $kuis->pluck('pertemuan_id', 'id');
+        $jumlahKuis = $kuis->countBy('pertemuan_id');
+
+        $tugas = Tugas::whereIn('pertemuan_id', $pertemuanIds)
+            ->whereNotNull('deadline')
+            ->where('deadline', '<=', $now)
+            ->get(['id', 'pertemuan_id']);
+        $tugasKePertemuan = $tugas->pluck('pertemuan_id', 'id');
+        $jumlahTugas = $tugas->countBy('pertemuan_id');
+
+        $nilai = [];
+        if ($kuisKePertemuan->isNotEmpty()) {
+            foreach (KuisHasil::whereIn('siswa_id', $siswaIds)
+                ->whereIn('kuis_id', $kuisKePertemuan->keys())
+                ->get(['siswa_id', 'kuis_id', 'skor']) as $hasil) {
+                $siswaId = (int) $hasil->siswa_id;
+                $pertemuanId = (int) $kuisKePertemuan[$hasil->kuis_id];
+                $nilai[$siswaId][$pertemuanId] ??= ['jumlah' => 0, 'total' => 0.0, 'tugas_dinilai' => 0];
+                $nilai[$siswaId][$pertemuanId]['jumlah']++;
+                $nilai[$siswaId][$pertemuanId]['total'] += (float) $hasil->skor;
+            }
+        }
+
+        $pengumpulan = [];
+        if ($tugasKePertemuan->isNotEmpty()) {
+            foreach (PengumpulanTugas::whereIn('siswa_id', $siswaIds)
+                ->whereIn('tugas_id', $tugasKePertemuan->keys())
+                ->get(['siswa_id', 'tugas_id', 'nilai', 'terlambat']) as $baris) {
+                $siswaId = (int) $baris->siswa_id;
+                $pertemuanId = (int) $tugasKePertemuan[$baris->tugas_id];
+                $pengumpulan[$siswaId][$pertemuanId] ??= ['jumlah' => 0, 'terlambat' => 0];
+                $pengumpulan[$siswaId][$pertemuanId]['jumlah']++;
+                $pengumpulan[$siswaId][$pertemuanId]['terlambat'] += $baris->terlambat ? 1 : 0;
+
+                if ($baris->nilai !== null) {
+                    $nilai[$siswaId][$pertemuanId] ??= ['jumlah' => 0, 'total' => 0.0, 'tugas_dinilai' => 0];
+                    $nilai[$siswaId][$pertemuanId]['jumlah']++;
+                    $nilai[$siswaId][$pertemuanId]['total'] += (float) $baris->nilai;
+                    $nilai[$siswaId][$pertemuanId]['tugas_dinilai']++;
+                }
+            }
+        }
+
+        $parameter = [];
+        foreach ($siswaIds as $siswaId) {
+            $siswaId = (int) $siswaId;
+
+            foreach ($pertemuans as $pertemuan) {
+                $pertemuanId = (int) $pertemuan->id;
+                $nilaiSiswa = $nilai[$siswaId][$pertemuanId] ?? null;
+                $pengumpulanSiswa = $pengumpulan[$siswaId][$pertemuanId] ?? ['jumlah' => 0, 'terlambat' => 0];
+                $jumlahTugasPertemuan = (int) ($jumlahTugas[$pertemuanId] ?? 0);
+
+                $parameter[$siswaId][$pertemuanId] = [
+                    'rata_nilai' => $nilaiSiswa && $nilaiSiswa['jumlah'] > 0
+                        ? round($nilaiSiswa['total'] / $nilaiSiswa['jumlah'], 1)
+                        : null,
+                    'persen_terlambat' => $jumlahTugasPertemuan > 0
+                        ? round($pengumpulanSiswa['terlambat'] / $jumlahTugasPertemuan * 100, 1)
+                        : null,
+                    'persen_terlewat' => $jumlahTugasPertemuan > 0
+                        ? round(max(0, $jumlahTugasPertemuan - $pengumpulanSiswa['jumlah']) / $jumlahTugasPertemuan * 100, 1)
+                        : null,
+                    'nilai_keseluruhan' => $nilaiSiswa && ($jumlahKuis[$pertemuanId] ?? 0) + $nilaiSiswa['tugas_dinilai'] > 0
+                        ? round(
+                            $nilaiSiswa['total']
+                                / (((int) ($jumlahKuis[$pertemuanId] ?? 0) + $nilaiSiswa['tugas_dinilai']) * 100)
+                                * 100,
+                            1
+                        )
+                        : null,
+                ];
+            }
+        }
+
+        return $parameter;
+    }
+
     public function simpanPertemuan(int $siswaId, Pertemuan $pertemuan, ?array $parameter = null): ?PrediksiRisikoPertemuan
     {
         if (! $pertemuan->dibuka) {
@@ -271,6 +370,59 @@ class PrediksiRisikoService
     }
 
     /**
+     * Perbarui snapshot banyak siswa dengan satu pembacaan riwayat risiko.
+     *
+     * @param  array<int, int>  $siswaIds
+     */
+    private function perbaruiSnapshotBatch(array $siswaIds): int
+    {
+        $terbaru = PrediksiRisikoPertemuan::whereIn('siswa_id', $siswaIds)
+            ->with('pertemuan:id,urutan')
+            ->get()
+            ->groupBy('siswa_id');
+        $now = now();
+        $rows = [];
+
+        foreach ($terbaru as $riwayatSiswa) {
+            $baris = $riwayatSiswa->sortByDesc(fn (PrediksiRisikoPertemuan $risiko) => [
+                $risiko->pertemuan?->urutan ?? 0,
+                $risiko->kelas_id ?? 0,
+                $risiko->pertemuan_id,
+            ])->first();
+
+            if ($baris->status_data !== self::STATUS_LENGKAP
+                || $baris->skor_penyimpangan === null
+                || $baris->kategori_risiko === null) {
+                continue;
+            }
+
+            $rows[] = [
+                'siswa_id' => $baris->siswa_id,
+                'hasil' => $baris->kategori_risiko,
+                'skor_risiko' => (float) $baris->skor_penyimpangan,
+                'feature_vector' => json_encode([
+                    (float) $baris->rata_nilai,
+                    (float) $baris->persen_terlambat,
+                    (float) $baris->persen_terlewat,
+                    (float) $baris->nilai_keseluruhan,
+                ], JSON_THROW_ON_ERROR),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        foreach (array_chunk($rows, 500) as $batch) {
+            PrediksiAi::upsert(
+                $batch,
+                ['siswa_id'],
+                ['hasil', 'skor_risiko', 'feature_vector', 'updated_at']
+            );
+        }
+
+        return count($rows);
+    }
+
+    /**
      * Hitung & simpan skor risiko untuk seluruh (siswa, pertemuan yang dibuka),
      * lalu perbarui snapshot `prediksi_ai` tiap siswa. Opsional menyegarkan
      * snapshot fitur 7-indikator per-pertemuan (untuk grafik & regresi).
@@ -289,55 +441,87 @@ class PrediksiRisikoService
             'catatan' => [],
         ];
 
-        try {
-            $siswaIds = [];
+        $siswaIds = [];
+        $pertemuans = Pertemuan::query()
+            ->dibuka()
+            ->orderBy('kelas_id')
+            ->orderBy('urutan')
+            ->get();
 
-            $pertemuans = Pertemuan::query()
-                ->dibuka()
-                ->orderBy('kelas_id')
-                ->orderBy('urutan')
-                ->get();
+        foreach ($pertemuans->groupBy('kelas_id') as $kelasId => $daftar) {
+            foreach ($this->siswaKelas((int) $kelasId)->chunk(200) as $siswaBatch) {
+                $idsBatch = $siswaBatch->map(fn ($id) => (int) $id)->all();
+                $siswaIds = array_merge($siswaIds, $idsBatch);
+                $parameterBatch = $this->parameterPertemuanBatch($idsBatch, $daftar->all());
+                $rows = [];
+                $now = now();
 
-            foreach ($pertemuans->groupBy('kelas_id') as $kelasId => $daftar) {
-                foreach ($this->siswaKelas((int) $kelasId) as $siswaId) {
-                    $siswaIds[$siswaId] = true;
-
+                foreach ($idsBatch as $siswaId) {
                     foreach ($daftar as $pertemuan) {
-                        $baris = $this->simpanPertemuan($siswaId, $pertemuan);
+                        $parameter = $parameterBatch[$siswaId][$pertemuan->id];
+                        $hasil = $this->hitungSkor($parameter);
+                        $rows[] = [
+                            'siswa_id' => $siswaId,
+                            'kelas_id' => $pertemuan->kelas_id,
+                            'pertemuan_id' => $pertemuan->id,
+                            ...$parameter,
+                            'metode' => self::METODE,
+                            'versi_konfigurasi' => self::VERSI_KONFIGURASI,
+                            'skor_penyimpangan' => $hasil['skor_penyimpangan'],
+                            'kategori_risiko' => $hasil['kategori_risiko'],
+                            'status_data' => $hasil['status_data'],
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
                         $laporan['pertemuan']++;
 
-                        if ($baris?->status_data === self::STATUS_LENGKAP) {
+                        if ($hasil['status_data'] === self::STATUS_LENGKAP) {
                             $laporan['lengkap']++;
-                        } elseif ($baris?->status_data === self::STATUS_TIDAK_VALID) {
+                        } elseif ($hasil['status_data'] === self::STATUS_TIDAK_VALID) {
                             $laporan['tidak_valid']++;
-                        } elseif ($baris !== null) {
+                        } else {
                             $laporan['tidak_lengkap']++;
                         }
                     }
                 }
-            }
 
-            foreach (array_keys($siswaIds) as $siswaId) {
-                if ($this->perbaruiSnapshot($siswaId) !== null) {
-                    $laporan['snapshot']++;
+                foreach (array_chunk($rows, 500) as $batch) {
+                    PrediksiRisikoPertemuan::upsert(
+                        $batch,
+                        ['siswa_id', 'pertemuan_id'],
+                        [
+                            'kelas_id',
+                            'metode',
+                            'versi_konfigurasi',
+                            'rata_nilai',
+                            'persen_terlambat',
+                            'persen_terlewat',
+                            'nilai_keseluruhan',
+                            'skor_penyimpangan',
+                            'kategori_risiko',
+                            'status_data',
+                            'updated_at',
+                        ]
+                    );
                 }
             }
+        }
 
-            $laporan['siswa'] = count($siswaIds);
+        $siswaIds = array_values(array_unique(array_map('intval', $siswaIds)));
+        $laporan['siswa'] = count($siswaIds);
+        foreach (array_chunk($siswaIds, 500) as $batch) {
+            $laporan['snapshot'] += $this->perbaruiSnapshotBatch($batch);
+        }
 
-            if ($backfill) {
-                $laporan['fitur_pertemuan'] = app(FiturPertemuanService::class)->backfill();
-            }
-        } catch (\Throwable $e) {
-            Log::warning('PrediksiRisikoService::jalankan gagal: {msg}', ['msg' => $e->getMessage()]);
-            $laporan['catatan'][] = $e->getMessage();
+        if ($backfill) {
+            $laporan['fitur_pertemuan'] = app(FiturPertemuanService::class)->backfill();
         }
 
         return $laporan;
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, int>
+     * @return Collection<int, int>
      */
     protected function siswaKelas(int $kelasId)
     {

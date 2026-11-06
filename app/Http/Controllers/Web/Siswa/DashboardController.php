@@ -11,6 +11,7 @@ use App\Models\MateriRemedial;
 use App\Models\NilaiHarian;
 use App\Models\PengumpulanTugas;
 use App\Models\Tugas;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -42,12 +43,16 @@ class DashboardController extends Controller
             ->get();
 
         $materiTerbaru = Materi::whereIn('kelas_id', $kelasIds)
+            ->where(fn (Builder $query) => $query->whereNull('pertemuan_id')
+                ->orWhereHas('pertemuan', fn (Builder $pertemuan) => $pertemuan->dibuka()))
             ->with('kelas', 'pertemuan')
             ->latest()
             ->take(5)
             ->get();
 
         $tugasTerbaru = Tugas::whereIn('kelas_id', $kelasIds)
+            ->where(fn (Builder $query) => $query->whereNull('pertemuan_id')
+                ->orWhereHas('pertemuan', fn (Builder $pertemuan) => $pertemuan->dibuka()))
             ->with('kelas')
             ->latest()
             ->take(10)
@@ -58,8 +63,12 @@ class DashboardController extends Controller
             ->keyBy('tugas_id');
         $tugasTerbaru->each(fn ($t) => $t->pengumpulan = $pengumpulanIndex->get($t->id));
 
+        $now = now();
         $kuisTersedia = Kuis::whereIn('kelas_id', $kelasIds)
             ->where('is_aktif', true)
+            ->where(fn (Builder $query) => $query->whereNull('tanggal_mulai')->orWhere('tanggal_mulai', '<=', $now))
+            ->where(fn (Builder $query) => $query->whereNull('tanggal_selesai')->orWhere('tanggal_selesai', '>=', $now))
+            ->where(fn ($query) => $query->whereNull('pertemuan_id')->orWhereHas('pertemuan', fn ($pertemuan) => $pertemuan->dibuka()))
             ->with('kelas')
             ->latest()
             ->take(6)

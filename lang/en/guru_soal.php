@@ -127,6 +127,7 @@ return [
     'jawaban_salah' => 'Incorrect',
     'skor_ai' => 'AI Score: :skor',
     'menunggu_pemeriksaan' => 'Waiting for the AI check, or not checked yet.',
+    'pemeriksaan_ai_gagal' => 'AI review failed after several attempts. Retry the review or grade manually.',
     'nilai_final' => 'Final Grade (0-100)',
     'gunakan_nilai_ai' => 'Use AI Grade',
     'simpan_nilai' => 'Save Grades',

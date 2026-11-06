@@ -65,9 +65,9 @@ class PengajuanMengajarController extends Controller
                         'catatan_operator' => __('operator.pengajuan_mengajar.catatan_otomatis_terisi'),
                     ]);
 
-                    $lain->pengajar->notify(new PengajuanMengajarDiverifikasi(
+                    $lain->pengajar->notify((new PengajuanMengajarDiverifikasi(
                         false, $lain->kelas->nama_kelas, $lain->kelas_id, app()->getLocale(),
-                    ));
+                    ))->afterCommit());
                 });
         });
 
@@ -115,7 +115,7 @@ class PengajuanMengajarController extends Controller
 
         return Storage::disk('local')->download(
             $pengajuan->berkas_path,
-            'bahan-rencana-ajar-' . basename($pengajuan->berkas_path),
+            'bahan-rencana-ajar-'.basename($pengajuan->berkas_path),
         );
     }
 

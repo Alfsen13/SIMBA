@@ -131,7 +131,10 @@ test('menyetujui pengajuan mengisi kelas dan otomatis menolak pengajuan lain', f
         ->and($pengajuB->fresh()->catatan_operator)->not->toBeNull();
 
     Notification::assertSentTo($this->guru, PengajuanMengajarDiverifikasi::class);
-    Notification::assertSentTo($pengajuB->pengajar, PengajuanMengajarDiverifikasi::class);
+    Notification::assertSentTo(
+        $pengajuB->pengajar,
+        fn (PengajuanMengajarDiverifikasi $notification) => $notification->afterCommit === true,
+    );
 });
 
 test('pengajuan kelas yang sudah terisi tidak bisa disetujui', function () {

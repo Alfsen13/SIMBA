@@ -3,6 +3,7 @@
 use App\Models\AplikasiPengajar;
 use App\Models\Kelas;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -31,7 +32,9 @@ test('operator can verify a pending user', function () {
         ->assertRedirect();
 
     $user->refresh();
-    expect($user->status)->toBe('verified');
+    expect($user->status)->toBe('verified')
+        ->and($user->verified_by)->toBe($this->operator->id)
+        ->and($user->verified_at)->not->toBeNull();
 });
 
 test('operator can reject a pending user', function () {
@@ -42,7 +45,58 @@ test('operator can reject a pending user', function () {
         ->assertRedirect();
 
     $user->refresh();
-    expect($user->status)->toBe('rejected');
+    expect($user->status)->toBe('rejected')
+        ->and($user->verified_by)->toBe($this->operator->id)
+        ->and($user->verified_at)->not->toBeNull();
+});
+
+test('operator import menolak berkas xls yang tidak didukung parser', function () {
+    $this->actingAs($this->operator)
+        ->post(route('operator.import.users'), [
+            'file' => UploadedFile::fake()->create('pengguna.xls', 10, 'application/vnd.ms-excel'),
+        ])
+        ->assertSessionHasErrors('file');
+});
+
+test('operator can delete a student regardless of operator category', function () {
+    $this->operator->update(['kategori_mapel' => 'Matematika']);
+    $student = User::factory()->create(['role' => 'pelajar']);
+
+    $this->actingAs($this->operator)
+        ->delete(route('operator.users.destroy', $student))
+        ->assertRedirect(route('operator.users.index'));
+
+    $this->assertDatabaseMissing('users', ['id' => $student->id]);
+});
+
+test('operator can delete a teacher in their category', function () {
+    $this->operator->update(['kategori_mapel' => 'Matematika']);
+    $teacher = User::factory()->pengajar()->create();
+    AplikasiPengajar::create([
+        'user_id' => $teacher->id,
+        'kategori_mapel' => 'Matematika',
+    ]);
+
+    $this->actingAs($this->operator)
+        ->delete(route('operator.users.destroy', $teacher))
+        ->assertRedirect(route('operator.users.index'));
+
+    $this->assertDatabaseMissing('users', ['id' => $teacher->id]);
+});
+
+test('operator cannot delete a teacher in another category', function () {
+    $this->operator->update(['kategori_mapel' => 'Matematika']);
+    $teacher = User::factory()->pengajar()->create();
+    AplikasiPengajar::create([
+        'user_id' => $teacher->id,
+        'kategori_mapel' => 'Bahasa Indonesia',
+    ]);
+
+    $this->actingAs($this->operator)
+        ->delete(route('operator.users.destroy', $teacher))
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('users', ['id' => $teacher->id]);
 });
 
 test('operator kelas index returns 200', function () {

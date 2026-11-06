@@ -1,4 +1,4 @@
-# Overlay GPU opsional untuk Ollama (+ pix2tex di app).
+# Overlay GPU opsional untuk pix2tex di app.
 #
 # Pemakaian:
 #   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
@@ -13,15 +13,6 @@
 # qwen2.5:7b (~4.7 GB) melebihi 4 GB sehingga tetap di-offload ke CPU/ RAM.
 
 services:
-  ollama:
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-
   app:
     deploy:
       resources:

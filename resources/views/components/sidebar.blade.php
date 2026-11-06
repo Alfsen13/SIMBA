@@ -57,9 +57,8 @@
                 <x-sidebar-group
                     :label="__('navigation.groups.content')"
                     icon="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                    :open="str_starts_with($route, 'operator.documents') || str_starts_with($route, 'operator.berita')"
+                    :open="str_starts_with($route, 'operator.berita')"
                 >
-                    <x-sidebar-link :active="str_starts_with($route, 'operator.documents')" href="{{ route('operator.documents.index') }}" :label="__('navigation.documents')" icon="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     <x-sidebar-link :active="str_starts_with($route, 'operator.berita')" href="{{ route('operator.berita.index') }}" :label="__('navigation.news')" icon="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                 </x-sidebar-group>
 

@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Kelas;
+use App\Models\MateriRemedial;
 use App\Models\Pertemuan;
+use App\Models\PrediksiAi;
 use App\Models\Tugas;
 use App\Models\User;
 
@@ -13,6 +15,44 @@ test('guru dashboard returns 200', function () {
     $this->actingAs($this->guru)
         ->get(route('pengajar.dashboard'))
         ->assertOk();
+});
+
+test('guru dashboard limits remedial and risk lists to students in their active classes', function () {
+    $kelasGuru = Kelas::factory()->create(['guru_id' => $this->guru->id]);
+    $siswaGuru = User::factory()->verified()->create(['role' => 'pelajar']);
+    $siswaGuru->kelasDiikuti()->attach($kelasGuru->id);
+
+    $guruLain = User::factory()->pengajar()->verified()->create();
+    $kelasGuruLain = Kelas::factory()->create(['guru_id' => $guruLain->id]);
+    $siswaGuruLain = User::factory()->verified()->create(['role' => 'pelajar']);
+    $siswaGuruLain->kelasDiikuti()->attach($kelasGuruLain->id);
+
+    MateriRemedial::create([
+        'siswa_id' => $siswaGuru->id,
+        'topik_lemah' => 'Remedial kelas sendiri',
+    ]);
+    MateriRemedial::create([
+        'siswa_id' => $siswaGuruLain->id,
+        'topik_lemah' => 'Remedial kelas lain',
+    ]);
+    PrediksiAi::create([
+        'siswa_id' => $siswaGuru->id,
+        'hasil' => 'berisiko_tinggi',
+        'skor_risiko' => 80,
+    ]);
+    PrediksiAi::create([
+        'siswa_id' => $siswaGuruLain->id,
+        'hasil' => 'berisiko_tinggi',
+        'skor_risiko' => 90,
+    ]);
+
+    $this->actingAs($this->guru)
+        ->get(route('pengajar.dashboard'))
+        ->assertOk()
+        ->assertSee('Remedial kelas sendiri')
+        ->assertDontSee('Remedial kelas lain')
+        ->assertSee($siswaGuru->name)
+        ->assertDontSee($siswaGuruLain->name);
 });
 
 test('guru kelas index returns 200', function () {

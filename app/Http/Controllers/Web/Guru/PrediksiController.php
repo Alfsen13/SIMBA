@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web\Guru;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RunPrediksiJob;
 use App\Models\FiturSiswaHistory;
 use App\Models\PrediksiMendatang;
 use App\Models\PrediksiRisikoPertemuan;
@@ -10,17 +11,18 @@ use App\Models\User;
 use App\Services\FiturPertemuanService;
 use App\Services\KlasifikasiRisikoService;
 use App\Services\PrediksiMendatangService;
-use App\Services\PrediksiRisikoService;
 use App\Services\RemedialService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
+use Throwable;
 
 class PrediksiController extends Controller
 {
-
     public function index(): View
     {
         $siswaList = User::where('role', 'pelajar')->where('status', 'verified')
@@ -31,8 +33,9 @@ class PrediksiController extends Controller
         // Daftar siswa yang punya pemicu remedial (risiko global atau nilai
         // pertemuan di bawah ambang), untuk menandai baris yang relevan.
         $butuhRemedial = app(RemedialService::class)->siswaButuhRemedial();
+        $prediksiStatus = Cache::get(RunPrediksiJob::STATUS_CACHE_KEY, ['status' => 'idle']);
 
-        return view('guru.prediksi.index', compact('siswaList', 'butuhRemedial'));
+        return view('guru.prediksi.index', compact('siswaList', 'butuhRemedial', 'prediksiStatus'));
     }
 
     public function show(Request $request): View
@@ -79,10 +82,18 @@ class PrediksiController extends Controller
 
         $chartData = $this->buildChartData($history);
         $mendatang = $this->buildForecast($siswa, $fitur);
+        $prediksiStatus = Cache::get(RunPrediksiJob::STATUS_CACHE_KEY, ['status' => 'idle']);
 
         return view('guru.prediksi.show', compact(
-            'siswaOptions', 'siswa', 'fitur', 'pred', 'rf', 'benchmarkRf', 'history', 'chartData', 'mendatang'
+            'siswaOptions', 'siswa', 'fitur', 'pred', 'rf', 'benchmarkRf', 'history', 'chartData', 'mendatang', 'prediksiStatus'
         ));
+    }
+
+    public function status(): JsonResponse
+    {
+        return response()->json(
+            Cache::get(RunPrediksiJob::STATUS_CACHE_KEY, ['status' => 'idle'])
+        );
     }
 
     protected function buildChartData(Collection $history): array
@@ -245,39 +256,26 @@ class PrediksiController extends Controller
 
     protected function jalankanPrediksi(): RedirectResponse
     {
-        set_time_limit(0);
-
-        $laporan = app(PrediksiRisikoService::class)->jalankan();
-
-        // Klasifikasi Random Forest hanya MEMAKAI model yang sudah dilatih
-        // `ml:train` (tidak melatih ulang di tengah request guru).
-        $rf = app(KlasifikasiRisikoService::class)->klasifikasiSemua();
-
-        $dilengkapi = app(PrediksiMendatangService::class)->sinkronkanNilaiAktual();
-
-        $pesan = sprintf(
-            'Prediksi selesai: %d pelajar, %d baris risiko per-pertemuan (%d lengkap, %d data tidak lengkap, %d data tidak valid). Snapshot fitur per-pertemuan tersimpan %d baris. Nilai aktual ramalan dilengkapi %d baris. ',
-            $laporan['siswa'],
-            $laporan['pertemuan'],
-            $laporan['lengkap'] ?? 0,
-            $laporan['tidak_lengkap'] ?? 0,
-            $laporan['tidak_valid'] ?? 0,
-            $laporan['snapshot'],
-            $dilengkapi
-        );
-
-        $pesan .= ($rf['model'] ?? false)
-            ? sprintf('Klasifikasi Random Forest: %d baris. ', $rf['diklasifikasi'])
-            : 'Klasifikasi Random Forest belum tersedia: '.($rf['catatan'] ?? 'model belum dilatih').'. ';
-
-        $pesan .= 'Buat materi remedial lewat tombol "Buat Remedial" per pelajar.';
-
-        if ($laporan['catatan'] !== []) {
-            return back()
-                ->with('warning', array_values(array_unique($laporan['catatan'])))
-                ->with('success', $pesan);
+        $status = Cache::get(RunPrediksiJob::STATUS_CACHE_KEY, ['status' => 'idle']);
+        if (in_array($status['status'] ?? null, ['queued', 'processing'], true)) {
+            return back()->with('info', __('guru_analitik.prediksi.already_running'));
         }
 
-        return back()->with('success', $pesan);
+        Cache::put(RunPrediksiJob::STATUS_CACHE_KEY, ['status' => 'queued'], now()->addHours(2));
+
+        try {
+            RunPrediksiJob::dispatch();
+        } catch (Throwable $exception) {
+            Cache::put(RunPrediksiJob::STATUS_CACHE_KEY, ['status' => 'failed'], now()->addHours(2));
+            report($exception);
+
+            return back()->with('error', __('guru_analitik.prediksi.schedule_failed'));
+        }
+
+        if ((Cache::get(RunPrediksiJob::STATUS_CACHE_KEY)['status'] ?? null) === 'completed') {
+            return back()->with('success', __('guru_analitik.prediksi.completed'));
+        }
+
+        return back()->with('info', __('guru_analitik.prediksi.queued'));
     }
 }

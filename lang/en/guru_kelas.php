@@ -162,6 +162,16 @@ return [
         'konfirmasi_hapus' => 'Delete this material?',
         'pratinjau_baru' => 'Preview of selected file',
         'pratinjau_tidak_tersedia' => 'Preview is only available for PDF and image files.',
+        'ringkasan_upload_notice' => 'Processing note: scanned PDFs rely on OCR, which is limited to 50 pages. AI summaries use at most the first 8,000 extracted characters. If the extracted text is very short (500 characters or fewer) or AI processing fails, the extracted text may be saved without summarization; OCR results may also be inaccurate.',
+        'rag_status_title' => 'AI Tutor indexing status: :status',
+        'rag_status_pending' => 'pending',
+        'rag_status_processing' => 'processing',
+        'rag_status_completed' => 'ready',
+        'rag_status_failed' => 'failed',
+        'rag_ready' => 'This material is ready for the AI Tutor.',
+        'rag_failed' => 'This material is not available to the AI Tutor. Details: :error',
+        'rag_upload_failed' => 'The material was saved, but AI Tutor processing failed: :error',
+        'rag_unknown_error' => 'unknown error',
     ],
 
     'tugas_tipe' => [

@@ -5,17 +5,6 @@
 @section('content')
     <x-page-header :title="__('guru_analitik.prediksi.risk_page_title')">
         <x-slot:actions>
-            {{-- Satu siklus prediksi hanya 0,8-5,7 detik, jadi dijalankan sinkron
-                 di request ini: guru langsung melihat hasilnya, tidak perlu reload,
-                 dan tidak bisa menekan tombol berkali-kali sementara pekerjaan yang
-                 sama masih jalan di belakang. Pembuatan materi remedial TIDAK ikut
-                 di sini (dulu ya, dan itu berarti menunggu puluhan panggilan AI
-                 sekaligus) - sekarang dipisah per pelajar lewat tombol di kolom
-                 "Buat Remedial".
-
-                 Setiap form punya scope Alpine sendiri yang berisi form + overlay-nya.
-                 Kalau overlay ditaruh di luar x-data, state `generating`-nya tidak
-                 terjangkau dan overlay tidak pernah muncul. --}}
             <div x-data="{ generating: false }">
                 <form
                     action="{{ route('pengajar.prediksi.run') }}"
@@ -32,15 +21,9 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
                         <span x-show="!generating">{{ __('guru_analitik.prediksi.run') }}</span>
-                        <span x-show="generating" x-cloak>{{ __('guru_analitik.prediksi.calculating') }}</span>
+                        <span x-show="generating" x-cloak>{{ __('guru_analitik.prediksi.scheduling') }}</span>
                     </x-btn-primary>
                 </form>
-
-                <x-loading-overlay
-                    :judul="__('guru_analitik.prediksi.overlay_risk')"
-                    :heading="__('guru_analitik.prediksi.overlay_heading')"
-                    :catatan="__('guru_analitik.prediksi.overlay_note')"
-                />
             </div>
 
             {{-- Tombol "Latih Ulang Model" SENGAJA disembunyikan (tidak dipindah ke
@@ -50,6 +33,8 @@
                  diuji; hanya UI-nya yang tidak ditampilkan. --}}
         </x-slot:actions>
     </x-page-header>
+
+    <x-prediksi-status :status="$prediksiStatus" />
 
     <div x-data="{ generating: false }">
     <x-card :padding="false">

@@ -37,8 +37,8 @@
                 <x-btn-primary :href="route('operator.mata-pelajaran.index')" class="bg-slate-700 hover:bg-slate-800">
                     Mata Pelajaran
                 </x-btn-primary>
-                <x-btn-primary :href="route('operator.documents.index')" class="bg-slate-700 hover:bg-slate-800">
-                    Dokumen
+                <x-btn-primary :href="route('operator.mata-pelajaran.index')" class="bg-slate-700 hover:bg-slate-800">
+                    Materi Pengajar
                 </x-btn-primary>
                 <x-btn-primary :href="route('operator.berita.index')" class="bg-slate-700 hover:bg-slate-800">
                     Berita

@@ -9,6 +9,7 @@ use App\Models\Pertemuan;
 use App\Models\Tugas;
 use App\Models\User;
 use App\Services\Tugas\TugasService;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -122,6 +123,21 @@ it('menyimpan materi pendukung dalam pivot tanpa kolom timestamp', function () {
     expect($catatan->pluck('id'))->toContain($materi->id);
 });
 
+it('membatalkan pembuatan tugas jika sinkronisasi materi pendukung gagal', function () {
+    $guru = tgGuru();
+    $kelas = tgKelas($guru);
+    $pertemuan = tgPertemuan($kelas->id);
+
+    expect(fn () => app(TugasService::class)->buat([
+        'kelas_id' => $kelas->id,
+        'pertemuan_id' => $pertemuan->id,
+        'judul' => 'Tugas gagal',
+        'tipe' => 'upload',
+    ], $guru->id, [PHP_INT_MAX]))->toThrow(QueryException::class);
+
+    expect(Tugas::where('judul', 'Tugas gagal')->exists())->toBeFalse();
+});
+
 it('sync materi pendukung menghapus materi yang dilepas', function () {
     $guru = tgGuru();
     $kelas = tgKelas($guru);
@@ -147,6 +163,30 @@ it('sync materi pendukung menghapus materi yang dilepas', function () {
     $tugas->unsetRelations();
     expect($tugas->materiPendukung()->pluck('materi.id')->all())->toBe([$materiB->id]);
     expect($tugas->materiPendukung()->count())->toBe(1);
+});
+
+it('membatalkan perubahan tugas jika sinkronisasi materi pendukung gagal', function () {
+    $guru = tgGuru();
+    $kelas = tgKelas($guru);
+    $pertemuan = tgPertemuan($kelas->id);
+    $materi = Materi::factory()->create(['kelas_id' => $kelas->id]);
+    $service = app(TugasService::class);
+    $tugas = $service->buat([
+        'kelas_id' => $kelas->id,
+        'pertemuan_id' => $pertemuan->id,
+        'judul' => 'Judul lama',
+        'tipe' => 'upload',
+    ], $guru->id, [$materi->id]);
+
+    expect(fn () => $service->perbarui($tugas, [
+        'judul' => 'Judul baru',
+        'kelas_id' => $kelas->id,
+        'pertemuan_id' => $pertemuan->id,
+        'tipe' => 'upload',
+    ], [PHP_INT_MAX]))->toThrow(QueryException::class);
+
+    expect($tugas->fresh()->judul)->toBe('Judul lama')
+        ->and($tugas->materiPendukung()->pluck('materi.id')->all())->toBe([$materi->id]);
 });
 
 it('perbarui mempertahankan soal lama saat request tidak membawa soal', function () {

@@ -10,6 +10,7 @@
 
     <x-card class="mt-4">
         <h1 class="text-xl font-bold text-slate-900 dark:text-slate-100">{{ $materi->judul }}</h1>
+        <x-rag-status :document="$materi->document" />
         <dl class="mt-4 space-y-3">
             <div class="flex">
                 <dt class="w-32 text-sm text-slate-500 dark:text-slate-400">{{ __('guru_kelas.materi.kelas') }}</dt>

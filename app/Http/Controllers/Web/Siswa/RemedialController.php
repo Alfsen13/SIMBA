@@ -48,15 +48,25 @@ class RemedialController extends Controller
             return back()->with('error', 'Tugas remedial belum tersedia.');
         }
 
+        if ($remedial->hasil_remedial !== null) {
+            return back()->with('error', 'Penilaian sudah selesai. Pilih kerjakan ulang sebelum mengirim jawaban baru.');
+        }
+
         $validated = $request->validated();
+        $jawabanLama = array_map('strval', array_values($remedial->jawaban_remedial ?? []));
+        $jawabanBaru = array_map('strval', array_values($validated['jawaban']));
+
+        if ($jawabanLama !== [] && $jawabanLama !== $jawabanBaru) {
+            return back()->with('error', 'Jawaban yang sudah dikirim tidak dapat diubah saat menunggu penilaian.');
+        }
 
         $remedial->update([
-            'jawaban_remedial' => $validated['jawaban'],
+            'jawaban_remedial' => $jawabanLama === [] ? $jawabanBaru : $remedial->jawaban_remedial,
             'hasil_remedial' => null,
             'bloom_tercapai' => null,
             'mastery_alasan' => null,
             'dinilai_at' => null,
-            'status' => 'selesai',
+            'status' => 'dibaca',
         ]);
 
         NilaiRemedialTugasAI::dispatch($remedial->id);
@@ -72,6 +82,10 @@ class RemedialController extends Controller
             abort(403);
         }
 
+        if ($remedial->jawaban_remedial !== null && $remedial->hasil_remedial === null) {
+            return back()->with('error', 'Jawabanmu masih menunggu penilaian AI.');
+        }
+
         $remedial->update([
             'jawaban_remedial' => null,
             'hasil_remedial' => null,
@@ -84,4 +98,3 @@ class RemedialController extends Controller
         return back()->with('success', 'Kamu boleh mengerjakan ulang tugas remedial.');
     }
 }
-

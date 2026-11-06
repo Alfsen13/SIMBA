@@ -17,6 +17,8 @@ use App\Notifications\RisikoTinggiDetected;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
+use UnexpectedValueException;
 
 class RemedialService
 {
@@ -463,16 +465,14 @@ PROMPT;
                     'msg' => $e2->getMessage(),
                 ]);
 
-                return null;
+                throw new RuntimeException('Semua provider AI gagal membuat materi remedial.', 0, $e2);
             }
         }
 
         $parsedRemedial = $this->parseResponse($aiOutput);
 
         if ($parsedRemedial === null) {
-
-
-            return null;
+            throw new UnexpectedValueException('Respons AI tidak valid untuk pembuatan materi remedial.');
         }
 
         $alasanAkhir = $this->alasanDilewati($prediksi);
@@ -592,7 +592,7 @@ PROMPT;
                 'pertemuan_id' => $pertemuanId,
             ]);
 
-            return null;
+            throw new UnexpectedValueException('AI gagal membuat materi remedial pertemuan yang valid setelah semua percobaan.');
         }
 
         $alasanAkhir = $this->alasanDilewatiPertemuan($siswaId, $pertemuanId);

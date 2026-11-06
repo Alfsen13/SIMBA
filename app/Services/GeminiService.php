@@ -18,7 +18,6 @@ class GeminiService
         $this->endpoint = config('services.gemini.endpoint', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent');
     }
 
-     
     public function send(string $prompt, array $history = [], int $timeout = 120): string
     {
         if (! $this->apiKey) {
@@ -58,7 +57,6 @@ class GeminiService
         return $text ?? 'Maaf, tidak ada respons.';
     }
 
-     
     public function sendStream(string $prompt, array $history = [], int $timeout = 120): \Generator
     {
         if (! $this->apiKey) {
@@ -95,11 +93,12 @@ class GeminiService
         while (! $body->eof()) {
             $buffer .= $body->read(8192);
 
-            while (($pos = strpos($buffer, "\n\n")) !== false) {
+            while (preg_match('/\r\n\r\n|\n\n|\r\r/', $buffer, $separator, PREG_OFFSET_CAPTURE)) {
+                $pos = $separator[0][1];
                 $event = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 2);
+                $buffer = substr($buffer, $pos + strlen($separator[0][0]));
 
-                foreach (explode("\n", $event) as $line) {
+                foreach (preg_split('/\r\n|\r|\n/', $event) as $line) {
                     $line = trim($line);
                     if (! str_starts_with($line, 'data: ')) {
                         continue;
@@ -119,7 +118,6 @@ class GeminiService
         }
     }
 
-     
     protected function buildContents(string $prompt, array $history): array
     {
         $contents = [];
@@ -146,4 +144,3 @@ class GeminiService
         return $contents;
     }
 }
-

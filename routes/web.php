@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Web\Admin\BeritaController;
-use App\Http\Controllers\Web\Admin\DocumentController as AdminDocument;
 use App\Http\Controllers\Web\Admin\KelasController as AdminKelas;
 use App\Http\Controllers\Web\Admin\UserController as AdminUser;
 use App\Http\Controllers\Web\Auth\LoginController;
@@ -24,6 +23,7 @@ use App\Http\Controllers\Web\NotifikasiController;
 use App\Http\Controllers\Web\Operator\DashboardController as OperatorDashboard;
 use App\Http\Controllers\Web\Operator\ImportController as OperatorImport;
 use App\Http\Controllers\Web\Operator\MataPelajaranController as OperatorMataPelajaran;
+use App\Http\Controllers\Web\Operator\MateriController as OperatorMateri;
 use App\Http\Controllers\Web\Operator\PendaftaranKelasController as OperatorPendaftaran;
 use App\Http\Controllers\Web\Operator\PengajuanMengajarController as OperatorPengajuan;
 use App\Http\Controllers\Web\Operator\PengajuanPerubahanPendidikanController as OperatorPengajuanPerubahan;
@@ -111,7 +111,7 @@ Route::prefix('pengajar')->name('pengajar.')->middleware(['auth', 'role:pengajar
     Route::get('kuis/generate-status', [KuisController::class, 'generateStatus'])->name('kuis.generate-status');
     Route::get('prediksi', [PrediksiController::class, 'index'])->name('prediksi');
     Route::get('prediksi/show', [PrediksiController::class, 'show'])->name('prediksi.show');
-
+    Route::get('prediksi/status', [PrediksiController::class, 'status'])->name('prediksi.status');
 
     Route::post('prediksi/run', [PrediksiController::class, 'run'])->name('prediksi.run');
     Route::post('prediksi/latih-ulang', [PrediksiController::class, 'retrain'])->name('prediksi.retrain');
@@ -154,7 +154,7 @@ Route::prefix('pelajar')->name('pelajar.')->middleware(['auth', 'role:pelajar'])
     Route::get('ai-tutor', [AITutorController::class, 'index'])->name('ai-tutor');
     Route::get('ai-tutor/kelas/{kelas}', [AITutorController::class, 'pertemuan'])->name('ai-tutor.pertemuan');
     Route::get('ai-tutor/kelas/{kelas}/pertemuan/{pertemuan}', [AITutorController::class, 'chat'])->name('ai-tutor.chat');
-    Route::post('ai-tutor/ask', [AITutorController::class, 'ask'])->name('ai-tutor.ask');
+    Route::post('ai-tutor/ask', [AITutorController::class, 'ask'])->middleware('throttle:10,1')->name('ai-tutor.ask');
     Route::post('aktivitas/{aktivitas}/durasi', [SiswaAktivitas::class, 'durasi'])->name('aktivitas.durasi');
     Route::get('pengajuan-pendidikan', [SiswaPengajuanPerubahan::class, 'index'])->name('pengajuan-pendidikan.index');
     Route::get('pengajuan-pendidikan/ajukan', [SiswaPengajuanPerubahan::class, 'create'])->name('pengajuan-pendidikan.create');
@@ -192,6 +192,8 @@ Route::prefix('operator')->name('operator.')->middleware(['auth', 'role:operator
     Route::get('users/{user}/berkas/{jenis}', [AdminUser::class, 'berkas'])->name('users.berkas');
     Route::resource('mata-pelajaran', OperatorMataPelajaran::class);
     Route::resource('kelas', AdminKelas::class)->parameters(['kelas' => 'kelas'])->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+    Route::get('kelas/{kelas}/materi', [AdminKelas::class, 'materi'])->name('kelas.materi');
+    Route::get('materi/{materi}', [OperatorMateri::class, 'show'])->name('materi.show');
     Route::post('kelas/{kelas}/lepas-guru', [AdminKelas::class, 'lepasGuru'])->name('kelas.lepas-guru');
     Route::get('pengajuan-mengajar/{kelas}', [OperatorPengajuan::class, 'show'])->name('pengajuan-mengajar.show');
     Route::post('pengajuan-mengajar/{pengajuan}/setujui', [OperatorPengajuan::class, 'setujui'])->name('pengajuan-mengajar.setujui');
@@ -209,12 +211,6 @@ Route::prefix('operator')->name('operator.')->middleware(['auth', 'role:operator
     Route::post('pendaftaran-kelas/{kelas}/setujui/{siswa}', [OperatorPendaftaran::class, 'setujui'])->name('pendaftaran-kelas.setujui');
     Route::post('pendaftaran-kelas/{kelas}/tolak/{siswa}', [OperatorPendaftaran::class, 'tolak'])->name('pendaftaran-kelas.tolak');
 
-    Route::get('documents', [AdminDocument::class, 'index'])->name('documents.index');
-    Route::get('documents/create', [AdminDocument::class, 'create'])->name('documents.create');
-    Route::post('documents', [AdminDocument::class, 'store'])->name('documents.store');
-    Route::get('documents/{document}', [AdminDocument::class, 'show'])->name('documents.show');
-    Route::delete('documents/{document}', [AdminDocument::class, 'destroy'])->name('documents.destroy');
-    Route::post('documents/{document}/reprocess', [AdminDocument::class, 'reprocess'])->name('documents.reprocess');
     Route::get('berita', [BeritaController::class, 'index'])->name('berita.index');
     Route::get('berita/create', [BeritaController::class, 'create'])->name('berita.create');
     Route::post('berita', [BeritaController::class, 'store'])->name('berita.store');
@@ -229,4 +225,3 @@ Route::prefix('operator')->name('operator.')->middleware(['auth', 'role:operator
     Route::post('notifikasi/{notifikasi}/read', [NotifikasiController::class, 'read'])->name('notifikasi.read');
     Route::post('notifikasi/read-all', [NotifikasiController::class, 'readAll'])->name('notifikasi.read-all');
 });
-

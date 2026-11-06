@@ -1,19 +1,24 @@
 <?php
 
+use App\Models\AktivitasLog;
 use App\Models\FiturHybridSiswa;
 use App\Models\FiturSiswaHistory;
+use App\Models\Kehadiran;
 use App\Models\Kelas;
 use App\Models\Kuis;
 use App\Models\KuisHasil;
+use App\Models\PengumpulanTugas;
 use App\Models\Pertemuan;
 use App\Models\PrediksiAi;
 use App\Models\PrediksiRisikoPertemuan;
+use App\Models\Tugas;
 use App\Models\User;
 use App\Services\FiturPertemuanService;
 use App\Services\KlasifikasiRisikoService;
 use App\Services\PrediksiMendatangService;
 use App\Services\PrediksiRisikoService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
@@ -141,6 +146,90 @@ it('backfill menyimpan snapshot fitur per-pertemuan untuk tiap siswa', function 
         ->and($history)->toHaveCount(2)
         ->and($history->first()->tanggal->toDateString())->toBe(now()->toDateString())
         ->and((float) $history->first()->rata_nilai)->toBe(80.0);
+});
+
+it('backfill batch mempertahankan hasil fitur aktivitas nilai tugas dan kehadiran', function () {
+    foreach ($this->pertemuans as $index => $pertemuan) {
+        AktivitasLog::create([
+            'siswa_id' => $this->siswa->id,
+            'pertemuan_id' => $pertemuan->id,
+            'kelas_id' => $this->kelas->id,
+            'tipe' => 'akses',
+            'metadata' => ['durasi_menit' => 10 + ($index * 10)],
+        ]);
+        Kehadiran::create([
+            'siswa_id' => $this->siswa->id,
+            'pertemuan_id' => $pertemuan->id,
+            'status' => $index === 0 ? 'hadir' : 'alpha',
+        ]);
+    }
+
+    $kuis = Kuis::create([
+        'judul' => 'Kuis Backfill',
+        'kelas_id' => $this->kelas->id,
+        'pertemuan_id' => $this->pertemuans[0]->id,
+        'soal' => [],
+        'is_aktif' => false,
+    ]);
+    KuisHasil::create([
+        'kuis_id' => $kuis->id,
+        'siswa_id' => $this->siswa->id,
+        'skor' => 80,
+    ]);
+    $tugas = Tugas::create([
+        'judul' => 'Tugas Backfill',
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'pertemuan_id' => $this->pertemuans[0]->id,
+        'tipe' => 'upload',
+    ]);
+    PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $this->siswa->id,
+        'nilai' => 70,
+    ]);
+
+    $service = app(FiturPertemuanService::class);
+    $expected = [];
+    foreach ($this->pertemuans as $pertemuan) {
+        $expected[$pertemuan->id] = $service->hitung($this->siswa->id, $pertemuan);
+    }
+
+    expect($service->backfill($this->kelas->id))->toBe(2);
+
+    foreach ($this->pertemuans as $pertemuan) {
+        $actual = FiturSiswaHistory::where('siswa_id', $this->siswa->id)
+            ->where('pertemuan_id', $pertemuan->id)
+            ->firstOrFail();
+
+        foreach (FiturPertemuanService::FEATURES as $feature) {
+            expect($actual->{$feature} === null ? null : (float) $actual->{$feature})
+                ->toEqual($expected[$pertemuan->id][$feature]);
+        }
+    }
+});
+
+it('jumlah query backfill tetap konstan untuk banyak siswa dalam satu batch', function () {
+    $service = app(FiturPertemuanService::class);
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $service->backfill($this->kelas->id);
+    $querySatuSiswa = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    foreach (range(1, 10) as $index) {
+        $siswa = User::factory()->verified()->create(['role' => 'pelajar']);
+        $siswa->kelasDiikuti()->attach($this->kelas->id);
+    }
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $service->backfill($this->kelas->id);
+    $querySebelasSiswa = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($querySebelasSiswa)->toBe($querySatuSiswa);
 });
 
 it('menampilkan riwayat indikator di data grafik', function () {

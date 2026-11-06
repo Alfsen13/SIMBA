@@ -88,7 +88,7 @@ class GenerateMateriSummaries extends Command
         $this->newLine();
         $this->info("Selesai. Berhasil: {$success}, Gagal: {$failed}");
 
-        return Command::SUCCESS;
+        return $failed > 0 ? Command::FAILURE : Command::SUCCESS;
     }
 
     protected function generateSummary(string $text, AIProviderService $ai): string

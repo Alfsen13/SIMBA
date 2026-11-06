@@ -152,6 +152,7 @@ return [
     'action_upload_first' => 'Upload the first document',
     'documents_upload_subtitle' => 'Upload a PDF, TXT, MD, or CSV file as a chatbot learning source',
     'label_document_file' => 'Document File',
+    'documents_processing_notice' => 'Processing note: scanned PDFs rely on OCR, which is limited to 50 pages. Complex layouts or low-quality scans may produce inaccurate extracted text and affect chatbot answers.',
     'drag_here' => 'Drag a file here or',
     'click_to_choose' => 'click to choose',
     'file_types_hint' => 'PDF, TXT, MD, CSV (max 20MB)',
@@ -192,8 +193,8 @@ return [
     'download_template' => 'Download Template',
     'import_desc_1' => 'Upload a file',
     'import_desc_2' => 'or',
-    'import_desc_3' => '(.xlsx, .xls) with columns:',
-    'import_columns' => 'name, email, role, nip/nisn, password (optional)',
+    'import_desc_3' => '(.xlsx, .csv, .txt) with columns:',
+    'import_columns' => 'name, email, role (pengajar/pelajar), nip, nisn (required for students), password (required, at least 8 characters)',
     'label_file_import' => 'File (CSV / Excel)',
     'import_button' => 'Import',
 

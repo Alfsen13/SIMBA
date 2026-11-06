@@ -114,19 +114,21 @@ class KuisController extends Controller
         $this->authorize('create', [Kuis::class, $pertemuan->kelas]);
 
         $sumber = $request->sumberKonteks();
-
-        set_time_limit(0);
-
+        $key = 'ai-soal:kuis:'.Auth::id().':'.Str::uuid();
+        Cache::put($key, ['status' => 'processing'], now()->addMinutes(30));
         try {
-            $soal = app(KuisGeneratorService::class)->generate(
-                $pertemuan,
+            GenerateSoalKuisAI::dispatch(
+                (int) Auth::id(),
+                (int) $pertemuan->id,
                 (int) $validated['jumlah'],
                 $validated['kesulitan'],
                 $validated['topik'] ?? null,
-                $sumber
+                $sumber,
+                $key
             );
         } catch (\Throwable $e) {
-            Log::error('GenerateSoalKuisAI gagal', [
+            Cache::forget($key);
+            Log::error('GenerateSoalKuisAI gagal dijadwalkan', [
                 'user_id' => (int) Auth::id(),
                 'pertemuan_id' => (int) $pertemuan->id,
                 'error' => $e->getMessage(),
@@ -134,14 +136,22 @@ class KuisController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+                'message' => 'Gagal menjadwalkan proses generate soal. Silakan coba lagi.',
+            ], 503);
+        }
+
+        $status = Cache::get($key);
+        if (($status['status'] ?? null) === 'done') {
+            return response()->json(['success' => true, 'soal' => $status['soal']]);
+        }
+        if (($status['status'] ?? null) === 'failed') {
+            return response()->json(['success' => false, 'message' => $status['message']], 422);
         }
 
         return response()->json([
-            'success' => true,
-            'soal' => $soal,
-        ]);
+            'status' => 'queued',
+            'key' => $key,
+        ], 202);
     }
 
     public function generateStatus(Request $request): JsonResponse
@@ -194,4 +204,3 @@ class KuisController extends Controller
         return redirect($target)->with('success', 'Kuis berhasil dihapus.');
     }
 }
-

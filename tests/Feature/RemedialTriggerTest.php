@@ -255,7 +255,7 @@ test('Jalankan Prediksi TIDAK lagi membuat remedial sekaligus', function () {
     $this->actingAs($this->guru)
         ->post(route('pengajar.prediksi.run'))
         ->assertRedirect()
-        ->assertSessionHas('success', fn ($pesan) => str_contains($pesan, 'Buat Remedial'));
+        ->assertSessionHas('info');
 
     // Tidak ada remedial otomatis; guru membuatnya per pelajar.
     expect(MateriRemedial::count())->toBe(0);

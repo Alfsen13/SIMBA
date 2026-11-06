@@ -127,6 +127,7 @@ return [
     'jawaban_salah' => 'Salah',
     'skor_ai' => 'Skor AI: :skor',
     'menunggu_pemeriksaan' => 'Menunggu pemeriksaan AI atau belum diperiksa.',
+    'pemeriksaan_ai_gagal' => 'Pemeriksaan AI gagal setelah beberapa percobaan. Coba periksa ulang atau nilai secara manual.',
     'nilai_final' => 'Nilai Final (0-100)',
     'gunakan_nilai_ai' => 'Gunakan Nilai AI',
     'simpan_nilai' => 'Simpan Nilai',

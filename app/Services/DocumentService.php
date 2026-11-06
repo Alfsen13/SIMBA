@@ -113,37 +113,8 @@ class DocumentService
             $paragraphs = array_filter($paragraphs, fn ($p) => trim($p) !== '');
             $paragraphs = array_values($paragraphs);
 
-            $currentChunk = '';
-
-            foreach ($paragraphs as $paragraph) {
-                $paragraph = trim($paragraph);
-
-                if (mb_strlen($currentChunk) + mb_strlen($paragraph) + 1 <= $chunkSize) {
-                    $currentChunk .= ($currentChunk === '' ? '' : "\n").$paragraph;
-
-                    continue;
-                }
-
-                if ($currentChunk !== '') {
-                    $allChunks[] = ['content' => $currentChunk, 'page_start' => $pageNum, 'page_end' => $pageNum];
-                }
-
-                $words = explode(' ', $currentChunk);
-                $overlapText = '';
-                $overlapCount = 0;
-                foreach (array_reverse($words) as $word) {
-                    if ($overlapCount + mb_strlen($word) + 1 > $overlap) {
-                        break;
-                    }
-                    $overlapText = $word.' '.$overlapText;
-                    $overlapCount += mb_strlen($word) + 1;
-                }
-
-                $currentChunk = trim($overlapText)."\n".$paragraph;
-            }
-
-            if ($currentChunk !== '') {
-                $allChunks[] = ['content' => $currentChunk, 'page_start' => $pageNum, 'page_end' => $pageNum];
+            foreach ($this->chunkParagraphs($paragraphs, $chunkSize, $overlap) as $content) {
+                $allChunks[] = ['content' => $content, 'page_start' => $pageNum, 'page_end' => $pageNum];
             }
         }
 
@@ -170,42 +141,8 @@ class DocumentService
         $paragraphs = array_filter($paragraphs, fn ($p) => trim($p) !== '');
         $paragraphs = array_values($paragraphs);
 
-        $chunks = [];
-        $currentChunk = '';
-        $index = 0;
-
-        foreach ($paragraphs as $paragraph) {
-            $paragraph = trim($paragraph);
-
-            if (mb_strlen($currentChunk) + mb_strlen($paragraph) + 1 <= $chunkSize) {
-                $currentChunk .= ($currentChunk === '' ? '' : "\n").$paragraph;
-
-                continue;
-            }
-
-            $chunks[] = $currentChunk;
-
-            $words = explode(' ', $currentChunk);
-            $overlapText = '';
-
-            $overlapCount = 0;
-            foreach (array_reverse($words) as $word) {
-                if ($overlapCount + mb_strlen($word) + 1 > $overlap) {
-                    break;
-                }
-                $overlapText = $word.' '.$overlapText;
-                $overlapCount += mb_strlen($word) + 1;
-            }
-
-            $currentChunk = trim($overlapText)."\n".$paragraph;
-        }
-
-        if ($currentChunk !== '') {
-            $chunks[] = $currentChunk;
-        }
-
         $indexedChunks = [];
-        foreach ($chunks as $i => $chunk) {
+        foreach ($this->chunkParagraphs($paragraphs, $chunkSize, $overlap) as $i => $chunk) {
             $indexedChunks[] = [
                 'index' => $i,
                 'content' => $chunk,
@@ -216,5 +153,84 @@ class DocumentService
 
         return $indexedChunks;
     }
-}
 
+    private function chunkParagraphs(array $paragraphs, int $chunkSize, int $overlap): array
+    {
+        $chunkSize = max(1, $chunkSize);
+        $overlap = max(0, min($overlap, $chunkSize - 1));
+        $chunks = [];
+        $currentChunk = '';
+
+        foreach ($paragraphs as $paragraph) {
+            $paragraph = trim($paragraph);
+            if ($paragraph === '') {
+                continue;
+            }
+
+            $candidate = $currentChunk === '' ? $paragraph : $currentChunk."\n".$paragraph;
+            if (mb_strlen($candidate) <= $chunkSize) {
+                $currentChunk = $candidate;
+
+                continue;
+            }
+
+            if ($currentChunk !== '') {
+                $chunks[] = $currentChunk;
+            }
+
+            $overlapText = $this->getOverlapText($currentChunk, $overlap);
+            $candidate = $overlapText === '' ? $paragraph : $overlapText."\n".$paragraph;
+            $segments = $this->splitTextIntoChunks($candidate, $chunkSize, $overlap);
+
+            foreach (array_slice($segments, 0, -1) as $segment) {
+                $chunks[] = $segment;
+            }
+            $currentChunk = end($segments) ?: '';
+        }
+
+        if ($currentChunk !== '') {
+            $chunks[] = $currentChunk;
+        }
+
+        return $chunks;
+    }
+
+    private function getOverlapText(string $chunk, int $overlap): string
+    {
+        if ($chunk === '' || $overlap === 0) {
+            return '';
+        }
+
+        $overlapText = '';
+        $overlapCount = 0;
+        foreach (array_reverse(explode(' ', $chunk)) as $word) {
+            if ($overlapCount + mb_strlen($word) + 1 > $overlap) {
+                break;
+            }
+            $overlapText = $word.' '.$overlapText;
+            $overlapCount += mb_strlen($word) + 1;
+        }
+
+        return trim($overlapText);
+    }
+
+    private function splitTextIntoChunks(string $text, int $chunkSize, int $overlap): array
+    {
+        $length = mb_strlen($text);
+        $step = max(1, $chunkSize - $overlap);
+        $chunks = [];
+
+        for ($offset = 0; $offset < $length; $offset += $step) {
+            $chunk = trim(mb_substr($text, $offset, $chunkSize));
+            if ($chunk !== '') {
+                $chunks[] = $chunk;
+            }
+
+            if ($offset + $chunkSize >= $length) {
+                break;
+            }
+        }
+
+        return $chunks;
+    }
+}

@@ -10,12 +10,12 @@ use App\Http\Requests\Guru\NilaiTugasRequest;
 use App\Http\Requests\Guru\TugasRequest;
 use App\Http\Requests\Guru\UpdateTugasRequest;
 use App\Jobs\GenerateSoalTugasAI;
+use App\Jobs\PeriksaRemedialSetelahNilaiTugas;
 use App\Models\Kelas;
 use App\Models\Pertemuan;
 use App\Models\Tugas;
 use App\Services\BloomTaxonomyService;
 use App\Services\KuisGeneratorService;
-use App\Services\RemedialService;
 use App\Services\Tugas\PengumpulanTugasService;
 use App\Services\Tugas\TugasPresenter;
 use App\Services\Tugas\TugasService;
@@ -35,7 +35,6 @@ class TugasController extends Controller
         private readonly TugasService $tugas,
         private readonly PengumpulanTugasService $pengumpulan,
         private readonly TugasPresenter $presenter,
-        private readonly RemedialService $remedial,
     ) {}
 
     public function index(): View
@@ -126,16 +125,22 @@ class TugasController extends Controller
         $this->authorize('create', [Tugas::class, $pertemuan->kelas]);
 
         $sumber = $request->sumberKonteks();
-
-        set_time_limit(0);
-
+        $key = 'ai-soal:tugas:'.Auth::id().':'.Str::uuid();
+        Cache::put($key, ['status' => 'processing'], now()->addMinutes(30));
         try {
-            $generator = app(KuisGeneratorService::class);
-            $soal = $validated['tipe'] === 'essai'
-                ? $generator->generateEssai($pertemuan, (int) $validated['jumlah'], $validated['topik'] ?? null, $sumber)
-                : $generator->generate($pertemuan, (int) $validated['jumlah'], $validated['kesulitan'] ?? 'sedang', $validated['topik'] ?? null, $sumber);
+            GenerateSoalTugasAI::dispatch(
+                (int) Auth::id(),
+                (int) $pertemuan->id,
+                $validated['tipe'],
+                (int) $validated['jumlah'],
+                $validated['kesulitan'] ?? null,
+                $validated['topik'] ?? null,
+                $sumber,
+                $key
+            );
         } catch (\Throwable $e) {
-            Log::error('GenerateSoalTugasAI gagal', [
+            Cache::forget($key);
+            Log::error('GenerateSoalTugasAI gagal dijadwalkan', [
                 'user_id' => (int) Auth::id(),
                 'pertemuan_id' => (int) $pertemuan->id,
                 'error' => $e->getMessage(),
@@ -143,14 +148,22 @@ class TugasController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+                'message' => 'Gagal menjadwalkan proses generate soal. Silakan coba lagi.',
+            ], 503);
+        }
+
+        $status = Cache::get($key);
+        if (($status['status'] ?? null) === 'done') {
+            return response()->json(['success' => true, 'soal' => $status['soal']]);
+        }
+        if (($status['status'] ?? null) === 'failed') {
+            return response()->json(['success' => false, 'message' => $status['message']], 422);
         }
 
         return response()->json([
-            'success' => true,
-            'soal' => $soal,
-        ]);
+            'status' => 'queued',
+            'key' => $key,
+        ], 202);
     }
 
     public function generateStatus(Request $request): JsonResponse
@@ -198,9 +211,7 @@ class TugasController extends Controller
 
         $this->pengumpulan->simpanNilai($tugas, $request->validated()['nilai']);
 
-        // Nilai tugas baru bisa menurunkan skor pertemuan di bawah ambang.
-        // Dipindah ke queue agar tidak memblokir request saat banyak siswa.
-        $this->remedial->periksaSetelahNilaiTugas($tugas);
+        PeriksaRemedialSetelahNilaiTugas::dispatch($tugas->id);
 
         return back()->with('success', 'Nilai berhasil disimpan. Proses remedial akan dijalankan di latar belakang.');
     }
@@ -235,4 +246,3 @@ class TugasController extends Controller
         ], fn ($v) => $v !== null));
     }
 }
-

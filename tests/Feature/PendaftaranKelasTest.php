@@ -2,6 +2,7 @@
 
 use App\Models\Kelas;
 use App\Models\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -68,6 +69,72 @@ it('siswa yang ditolak boleh mengajukan ulang', function () {
 
     expect(DB::table('kelas_siswa')->where('kelas_id', $this->kelas->id)->where('siswa_id', $this->siswa->id)->value('status'))->toBe('pending')
         ->and(DB::table('kelas_siswa')->count())->toBe(1);
+});
+
+it('menangani pendaftaran serentak tanpa membuat duplikat atau error server', function () {
+    $duplikatDisisipkan = false;
+
+    DB::listen(function (QueryExecuted $query) use (&$duplikatDisisipkan) {
+        $sql = strtolower($query->sql);
+        if ($duplikatDisisipkan || ! str_contains($sql, 'join') || ! str_contains($sql, 'kelas_siswa') || ! str_contains($sql, 'limit 1')) {
+            return;
+        }
+
+        $duplikatDisisipkan = true;
+        DB::table('kelas_siswa')->insert([
+            'kelas_id' => $this->kelas->id,
+            'siswa_id' => $this->siswa->id,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    });
+
+    $this->actingAs($this->siswa)
+        ->post(route('pelajar.kelas.enroll', $this->kelas))
+        ->assertRedirect(route('pelajar.kelas.index'))
+        ->assertSessionHas('success');
+
+    expect($duplikatDisisipkan)->toBeTrue()
+        ->and(DB::table('kelas_siswa')
+            ->where('kelas_id', $this->kelas->id)
+            ->where('siswa_id', $this->siswa->id)
+            ->count())->toBe(1);
+});
+
+it('siswa tidak dapat mendaftar langsung ke kelas yang ditutup', function () {
+    $kelasDitutup = Kelas::factory()->create([
+        'guru_id' => $this->guru->id,
+        'status' => 'ditutup',
+    ]);
+
+    $this->actingAs($this->siswa)
+        ->from(route('pelajar.kelas.available'))
+        ->post(route('pelajar.kelas.enroll', $kelasDitutup))
+        ->assertRedirect(route('pelajar.kelas.available'))
+        ->assertSessionHas('error', __('siswa.kelas.tidak_dibuka'));
+
+    expect(DB::table('kelas_siswa')->where('kelas_id', $kelasDitutup->id)->exists())->toBeFalse();
+});
+
+it('operator tidak dapat menyetujui pendaftaran kelas yang sudah ditutup', function () {
+    $kelasDitutup = Kelas::factory()->create([
+        'guru_id' => $this->guru->id,
+        'status' => 'ditutup',
+    ]);
+    pkAjukan($this->siswa, $kelasDitutup);
+
+    $this->actingAs($this->operator)
+        ->post(route('operator.pendaftaran-kelas.setujui', [
+            'kelas' => $kelasDitutup->id,
+            'siswa' => $this->siswa->id,
+        ]))
+        ->assertSessionHas('error', __('siswa.kelas.tidak_dibuka'));
+
+    expect(DB::table('kelas_siswa')
+        ->where('kelas_id', $kelasDitutup->id)
+        ->where('siswa_id', $this->siswa->id)
+        ->value('status'))->toBe('pending');
 });
 
 it('menyetujui dua kali tidak menggandakan baris', function () {

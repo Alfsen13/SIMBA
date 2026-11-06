@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\AIProviderService;
 use App\Services\PenilaianAIService;
 use App\Services\Tugas\TugasPresenter;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -93,6 +94,26 @@ test('siswa dapat mengumpulkan jawaban esai dan memicu penilaian AI', function (
     });
 });
 
+test('upload tugas menolak ekstensi yang tidak didukung oleh formulir', function () {
+    $siswa = User::factory()->verified()->create();
+    $siswa->kelasDiikuti()->attach($this->kelas->id);
+    $tugas = Tugas::create([
+        'judul' => 'Upload Tugas',
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'pertemuan_id' => $this->pertemuan->id,
+        'tipe' => 'upload',
+    ]);
+
+    $this->actingAs($siswa)
+        ->post(route('pelajar.tugas.submit', $tugas), [
+            'file' => UploadedFile::fake()->create('program.exe', 10, 'application/octet-stream'),
+        ])
+        ->assertSessionHasErrors('file');
+
+    expect(PengumpulanTugas::where('tugas_id', $tugas->id)->exists())->toBeFalse();
+});
+
 test('penilaian ai menyimpan hasil benar mendekati salah dan skor saran', function () {
     $this->mock(AIProviderService::class, function ($mock) {
         $mock->shouldReceive('sendLocalPreferred')->once()->andReturn(json_encode([
@@ -130,6 +151,74 @@ test('penilaian ai menyimpan hasil benar mendekati salah dan skor saran', functi
         ->and($pengumpulan->hasil_ai[0]['status'])->toBe('benar')
         ->and($pengumpulan->hasil_ai[1]['status'])->toBe('mendekati')
         ->and($pengumpulan->koreksi_ai_at)->not->toBeNull();
+});
+
+test('penilaian ai meneruskan kegagalan provider agar job dapat mencoba ulang', function () {
+    $this->mock(AIProviderService::class, function ($mock) {
+        $mock->shouldReceive('sendLocalPreferred')->once()->andThrow(new RuntimeException('Provider tidak tersedia.'));
+    });
+
+    $siswa = User::factory()->verified()->create();
+    $siswa->kelasDiikuti()->attach($this->kelas->id);
+    $tugas = Tugas::create([
+        'judul' => 'Esai Gagal',
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'pertemuan_id' => $this->pertemuan->id,
+        'tipe' => 'essai',
+        'soal' => [['pertanyaan' => 'Jelaskan konsepnya.']],
+    ]);
+    $pengumpulan = PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'jawaban' => ['Jawaban siswa.'],
+    ]);
+
+    expect(fn () => app(PenilaianAIService::class)->nilai($pengumpulan))
+        ->toThrow(RuntimeException::class, 'Provider tidak tersedia.');
+
+    $job = new PeriksaJawabanTugasAI($pengumpulan->id);
+    expect($job->tries)->toBe(3)
+        ->and($job->backoff)->toBe([30, 120]);
+
+    $job->failed(new RuntimeException('Provider tidak tersedia.'));
+
+    expect($pengumpulan->fresh()->koreksi_ai_gagal)->toBeTrue();
+
+    $this->actingAs($this->guru)
+        ->get(route('pengajar.tugas.penilaian', $tugas))
+        ->assertOk()
+        ->assertSee('Pemeriksaan AI gagal setelah beberapa percobaan.');
+
+    $this->actingAs($siswa)
+        ->get(route('pelajar.tugas.show', $tugas))
+        ->assertOk()
+        ->assertSee('Pemeriksaan AI gagal setelah beberapa percobaan.');
+});
+
+test('penilaian ai menganggap keluaran yang tidak valid sebagai kegagalan job', function () {
+    $this->mock(AIProviderService::class, function ($mock) {
+        $mock->shouldReceive('sendLocalPreferred')->once()->andReturn('bukan json');
+    });
+
+    $siswa = User::factory()->verified()->create();
+    $siswa->kelasDiikuti()->attach($this->kelas->id);
+    $tugas = Tugas::create([
+        'judul' => 'Esai Respons Tidak Valid',
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'pertemuan_id' => $this->pertemuan->id,
+        'tipe' => 'essai',
+        'soal' => [['pertanyaan' => 'Jelaskan konsepnya.']],
+    ]);
+    $pengumpulan = PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'jawaban' => ['Jawaban siswa.'],
+    ]);
+
+    expect(fn () => app(PenilaianAIService::class)->nilai($pengumpulan))
+        ->toThrow(UnexpectedValueException::class);
 });
 
 test('indeks 1-based dari AI tetap dipetakan ke soal yang benar', function () {
@@ -241,6 +330,34 @@ test('halaman penilaian menampilkan hasil AI untuk tugas esai', function () {
         ->get(route('pengajar.tugas.penilaian', $tugas))
         ->assertOk()
         ->assertSee('Nilai AI: 90');
+});
+
+test('penjadwalan ulang pemeriksaan menghapus status gagal sebelumnya', function () {
+    Queue::fake();
+
+    $siswa = User::factory()->verified()->create();
+    $siswa->kelasDiikuti()->attach($this->kelas->id);
+    $tugas = Tugas::create([
+        'judul' => 'Esai Pemeriksaan Ulang',
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'pertemuan_id' => $this->pertemuan->id,
+        'tipe' => 'essai',
+        'soal' => [['pertanyaan' => 'Jelaskan konsepnya.']],
+    ]);
+    $pengumpulan = PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'jawaban' => ['Jawaban siswa.'],
+        'koreksi_ai_gagal' => true,
+    ]);
+
+    $this->actingAs($this->guru)
+        ->post(route('pengajar.tugas.periksa-ai', $tugas))
+        ->assertRedirect();
+
+    expect($pengumpulan->fresh()->koreksi_ai_gagal)->toBeFalse();
+    Queue::assertPushed(PeriksaJawabanTugasAI::class);
 });
 
 test('periksa-ai hanya berlaku untuk tugas esai', function () {

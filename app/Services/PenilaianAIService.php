@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\PengumpulanTugas;
-use Illuminate\Support\Facades\Log;
+use UnexpectedValueException;
 
 class PenilaianAIService
 {
@@ -14,7 +14,6 @@ class PenilaianAIService
         $this->ai = app(AIProviderService::class);
     }
 
-     
     public function nilai(PengumpulanTugas $pengumpulan): void
     {
         $tugas = $pengumpulan->tugas;
@@ -70,20 +69,11 @@ Keluarkan HANYA pure JSON array tanpa teks lain dan tanpa markdown code fence:
 [{"indeks":0,"status":"benar","skor":90,"alasan":"..."}]
 PROMPT;
 
-        try {
-            $output = $this->ai->sendLocalPreferred($prompt, [], $system);
-        } catch (\Throwable $e) {
-            Log::warning('PenilaianAI: AI gagal untuk pengumpulan {id}: {msg}', [
-                'id' => $pengumpulan->id,
-                'msg' => $e->getMessage(),
-            ]);
-
-            return;
-        }
+        $output = $this->ai->sendLocalPreferred($prompt, [], $system);
 
         $hasil = $this->parseHasil($output, $indeksSah);
         if (count($hasil) === 0) {
-            return;
+            throw new UnexpectedValueException('AI tidak mengembalikan hasil penilaian esai yang valid.');
         }
 
         $total = count($hasil);
@@ -93,10 +83,10 @@ PROMPT;
             'hasil_ai' => $hasil,
             'nilai_ai' => $nilaiAi,
             'koreksi_ai_at' => now(),
+            'koreksi_ai_gagal' => false,
         ]);
     }
 
-     
     protected function parseHasil(string $output, array $indeksSah = []): array
     {
         $teksBersih = preg_replace('/^```(?:json)?\s*/i', '', trim($output));
@@ -141,7 +131,6 @@ PROMPT;
         return $this->sejajarkanIndeks($hasil, $indeksSah);
     }
 
-     
     private function sejajarkanIndeks(array $hasil, array $indeksSah): array
     {
         if ($hasil === []) {
@@ -174,4 +163,3 @@ PROMPT;
         return $hasil;
     }
 }
-

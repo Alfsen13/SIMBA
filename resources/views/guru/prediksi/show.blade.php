@@ -34,10 +34,6 @@
             <a href="{{ route('pengajar.prediksi') }}" class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                 &larr; {{ __('guru_analitik.prediksi.back_to_list') }}
             </a>
-            {{-- Sinkron: satu siklus prediksi 0,8-5,7 detik, jadi guru langsung
-                 melihat hasilnya tanpa reload. Overlay harus berada di dalam
-                 x-data yang sama dengan form, kalau tidak state `generating`
-                 tidak terjangkau. --}}
             <div x-data="{ generating: false }">
                 <form
                     action="{{ route('pengajar.prediksi.run') }}"
@@ -54,18 +50,14 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
                         <span x-show="!generating">{{ __('guru_analitik.prediksi.run') }}</span>
-                        <span x-show="generating" x-cloak>{{ __('guru_analitik.prediksi.calculating') }}</span>
+                        <span x-show="generating" x-cloak>{{ __('guru_analitik.prediksi.scheduling') }}</span>
                     </x-btn-primary>
                 </form>
-
-                <x-loading-overlay
-                    :judul="__('guru_analitik.prediksi.overlay_risk')"
-                    :heading="__('guru_analitik.prediksi.overlay_heading')"
-                    :catatan="__('guru_analitik.prediksi.overlay_note')"
-                />
             </div>
         </x-slot:actions>
     </x-page-header>
+
+    <x-prediksi-status :status="$prediksiStatus" />
 
     @if($siswaOptions->isEmpty())
         <x-card>

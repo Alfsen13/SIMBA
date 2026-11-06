@@ -73,7 +73,7 @@ PROMPT;
 
         for ($percobaan = 1; $percobaan <= 3; $percobaan++) {
             try {
-                $output = $this->ai->send($prompt, [], $system);
+                $output = $this->ai->sendLocalPreferred($prompt, [], $system);
             } catch (\Throwable) {
                 throw new RuntimeException('Layanan AI tidak dapat dihubungi saat ini. Silakan coba lagi.');
             }
@@ -90,17 +90,20 @@ PROMPT;
                 continue;
             }
 
-            if (count($soal) > 0) {
+            if (count($soal) === $jumlah) {
                 break;
             }
 
-            Log::warning('KuisGenerator: percobaan '.$percobaan.' menghasilkan 0 soal.', [
+            Log::warning('KuisGenerator: jumlah soal valid tidak sesuai.', [
                 'diminta' => $jumlah,
+                'valid' => count($soal),
                 'raw' => mb_substr($output, 0, 300),
             ]);
+
+            $terakhirError = new RuntimeException('AI hanya menghasilkan '.count($soal).' dari '.$jumlah.' soal yang diminta.');
         }
 
-        if (count($soal) === 0) {
+        if (count($soal) !== $jumlah) {
             throw $terakhirError ?? new RuntimeException('AI tidak menghasilkan soal yang valid. Silakan coba lagi.');
         }
 
@@ -144,7 +147,7 @@ PROMPT;
 
         for ($percobaan = 1; $percobaan <= 3; $percobaan++) {
             try {
-                $output = $this->ai->send($prompt, [], $system);
+                $output = $this->ai->sendLocalPreferred($prompt, [], $system);
             } catch (\Throwable) {
                 throw new RuntimeException('Layanan AI tidak dapat dihubungi saat ini. Silakan coba lagi.');
             }
@@ -161,17 +164,20 @@ PROMPT;
                 continue;
             }
 
-            if (count($soal) > 0) {
+            if (count($soal) === $jumlah) {
                 break;
             }
 
-            Log::warning('KuisGenerator: percobaan '.$percobaan.' menghasilkan 0 esai.', [
+            Log::warning('KuisGenerator: jumlah soal esai valid tidak sesuai.', [
                 'diminta' => $jumlah,
+                'valid' => count($soal),
                 'raw' => mb_substr($output, 0, 300),
             ]);
+
+            $terakhirError = new RuntimeException('AI hanya menghasilkan '.count($soal).' dari '.$jumlah.' soal yang diminta.');
         }
 
-        if (count($soal) === 0) {
+        if (count($soal) !== $jumlah) {
             throw $terakhirError ?? new RuntimeException('AI tidak menghasilkan soal yang valid. Silakan coba lagi.');
         }
 
@@ -201,14 +207,14 @@ PROMPT;
                 continue;
             }
 
-            $pertanyaan = trim((string) ($item['pertanyaan'] ?? ''));
+            $pertanyaan = is_string($item['pertanyaan'] ?? null) ? trim($item['pertanyaan']) : '';
             if ($pertanyaan === '') {
                 continue;
             }
 
             $soal = [
                 'pertanyaan' => $pertanyaan,
-                'referensi' => trim((string) ($item['referensi'] ?? '')),
+                'referensi' => is_string($item['referensi'] ?? null) ? trim($item['referensi']) : '',
             ];
 
             $soal = $this->sertakanAkurasi($soal, $item);
@@ -571,29 +577,21 @@ PROMPT;
                 continue;
             }
 
-            $pertanyaan = trim((string) ($item['pertanyaan'] ?? ''));
+            $pertanyaan = is_string($item['pertanyaan'] ?? null) ? trim($item['pertanyaan']) : '';
+            $pilihanRaw = $item['pilihan'] ?? $item['opsi'] ?? null;
+            if (! is_array($pilihanRaw) || count($pilihanRaw) !== 4) {
+                continue;
+            }
+
             $pilihan = [];
-
-            foreach (($item['pilihan'] ?? []) as $pil) {
-                $pil = trim((string) $pil);
-                if ($pil !== '') {
-                    $pilihan[] = $pil;
+            foreach ($pilihanRaw as $pil) {
+                if (! is_string($pil) || trim($pil) === '') {
+                    continue 2;
                 }
+                $pilihan[] = trim($pil);
             }
 
-            if (count($pilihan) < 2 && isset($item['opsi']) && is_array($item['opsi'])) {
-                $pilihan = array_values(array_filter(
-                    array_map('trim', array_map('strval', $item['opsi'])),
-                    fn ($pil) => $pil !== '',
-                ));
-            }
-
-            $pilihan = array_slice($pilihan, 0, 4);
-            while (count($pilihan) < 4) {
-                $pilihan[] = '';
-            }
-
-            $jawabanRaw = $item['jawaban'] ?? 0;
+            $jawabanRaw = $item['jawaban'] ?? null;
             if (is_string($jawabanRaw)) {
                 $jawabanStr = strtoupper(trim($jawabanRaw));
                 $map = ['A' => 0, 'B' => 1, 'C' => 2, 'D' => 3];
@@ -602,18 +600,18 @@ PROMPT;
                 } elseif (ctype_digit($jawabanStr)) {
                     $jawaban = (int) $jawabanStr;
                 } else {
-                    $jawaban = 0;
+                    continue;
                 }
-            } elseif (is_numeric($jawabanRaw)) {
+            } elseif (is_int($jawabanRaw)) {
                 $jawaban = (int) $jawabanRaw;
             } else {
-                $jawaban = 0;
+                continue;
             }
             if ($jawaban < 0 || $jawaban > 3) {
-                $jawaban = 0;
+                continue;
             }
 
-            if ($pertanyaan === '' || count(array_filter($pilihan, fn ($pil) => $pil !== '')) < 2) {
+            if ($pertanyaan === '') {
                 continue;
             }
 
@@ -688,4 +686,3 @@ PROMPT;
         return $this->bloom->difficultyGuidance($kesulitan, $jumlah);
     }
 }
-

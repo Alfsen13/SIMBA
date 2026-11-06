@@ -33,6 +33,19 @@ class KelasController extends Controller
         return view('admin.kelas.index', compact('kelasList'));
     }
 
+    public function materi(Kelas $kelas): View
+    {
+        $this->authorize('view', $kelas);
+        $kelas->load('mataPelajaran');
+
+        $materiList = $kelas->materi()
+            ->with(['guru:id,name', 'pertemuan:id,nama_pertemuan'])
+            ->latest()
+            ->paginate(15);
+
+        return view('operator.kelas.materi', compact('kelas', 'materiList'));
+    }
+
     public function create(): View
     {
         return view('admin.kelas.create', $this->dataForm());

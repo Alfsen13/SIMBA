@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\BloomTaxonomyService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
  
 final class TugasService
@@ -64,12 +65,12 @@ final class TugasService
         $data['guru_id'] = $guruId;
         $data['soal'] = $this->normalisasiSoal($data['soal'] ?? null, (string) ($data['tipe'] ?? 'upload'));
 
-        $tugas = Tugas::create($data);
+        return DB::transaction(function () use ($data, $materiPendukungIds): Tugas {
+            $tugas = Tugas::create($data);
+            $tugas->materiPendukung()->sync($materiPendukungIds);
 
-
-        $tugas->materiPendukung()->sync($materiPendukungIds);
-
-        return $tugas;
+            return $tugas;
+        });
     }
 
      
@@ -82,8 +83,10 @@ final class TugasService
             );
         }
 
-        $tugas->update($data);
-        $tugas->materiPendukung()->sync($materiPendukungIds);
+        DB::transaction(function () use ($tugas, $data, $materiPendukungIds): void {
+            $tugas->update($data);
+            $tugas->materiPendukung()->sync($materiPendukungIds);
+        });
 
         return $tugas;
     }
@@ -138,4 +141,3 @@ final class TugasService
         );
     }
 }
-

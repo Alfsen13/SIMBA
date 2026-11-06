@@ -162,6 +162,16 @@ return [
         'konfirmasi_hapus' => 'Hapus materi ini?',
         'pratinjau_baru' => 'Pratinjau file yang dipilih',
         'pratinjau_tidak_tersedia' => 'Pratinjau hanya tersedia untuk file PDF dan gambar.',
+        'ringkasan_upload_notice' => 'Catatan pemrosesan: PDF hasil scan mengandalkan OCR dan pemindaian dibatasi hingga 50 halaman. Ringkasan AI memakai maksimal 8.000 karakter hasil ekstraksi. Jika teks yang diekstrak sangat pendek (500 karakter atau kurang) atau AI gagal, teks hasil ekstraksi dapat disimpan tanpa diringkas; hasil OCR juga bisa kurang akurat.',
+        'rag_status_title' => 'Status indeks AI Tutor: :status',
+        'rag_status_pending' => 'menunggu diproses',
+        'rag_status_processing' => 'sedang diproses',
+        'rag_status_completed' => 'siap digunakan',
+        'rag_status_failed' => 'gagal diproses',
+        'rag_ready' => 'Materi ini siap digunakan oleh AI Tutor.',
+        'rag_failed' => 'Materi ini belum dapat digunakan oleh AI Tutor. Detail: :error',
+        'rag_upload_failed' => 'Materi berhasil disimpan, tetapi pemrosesan untuk AI Tutor gagal: :error',
+        'rag_unknown_error' => 'kesalahan tidak diketahui',
     ],
 
     'tugas_tipe' => [

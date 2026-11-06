@@ -329,20 +329,17 @@ test('nilai toleran saat AI membungkus objek di dalam array', function () {
 });
 
 test('GenerateRemedialAI setelah membuat materi juga membuatkan tugas remedial', function () {
-    // Hapus remedial bawaan beforeEach: job ini sekarang menolak jalan bila
-    // sudah ada remedial yang belum diselesaikan (guard anti-duplikat), jadi
-    // tanpa dibersihkan test ini menguji jalur yang sudah tidak berlaku.
+    // Pastikan job menguji jalur pembuatan, bukan pemulihan remedial lama.
     MateriRemedial::where('siswa_id', $this->siswa->id)->delete();
 
-    $remedial = MateriRemedial::create([
+    $remedial = new MateriRemedial([
         'siswa_id' => $this->siswa->id,
         'prediksi_ai_id' => $this->prediksi->id,
         'topik_lemah' => 'Fotosintesis',
         'ringkasan' => 'Ringkasan materi foto sintesis.',
-        'latihan' => '',
+        'latihan' => 'Latihan.',
         'provider_llm' => 'ollama',
         'status' => 'belum_dibaca',
-        'generated_at' => now(),
     ]);
 
     $this->mock(RemedialService::class, function ($mock) use ($remedial) {
@@ -357,7 +354,37 @@ test('GenerateRemedialAI setelah membuat materi juga membuatkan tugas remedial',
     (new GenerateRemedialAI($this->siswa->id, $this->prediksi->id))->handle(app(RemedialService::class));
 });
 
+test('job remedial dapat melanjutkan pembuatan tugas setelah percobaan gagal', function () {
+    $percobaan = 0;
+    $this->mock(RemedialTugasService::class, function ($mock) use (&$percobaan) {
+        $mock->shouldReceive('generateTugas')
+            ->twice()
+            ->andReturnUsing(function (MateriRemedial $remedial) use (&$percobaan) {
+                $percobaan++;
+
+                if ($percobaan === 1) {
+                    return false;
+                }
+
+                $remedial->update(['tugas_remedial' => [['pertanyaan' => 'Latihan remedial']]]);
+
+                return true;
+            });
+    });
+
+    $job = new GenerateRemedialAI($this->siswa->id, $this->prediksi->id);
+
+    expect(fn () => $job->handle(app(RemedialService::class)))
+        ->toThrow(RuntimeException::class, 'Gagal membuat tugas untuk remedial');
+
+    $job->handle(app(RemedialService::class));
+
+    expect($this->remedial->fresh()->tugas_remedial)->toBe([['pertanyaan' => 'Latihan remedial']]);
+});
+
 test('generateForPrediksi membuat baris remedial dan notifikasi tanpa error skema', function () {
+    $this->remedial->delete();
+
     $this->mock(AIProviderService::class, function ($mock) {
         $mock->shouldReceive('send')
             ->once()
@@ -382,6 +409,8 @@ test('generateForPrediksi membuat baris remedial dan notifikasi tanpa error skem
 });
 
 test('generateForPrediksi mengisi topik_lemah dari nilai|kuis nyata', function () {
+    $this->remedial->delete();
+
     $pertemuan = Pertemuan::create([
         'kelas_id' => $this->kelas->id,
         'nama_pertemuan' => 'Pertemuan Fotosintesis',
@@ -413,15 +442,22 @@ test('generateForPrediksi mengisi topik_lemah dari nilai|kuis nyata', function (
         ->and($hasil->topik_lemah)->toContain('25');
 });
 
-test('generateForPrediksi mengembalikan null bila AI gagal total', function () {
+test('generateForPrediksi meneruskan kegagalan AI agar job dapat mencoba ulang', function () {
+    $this->remedial->delete();
+
     $this->mock(AIProviderService::class, function ($mock) {
         $mock->shouldReceive('send')->once()->andThrow(new RuntimeException('AI mati'));
         $mock->shouldReceive('sendLocalPreferred')->once()->andThrow(new RuntimeException('Ollama mati'));
     });
 
-    expect(app(RemedialService::class)->generateForPrediksi($this->prediksi->refresh()))->toBeNull();
+    expect(fn () => app(RemedialService::class)->generateForPrediksi($this->prediksi->refresh()))
+        ->toThrow(RuntimeException::class, 'Semua provider AI gagal membuat materi remedial.');
 
-    expect(MateriRemedial::where('siswa_id', $this->siswa->id)->count())->toBe(1);
+    expect(MateriRemedial::where('siswa_id', $this->siswa->id)->count())->toBe(0);
+
+    $job = new GenerateRemedialAI($this->siswa->id, $this->prediksi->id);
+    expect($job->tries)->toBe(3)
+        ->and($job->backoff)->toBe([30, 120]);
 });
 
 test('siswa mengumpulkan jawaban remedial dan memicu penilaian AI', function () {
@@ -441,12 +477,67 @@ test('siswa mengumpulkan jawaban remedial dan memicu penilaian AI', function () 
 
     expect($this->remedial->jawaban_remedial)->toHaveCount(3)
         ->and($this->remedial->jawaban_remedial[0])->toBe('Jawaban 1.')
-        ->and($this->remedial->status)->toBe('selesai')
+        ->and($this->remedial->status)->toBe('dibaca')
         ->and($this->remedial->bloom_tercapai)->toBeNull();
 
     Queue::assertPushed(NilaiRemedialTugasAI::class, function (NilaiRemedialTugasAI $job) {
         return $job->remedialId === $this->remedial->id;
     });
+});
+
+test('siswa dapat meminta penilaian ulang jika hasil AI belum tersedia', function () {
+    Queue::fake();
+
+    $answers = ['Jawaban 1.', 'Jawaban 2.', 'Jawaban 3.'];
+    $this->remedial->update([
+        'tugas_remedial' => json_decode(remedialGenerateJson(), true)['soal'],
+        'jawaban_remedial' => $answers,
+        'status' => 'dibaca',
+    ]);
+
+    $this->actingAs($this->siswa)
+        ->post(route('pelajar.remedial.submit', $this->remedial), ['jawaban' => $answers])
+        ->assertRedirect(route('pelajar.remedial.show', $this->remedial));
+
+    Queue::assertPushed(NilaiRemedialTugasAI::class, fn (NilaiRemedialTugasAI $job) => $job->remedialId === $this->remedial->id);
+});
+
+test('siswa tidak dapat mengubah jawaban saat penilaian remedial masih menunggu', function () {
+    Queue::fake();
+
+    $answers = ['Jawaban asli.', 'Jawaban 2.', 'Jawaban 3.'];
+    $this->remedial->update([
+        'tugas_remedial' => json_decode(remedialGenerateJson(), true)['soal'],
+        'jawaban_remedial' => $answers,
+        'status' => 'dibaca',
+    ]);
+
+    $this->actingAs($this->siswa)
+        ->post(route('pelajar.remedial.submit', $this->remedial), [
+            'jawaban' => ['Jawaban diubah.', 'Jawaban 2.', 'Jawaban 3.'],
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    expect($this->remedial->refresh()->jawaban_remedial)->toBe($answers);
+    Queue::assertNothingPushed();
+});
+
+test('job penilaian melempar kegagalan agar antrean dapat mencoba ulang', function () {
+    $this->remedial->update([
+        'tugas_remedial' => json_decode(remedialGenerateJson(), true)['soal'],
+        'jawaban_remedial' => ['Jawaban 1.', 'Jawaban 2.', 'Jawaban 3.'],
+        'status' => 'dibaca',
+    ]);
+
+    $service = $this->mock(RemedialTugasService::class, function ($mock) {
+        $mock->shouldReceive('nilai')->once()->andReturnFalse();
+    });
+
+    expect(fn () => (new NilaiRemedialTugasAI($this->remedial->id))->handle($service))
+        ->toThrow(RuntimeException::class);
+
+    expect($this->remedial->refresh()->status)->toBe('dibaca');
 });
 
 test('siswa lain tidak dapat mengumpulkan jawaban remedial orang lain', function () {

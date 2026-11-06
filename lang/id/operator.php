@@ -152,6 +152,7 @@ return [
     'action_upload_first' => 'Upload dokumen pertama',
     'documents_upload_subtitle' => 'Upload file PDF, TXT, MD, atau CSV sebagai sumber belajar chatbot',
     'label_document_file' => 'File Dokumen',
+    'documents_processing_notice' => 'Catatan pemrosesan: PDF hasil scan mengandalkan OCR dan pemindaian dibatasi hingga 50 halaman. Tata letak kompleks atau kualitas scan rendah dapat membuat teks yang diekstrak kurang akurat dan memengaruhi jawaban chatbot.',
     'drag_here' => 'Seret file ke sini atau',
     'click_to_choose' => 'klik untuk memilih',
     'file_types_hint' => 'PDF, TXT, MD, CSV (maks 20MB)',
@@ -192,8 +193,8 @@ return [
     'download_template' => 'Download Template',
     'import_desc_1' => 'Upload file',
     'import_desc_2' => 'atau',
-    'import_desc_3' => '(.xlsx, .xls) dengan kolom:',
-    'import_columns' => 'name, email, role, nip/nisn, password (opsional)',
+    'import_desc_3' => '(.xlsx, .csv, .txt) dengan kolom:',
+    'import_columns' => 'name, email, role (pengajar/pelajar), nip, nisn (wajib untuk pelajar), password (wajib, minimal 8 karakter)',
     'label_file_import' => 'File (CSV / Excel)',
     'import_button' => 'Import',
 

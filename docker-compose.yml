@@ -92,7 +92,7 @@ services:
       # Mail (configure as needed)
       MAIL_MAILER: log
       # AI / ML Services
-      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
@@ -144,8 +144,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      ollama:
-        condition: service_started
     networks:
       - simba-network
     restart: unless-stopped
@@ -187,7 +185,7 @@ services:
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
-      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
@@ -212,8 +210,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      ollama:
-        condition: service_started
     networks:
       - simba-network
     restart: unless-stopped
@@ -252,7 +248,7 @@ services:
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
-      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
@@ -315,7 +311,7 @@ services:
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
-      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
@@ -381,7 +377,7 @@ services:
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
-      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
@@ -415,31 +411,6 @@ services:
           memory: 256M
         reservations:
           memory: 128M
-
-  # =========================================================================
-  # Ollama (Local LLM) - GPU required for qwen2.5:7b
-  # =========================================================================
-  ollama:
-    image: ollama/ollama:latest
-    container_name: simba-ollama
-    environment:
-      # Biarkan model tetap di memori antar request (default Ollama hanya 5m).
-      OLLAMA_KEEP_ALIVE: "30m"
-    # Untuk GPU support, pakai overlay: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
-    # (butuh NVIDIA Container Toolkit / WSL2 GPU passthrough)
-    volumes:
-      - ollama_data:/root/.ollama
-    ports:
-      - "11434:11434"
-    networks:
-      - simba-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
 
   # =========================================================================
   # Development Services (profile: dev)
@@ -489,7 +460,7 @@ services:
       QUEUE_CONNECTION: sync
       SESSION_DRIVER: file
       CACHE_STORE: file
-      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
       OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
@@ -518,8 +489,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      ollama:
-        condition: service_started
       vite:
         condition: service_started
     networks:
@@ -533,7 +502,6 @@ services:
 volumes:
   db_data:
   redis_data:
-  ollama_data:
   node_modules:
 
 # =============================================================================

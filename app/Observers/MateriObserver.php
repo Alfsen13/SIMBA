@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 
 class MateriObserver
 {
-    private const array SUPPORTED_TYPES = ['pdf', 'txt', 'md', 'csv', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
+    private const array SUPPORTED_TYPES = ['pdf', 'txt', 'md', 'csv', 'docx', 'pptx', 'xlsx'];
 
     public function created(Materi $materi): void
     {
@@ -21,6 +21,7 @@ class MateriObserver
     public function updated(Materi $materi): void
     {
         if ($materi->wasChanged('file_path')) {
+            $materi->babSummary()->delete();
             $materi->document?->delete();
             if (! $materi->document_id) {
                 $this->syncDocument($materi);

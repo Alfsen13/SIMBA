@@ -51,17 +51,17 @@
             </div>
         </a>
 
-        {{-- 3. Dokumen RAG --}}
-        <a href="{{ route('operator.documents.index') }}" class="group relative overflow-hidden rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all">
+        {{-- 3. Materi Pengajar --}}
+        <a href="{{ route('operator.mata-pelajaran.index') }}" class="group relative overflow-hidden rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all">
             <div class="absolute top-0 right-0 w-24 h-24 bg-purple-50 dark:bg-purple-500/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 transition-colors"></div>
             <div class="relative">
                 <div class="w-11 h-11 bg-purple-50 dark:bg-purple-500/20 rounded-lg flex items-center justify-center group-hover:bg-purple-100 dark:group-hover:bg-purple-500/30 transition-colors mb-3">
                     <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                 </div>
-                <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">{{ __('operator.card_documents_title') }}</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ __('operator.card_documents_desc') }}</p>
+                <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">Materi Pengajar</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Lihat materi yang diunggah pengajar per mata pelajaran dan kelas.</p>
                 <div class="mt-3 flex items-center gap-1.5 text-xs font-medium text-purple-600 dark:text-purple-400">
-                    <span>{{ __('operator.card_documents_cta') }}</span>
+                    <span>Lihat materi</span>
                     <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </div>
             </div>

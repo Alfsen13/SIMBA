@@ -228,6 +228,35 @@ test('parameterPertemuan mengabaikan komponen pertemuan lain', function () {
     ]);
 });
 
+test('jalankan menghitung batch risiko dengan hasil yang sama seperti per siswa', function () {
+    [$kelas, $pertemuan, $siswa] = predRiskKonteks();
+    $kuis = predRiskKuisSelesai($kelas, $pertemuan);
+    KuisHasil::create([
+        'kuis_id' => $kuis->id,
+        'siswa_id' => $siswa->id,
+        'skor' => 80,
+    ]);
+    $tugas = predRiskTugasLewat($kelas, $pertemuan);
+    PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'nilai' => 60,
+        'terlambat' => true,
+    ]);
+
+    $expected = predRiskSvc()->parameterPertemuan($siswa->id, $pertemuan);
+    $laporan = predRiskSvc()->jalankan(backfill: false);
+    $actual = PrediksiRisikoPertemuan::where('siswa_id', $siswa->id)
+        ->where('pertemuan_id', $pertemuan->id)
+        ->firstOrFail();
+
+    expect($laporan['pertemuan'])->toBe(1)
+        ->and($actual->rata_nilai)->toEqual($expected['rata_nilai'])
+        ->and($actual->persen_terlambat)->toEqual($expected['persen_terlambat'])
+        ->and($actual->persen_terlewat)->toEqual($expected['persen_terlewat'])
+        ->and($actual->nilai_keseluruhan)->toEqual($expected['nilai_keseluruhan']);
+});
+
 // -------------------------------------------------------------------------
 // Penyimpanan & snapshot
 // -------------------------------------------------------------------------

@@ -35,7 +35,7 @@
                     type="file"
                     name="file"
                     :label="__('operator.label_file_import')"
-                    accept=".csv,.txt,.xlsx,.xls"
+                    accept=".csv,.txt,.xlsx"
                     required
                 />
                 @error('file')

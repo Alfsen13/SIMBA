@@ -37,6 +37,7 @@
         type="file"
         name="{{ $name }}"
         id="{{ $id }}"
+        accept=".pdf,.txt,.md,.csv,.docx,.pptx,.xlsx"
         class="w-full text-sm text-slate-600 dark:text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-50 dark:file:bg-emerald-600/20 file:text-emerald-700 dark:file:text-emerald-300 hover:file:bg-emerald-100"
         x-on:change="pilih($event)"
     >

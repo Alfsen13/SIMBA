@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\MateriRemedial;
 use App\Models\PrediksiAi;
 use App\Services\RemedialService;
 use App\Services\RemedialTugasService;
@@ -10,14 +11,17 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
-class GenerateRemedialAI implements ShouldQueue, ShouldBeUnique
+class GenerateRemedialAI implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, Queueable;
 
-    public $tries = 1;
+    public $tries = 3;
 
     public $timeout = 600;
+
+    public $backoff = [30, 120];
 
     public $uniqueFor = 3600;
 
@@ -36,6 +40,18 @@ class GenerateRemedialAI implements ShouldQueue, ShouldBeUnique
     public function handle(RemedialService $remedialService): void
     {
         $prediksi = PrediksiAi::find($this->prediksiAiId);
+
+        $remedialAda = MateriRemedial::where('prediksi_ai_id', $this->prediksiAiId)
+            ->where('status', '!=', 'selesai')
+            ->latest('id')
+            ->first();
+
+        if ($remedialAda) {
+            $this->pastikanTugasRemedial($remedialAda);
+
+            return;
+        }
+
         if (! $prediksi || $prediksi->hasil !== 'berisiko_tinggi') {
             return;
         }
@@ -60,8 +76,24 @@ class GenerateRemedialAI implements ShouldQueue, ShouldBeUnique
         $remedial = $remedialService->generateForPrediksi($prediksi);
 
         if ($remedial) {
-            app(RemedialTugasService::class)->generateTugas($remedial);
+            $this->pastikanTugasRemedial($remedial);
         }
     }
-}
 
+    private function pastikanTugasRemedial(MateriRemedial $remedial): void
+    {
+        if (empty($remedial->tugas_remedial)
+            && ! app(RemedialTugasService::class)->generateTugas($remedial)) {
+            throw new RuntimeException("Gagal membuat tugas untuk remedial {$remedial->id}.");
+        }
+    }
+
+    public function failed(\Throwable $e): void
+    {
+        Log::error('GenerateRemedialAI gagal untuk siswa {siswa_id} dan prediksi {prediksi_id}: {msg}', [
+            'siswa_id' => $this->siswaId,
+            'prediksi_id' => $this->prediksiAiId,
+            'msg' => $e->getMessage(),
+        ]);
+    }
+}

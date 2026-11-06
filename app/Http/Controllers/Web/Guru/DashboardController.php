@@ -20,22 +20,25 @@ class DashboardController extends Controller
     public function index(): View
     {
         $guruId = Auth::id();
-        $kelasIds = Kelas::where('guru_id', $guruId)->pluck('id');
-        $siswaIds = User::where('role', 'pelajar')
+        $kelasIds = Kelas::query()
+            ->where('guru_id', $guruId)
+            ->select('id');
+        $siswaIds = User::query()
+            ->where('role', 'pelajar')
             ->whereHas('kelasDiikuti', fn ($q) => $q->whereIn('kelas_id', $kelasIds))
-            ->pluck('id');
+            ->select('users.id');
 
         $cacheKey = "guru_dashboard_stats_{$guruId}";
         $stats = Cache::remember($cacheKey, 60, fn () => [
-            'total_kelas' => $kelasIds->count(),
+            'total_kelas' => (clone $kelasIds)->count(),
             'total_materi' => Materi::where('guru_id', $guruId)->count(),
             'total_tugas' => Tugas::where('guru_id', $guruId)->count(),
-            'total_pertemuan' => Pertemuan::whereIn('kelas_id', $kelasIds)->count(),
-            'total_kuis' => Kuis::whereIn('kelas_id', $kelasIds)->count(),
-            'total_siswa' => $siswaIds->count(),
-            'total_remedial' => MateriRemedial::whereIn('siswa_id', $siswaIds)->count(),
+            'total_pertemuan' => Pertemuan::whereIn('kelas_id', clone $kelasIds)->count(),
+            'total_kuis' => Kuis::whereIn('kelas_id', clone $kelasIds)->count(),
+            'total_siswa' => (clone $siswaIds)->count(),
+            'total_remedial' => MateriRemedial::whereIn('siswa_id', clone $siswaIds)->count(),
             'siswa_berisiko' => PrediksiAi::where('hasil', 'berisiko_tinggi')
-                ->whereIn('siswa_id', $siswaIds)
+                ->whereIn('siswa_id', clone $siswaIds)
                 ->count(),
         ]);
 
@@ -46,14 +49,14 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
-        $remedialList = MateriRemedial::whereIn('siswa_id', $siswaIds)
+        $remedialList = MateriRemedial::whereIn('siswa_id', clone $siswaIds)
             ->with('siswa')
             ->latest()
             ->take(5)
             ->get();
 
         $siswaBerisikoList = PrediksiAi::where('hasil', 'berisiko_tinggi')
-            ->whereIn('siswa_id', $siswaIds)
+            ->whereIn('siswa_id', clone $siswaIds)
             ->with('siswa')
             ->orderByDesc('skor_risiko')
             ->take(5)

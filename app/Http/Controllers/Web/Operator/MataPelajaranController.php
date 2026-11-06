@@ -20,6 +20,21 @@ class MataPelajaranController extends Controller
         return view('operator.mata-pelajaran.index', compact('mataPelajaran'));
     }
 
+    public function show(MataPelajaran $mataPelajaran): View
+    {
+        $user = auth()->user();
+        abort_unless($user->kategori_mapel && $mataPelajaran->kategori === $user->kategori_mapel, 403);
+
+        $kelasList = $mataPelajaran->kelas()
+            ->where('kategori', $user->kategori_mapel)
+            ->with('guru:id,name')
+            ->withCount('materi')
+            ->latest()
+            ->paginate(15);
+
+        return view('operator.mata-pelajaran.show', compact('mataPelajaran', 'kelasList'));
+    }
+
     public function create(): View
     {
         $user = auth()->user();

@@ -160,6 +160,13 @@
                 <div class="p-4 rounded-lg border border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-500/10 text-sm text-blue-700 dark:text-blue-300">
                     {{ __('siswa.remedial.menunggu_pemeriksaan') }}
                 </div>
+                <form method="POST" action="{{ route('pelajar.remedial.submit', $remedial) }}" class="mt-3">
+                    @csrf
+                    @foreach($remedial->jawaban_remedial as $i => $jawaban)
+                        <input type="hidden" name="jawaban[{{ $i }}]" value="{{ $jawaban }}">
+                    @endforeach
+                    <x-btn-secondary type="submit" size="sm">{{ __('siswa.remedial.kirim_ulang_penilaian') }}</x-btn-secondary>
+                </form>
                 @foreach($remedial->tugas_remedial as $i => $s)
                     <div class="border border-slate-100 dark:border-slate-800 rounded-lg p-3 mb-2 mt-3">
                         <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ $i + 1 }}. <x-math :value="$s['pertanyaan'] ?? __('siswa.shared.soal_fallback')" /></p>

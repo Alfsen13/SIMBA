@@ -35,6 +35,9 @@
                         </x-td>
                         <x-td align="right">
                             <div class="flex items-center justify-end gap-2">
+                                <a href="{{ route('operator.mata-pelajaran.show', $mapel) }}" class="text-xs text-emerald-700 dark:text-emerald-400 hover:underline">
+                                    Lihat kelas
+                                </a>
                                 <a href="{{ route('operator.mata-pelajaran.edit', $mapel) }}" class="text-xs text-emerald-700 dark:text-emerald-400 hover:underline">
                                     {{ __('common.edit') }}
                                 </a>

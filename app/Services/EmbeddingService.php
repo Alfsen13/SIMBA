@@ -19,7 +19,7 @@ class EmbeddingService
 
     public function __construct()
     {
-        $this->provider = env('EMBEDDING_PROVIDER', 'ollama');
+        $this->provider = config('services.embedding.provider', 'ollama');
         $this->baseUrl = config('services.ollama.base_url', 'http://localhost:11434');
 
         if ($this->provider === 'gemini') {
@@ -37,7 +37,7 @@ class EmbeddingService
             return $this->embedGemini($text);
         }
 
-        return $this->embedOllama([$text])[0] ?? [];
+        return $this->embedOllama([$text])[0];
     }
 
     public function embedBatch(array $texts, int $batchSize = 100, int $delayMs = 0): array
@@ -86,7 +86,7 @@ class EmbeddingService
             throw new RuntimeException('Gagal membuat embedding Ollama: '.$response->body());
         }
 
-        return $response->json('embeddings', []);
+        return $this->validateEmbeddings($response->json('embeddings'), count($texts), 'Ollama');
     }
 
     private function embedGemini(string $text): array
@@ -111,7 +111,9 @@ class EmbeddingService
             throw new RuntimeException('Gagal membuat embedding: '.$response->body());
         }
 
-        return $response->json('embedding.values', []);
+        $embeddings = $this->validateEmbeddings([$response->json('embedding.values')], 1, 'Gemini');
+
+        return $embeddings[0];
     }
 
     private function embedBatchGemini(array $texts, int $batchSize, int $delayMs): array
@@ -147,8 +149,14 @@ class EmbeddingService
                 throw new RuntimeException('Gagal membuat embedding batch: '.$response->body());
             }
 
-            $embeddings = $response->json('embeddings', []);
-            $allEmbeddings = array_merge($allEmbeddings, array_map(fn ($e) => $e['values'] ?? [], $embeddings));
+            $embeddings = $response->json('embeddings');
+            $vectors = is_array($embeddings)
+                ? array_map(fn ($embedding) => is_array($embedding) ? ($embedding['values'] ?? null) : null, $embeddings)
+                : null;
+            $allEmbeddings = array_merge(
+                $allEmbeddings,
+                $this->validateEmbeddings($vectors, count($batch), 'Gemini')
+            );
 
             if ($batchIndex < $totalBatches - 1) {
                 usleep($delayMs * 1000);
@@ -156,6 +164,27 @@ class EmbeddingService
         }
 
         return $allEmbeddings;
+    }
+
+    private function validateEmbeddings(mixed $embeddings, int $expectedCount, string $provider): array
+    {
+        if (! is_array($embeddings) || ! array_is_list($embeddings) || count($embeddings) !== $expectedCount) {
+            throw new RuntimeException("Respons embedding {$provider} tidak lengkap.");
+        }
+
+        foreach ($embeddings as $vector) {
+            if (! is_array($vector) || ! array_is_list($vector) || $vector === []) {
+                throw new RuntimeException("Respons embedding {$provider} berisi vektor kosong atau tidak valid.");
+            }
+
+            foreach ($vector as $value) {
+                if (! is_numeric($value) || ! is_finite((float) $value)) {
+                    throw new RuntimeException("Respons embedding {$provider} berisi nilai vektor tidak valid.");
+                }
+            }
+        }
+
+        return $embeddings;
     }
 
     private function sanitizeText(string $text): string
@@ -192,7 +221,8 @@ class EmbeddingService
         $queryEmbedding = $this->embed($query);
 
         $q = DocumentChunk::whereNotNull('embedding')
-            ->whereRaw('JSON_LENGTH(embedding) > 0');
+            ->whereRaw('JSON_LENGTH(embedding) > 0')
+            ->whereHas('document', fn ($query) => $query->where('status', 'completed'));
         if ($kategori !== null) {
             $q->where('kategori', $kategori);
         }

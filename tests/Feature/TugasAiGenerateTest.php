@@ -5,7 +5,9 @@ use App\Models\Materi;
 use App\Models\MateriBabSummary;
 use App\Models\Pertemuan;
 use App\Models\User;
+use App\Jobs\GenerateSoalTugasAI;
 use App\Services\AIProviderService;
+use Illuminate\Support\Facades\Queue;
 
 function buatPertemuanMateriTugas(User $guru): Pertemuan
 {
@@ -85,6 +87,29 @@ test('guru dapat generate soal esai untuk tugas', function () {
         ->assertJsonPath('success', true)
         ->assertJsonCount(1, 'soal')
         ->assertJsonPath('soal.0.referensi', 'Samakan koefisien, kurangkan untuk menghilangkan satu variabel, lalu substitusikan hasilnya.');
+});
+
+test('generate soal tugas dijadwalkan ke queue', function () {
+    $pertemuan = buatPertemuanMateriTugas($this->guru);
+    Queue::fake();
+
+    $response = $this->actingAs($this->guru)
+        ->postJson(route('pengajar.tugas.generate'), [
+            'pertemuan_id' => $pertemuan->id,
+            'tipe' => 'essai',
+            'jumlah' => 1,
+            'kesulitan' => 'mudah',
+        ])
+        ->assertStatus(202)
+        ->assertJsonPath('status', 'queued');
+
+    $key = $response->json('key');
+    expect($key)->toStartWith('ai-soal:tugas:'.$this->guru->id.':');
+
+    Queue::assertPushed(GenerateSoalTugasAI::class, fn ($job) => $job->cacheKey === $key
+        && $job->userId === $this->guru->id
+        && $job->pertemuanId === $pertemuan->id
+        && $job->tipe === 'essai');
 });
 
 test('generate soal tugas divalidasi parameter', function () {

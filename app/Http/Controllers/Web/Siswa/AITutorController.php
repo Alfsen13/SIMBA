@@ -4,18 +4,17 @@ namespace App\Http\Controllers\Web\Siswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kelas;
-use App\Models\Materi;
 use App\Models\Pertemuan;
 use App\Services\AIProviderService;
 use App\Services\RAGService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AITutorController extends Controller
 {
-     
     public function index(): View
     {
         $user = Auth::user();
@@ -30,7 +29,6 @@ class AITutorController extends Controller
         return view('siswa.ai-tutor.index', compact('kelasList'));
     }
 
-     
     public function pertemuan(Kelas $kelas): View
     {
         $user = Auth::user();
@@ -49,7 +47,6 @@ class AITutorController extends Controller
         return view('siswa.ai-tutor.pertemuan', compact('kelas', 'pertemuans'));
     }
 
-     
     public function chat(Kelas $kelas, Pertemuan $pertemuan): View
     {
         $user = Auth::user();
@@ -90,13 +87,19 @@ class AITutorController extends Controller
             ->with('materiUrlMap', $materiUrlMap);
     }
 
-     
     public function ask(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'pertemuan_id' => 'required|exists:pertemuan,id',
-            'materi_id' => 'nullable|exists:materi,id',
+            'materi_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('materi', 'id')->where('pertemuan_id', $request->input('pertemuan_id')),
+            ],
             'question' => 'required|string|max:2000',
+            'history' => 'nullable|array|max:10',
+            'history.*.role' => 'required|in:user,assistant',
+            'history.*.content' => 'required|string|max:2000',
         ]);
 
         $user = Auth::user();
@@ -111,12 +114,6 @@ class AITutorController extends Controller
         }
 
         $materiId = $validated['materi_id'] ?? null;
-        if ($materiId) {
-            $materi = Materi::find($materiId);
-            if (! $materi || $materi->pertemuan_id !== $pertemuan->id) {
-                $materiId = null;
-            }
-        }
 
         $kategori = $pertemuan->kelas?->kategori;
         $rag = app(RAGService::class);
@@ -131,9 +128,10 @@ class AITutorController extends Controller
 
         try {
             $ai = app(AIProviderService::class);
-            $answer = $ai->sendLocalPreferred($prompt);
+            $answer = $ai->sendForUser($user, $prompt, $validated['history'] ?? []);
         } catch (\Throwable $e) {
             \Log::error('AI Tutor ask error', ['msg' => $e->getMessage()]);
+
             return response()->json(['error' => 'Layanan AI tidak tersedia'], 503);
         }
 
@@ -151,7 +149,6 @@ class AITutorController extends Controller
         ]);
     }
 
-     
     private function normalizeJudul(?string $judul): string
     {
         $j = mb_strtolower((string) $judul);
@@ -164,4 +161,3 @@ class AITutorController extends Controller
         return trim($j);
     }
 }
-

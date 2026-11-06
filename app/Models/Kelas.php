@@ -28,6 +28,11 @@ class Kelas extends Model
         return $this->belongsTo(User::class, 'guru_id');
     }
 
+    public function mataPelajaran(): BelongsTo
+    {
+        return $this->belongsTo(MataPelajaran::class);
+    }
+
     /** Pengajuan pengajar mengisi kelas ini (bahan rencana ajar untuk tinjauan operator). */
     public function pengajuan(): HasMany
     {
@@ -73,4 +78,3 @@ class Kelas extends Model
         return $this->hasMany(Kuis::class);
     }
 }
-

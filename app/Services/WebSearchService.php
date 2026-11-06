@@ -84,7 +84,6 @@ class WebSearchService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->withOptions(['verify' => false])
                 ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
                 ->get('https://html.duckduckgo.com/html/', ['q' => $query]);
 

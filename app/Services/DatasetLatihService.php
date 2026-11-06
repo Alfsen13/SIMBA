@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * Snapshot dataset latih: "dasar" model ML yang dipisahkan dari database.
@@ -78,10 +80,27 @@ class DatasetLatihService
      */
     public function tulis(array $dataset, string $path = self::PATH): string
     {
-        Storage::put($path, json_encode(
+        $isi = json_encode(
             $dataset,
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR
-        ));
+        );
+        $direktori = dirname($path);
+        $pathSementara = ($direktori === '.' ? '' : $direktori.'/')
+            .'.'.basename($path).'.'.Str::uuid().'.tmp';
+
+        try {
+            if (! Storage::put($pathSementara, $isi)) {
+                throw new RuntimeException("Gagal menulis snapshot sementara: {$pathSementara}");
+            }
+
+            if (! Storage::move($pathSementara, $path)) {
+                throw new RuntimeException("Gagal mengganti snapshot dataset: {$path}");
+            }
+        } finally {
+            if (Storage::exists($pathSementara)) {
+                Storage::delete($pathSementara);
+            }
+        }
 
         return $path;
     }
@@ -178,9 +197,6 @@ class DatasetLatihService
         return null;
     }
 
-    /**
-     * @param  mixed  $fitur
-     */
     protected function daftarFitur(mixed $fitur): string
     {
         if (! is_array($fitur)) {

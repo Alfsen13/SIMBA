@@ -74,6 +74,7 @@ return [
         'kembali_ke_kelas' => 'Back to Class',
         'info_belajar_mandiri' => 'As a self-learning student, you can only join classes that are open to the public.',
         'ditolak_belajar_mandiri' => 'This class is not open to the public, so self-learning students cannot join it.',
+        'tidak_dibuka' => 'Enrollment is unavailable because this class is not currently open.',
     ],
 
     'materi' => [
@@ -102,6 +103,7 @@ return [
         'tidak_dijawab' => 'Not answered',
         'skor_ai' => 'AI score: :skor',
         'menunggu_pemeriksaan' => 'Waiting for AI review.',
+        'pemeriksaan_ai_gagal' => 'AI review failed after several attempts. Your teacher can retry the review or grade your answers manually.',
         'nilai_saran_ai' => 'Suggested AI score',
         'menunggu_konfirmasi_guru' => 'awaiting teacher confirmation',
         'kumpulkan_tugas' => 'Submit Assignment',
@@ -153,6 +155,7 @@ return [
         'tujuan_belum_tercapai' => 'Learning objectives not achieved yet',
         'dinilai_ai' => 'Graded by AI • :tanggal • Bloom Taxonomy Context',
         'kerjakan_ulang' => 'Try Again',
+        'kirim_ulang_penilaian' => 'Resubmit for review',
         'skor' => 'Score: :skor',
         'menunggu_pemeriksaan' => 'Your answers have been submitted and are being reviewed by AI. Please reopen this page in a moment.',
         'dibuat_oleh' => 'Created by: :provider',

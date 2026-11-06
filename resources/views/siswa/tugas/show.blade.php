@@ -60,6 +60,11 @@
         @if($tugas->tipe === 'essai' && $tugas->soal)
             <x-card padding="true" class="mt-4">
                 <h2 class="font-semibold mb-3">{{ __('siswa.shared.jawabanmu') }}</h2>
+                @if($pengumpulan->koreksi_ai_gagal)
+                    <p class="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                        {{ __('siswa.tugas.pemeriksaan_ai_gagal') }}
+                    </p>
+                @endif
                 @foreach($soalTampil as $s)
                     <div class="border border-slate-100 dark:border-slate-800 rounded-lg p-3 mb-2">
                         <div class="flex items-start gap-2">
@@ -82,7 +87,9 @@
                                 @endif
                             </div>
                         @else
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">{{ __('siswa.tugas.menunggu_pemeriksaan') }}</p>
+                            <p class="text-xs {{ $pengumpulan->koreksi_ai_gagal ? 'text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400' }} mt-2 italic">
+                                {{ $pengumpulan->koreksi_ai_gagal ? __('siswa.tugas.pemeriksaan_ai_gagal') : __('siswa.tugas.menunggu_pemeriksaan') }}
+                            </p>
                         @endif
                     </div>
                 @endforeach

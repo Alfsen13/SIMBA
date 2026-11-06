@@ -12,10 +12,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use RuntimeException;
+use Throwable;
 
 class MateriController extends Controller
 {
-     
     public function create(): View
     {
         $pertemuan = Pertemuan::with('kelas')->findOrFail(request('pertemuan_id'));
@@ -24,7 +25,6 @@ class MateriController extends Controller
         return view('guru.materi.create', compact('pertemuan'));
     }
 
-     
     public function store(MateriRequest $request): RedirectResponse
     {
         $validated = $request->validated();
@@ -34,26 +34,42 @@ class MateriController extends Controller
 
         $validated['guru_id'] = Auth::id();
 
+        $filePath = null;
         if ($request->hasFile('file')) {
-            $validated['file_path'] = $request->file('file')->store('materi', 'public');
+            $filePath = $request->file('file')->store('materi', 'public');
+
+            if ($filePath === false) {
+                throw new RuntimeException('Gagal menyimpan berkas materi.');
+            }
+
+            $validated['file_path'] = $filePath;
             $validated['file_type'] = $request->file('file')->getClientOriginalExtension();
         }
 
-        $materi = Materi::create($validated);
+        try {
+            $materi = Materi::create($validated);
+        } catch (Throwable $e) {
+            if ($filePath !== null) {
+                Storage::disk('public')->delete($filePath);
+            }
 
-        return redirect()->route('pengajar.pertemuan.show', $materi->pertemuan_id)->with('success', 'Materi berhasil ditambahkan.');
+            throw $e;
+        }
+
+        $response = redirect()->route('pengajar.pertemuan.show', $materi->pertemuan_id)
+            ->with('success', 'Materi berhasil ditambahkan.');
+
+        return $this->withRagProcessingWarning($response, $materi);
     }
 
-     
     public function show(Materi $materi): View
     {
         $this->authorize('view', $materi);
-        $materi->load(['kelas', 'pertemuan', 'guru']);
+        $materi->load(['kelas', 'pertemuan', 'guru', 'document']);
 
         return view('guru.materi.show', compact('materi'));
     }
 
-     
     public function edit(Materi $materi): View
     {
         $this->authorize('update', $materi);
@@ -65,30 +81,48 @@ class MateriController extends Controller
         return view('guru.materi.edit', compact('materi', 'kelasList', 'pertemuanList'));
     }
 
-     
     public function update(UpdateMateriRequest $request, Materi $materi): RedirectResponse
     {
         $this->authorize('update', $materi);
         $validated = $request->validated();
 
+        $fileLama = $materi->file_path;
+        $fileBaru = null;
+
         if ($request->hasFile('file')) {
-            if ($materi->file_path) {
-                Storage::disk('public')->delete($materi->file_path);
+            $fileBaru = $request->file('file')->store('materi', 'public');
+
+            if ($fileBaru === false) {
+                throw new RuntimeException('Gagal menyimpan berkas materi.');
             }
-            $validated['file_path'] = $request->file('file')->store('materi', 'public');
+
+            $validated['file_path'] = $fileBaru;
             $validated['file_type'] = $request->file('file')->getClientOriginalExtension();
         }
 
-        $materi->update($validated);
+        try {
+            $materi->update($validated);
+        } catch (Throwable $e) {
+            if ($fileBaru !== null) {
+                Storage::disk('public')->delete($fileBaru);
+            }
+
+            throw $e;
+        }
+
+        if ($fileBaru !== null && $fileLama !== null && $fileLama !== $fileBaru) {
+            Storage::disk('public')->delete($fileLama);
+        }
 
         $target = $materi->pertemuan_id
             ? route('pengajar.pertemuan.show', $materi->pertemuan_id)
             : route('pengajar.kelas.show', $materi->kelas_id);
 
-        return redirect($target)->with('success', 'Materi berhasil diupdate.');
+        $response = redirect($target)->with('success', 'Materi berhasil diupdate.');
+
+        return $this->withRagProcessingWarning($response, $materi);
     }
 
-     
     public function destroy(Materi $materi): RedirectResponse
     {
         $this->authorize('delete', $materi);
@@ -103,5 +137,17 @@ class MateriController extends Controller
 
         return redirect($target)->with('success', 'Materi berhasil dihapus.');
     }
-}
 
+    private function withRagProcessingWarning(RedirectResponse $response, Materi $materi): RedirectResponse
+    {
+        $document = $materi->loadMissing('document')->document;
+
+        if ($document?->status !== 'failed') {
+            return $response;
+        }
+
+        return $response->with('warning', __('guru_kelas.materi.rag_upload_failed', [
+            'error' => $document->error_message ?: __('guru_kelas.materi.rag_unknown_error'),
+        ]));
+    }
+}

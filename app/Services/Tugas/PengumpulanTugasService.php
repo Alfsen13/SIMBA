@@ -9,11 +9,12 @@ use App\Models\PengumpulanTugas;
 use App\Models\Tugas;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
+use Throwable;
 
- 
 final class PengumpulanTugasService
 {
-      
     public function submit(Tugas $tugas, User $siswa, ?UploadedFile $file, ?array $jawaban): PengumpulanTugas
     {
         $pakaiFile = $tugas->tipe === 'upload';
@@ -35,13 +36,25 @@ final class PengumpulanTugasService
         $data = [
             'jawaban' => $jawabanBersih,
             'terlambat' => $terlambat,
+            'nilai' => null,
+            'nilai_ai' => null,
+            'hasil_ai' => null,
+            'koreksi_ai_at' => null,
+            'koreksi_ai_gagal' => false,
         ];
+
+        $fileLama = $existing?->file;
+        $fileBaru = null;
 
         if ($pakaiFile) {
             if ($file instanceof UploadedFile) {
-                $data['file'] = $file->store('pengumpulan', 'public');
-            } elseif ($existing !== null && $existing->file) {
-                $data['file'] = $existing->file;
+                $fileBaru = $file->store('pengumpulan', 'public');
+
+                if ($fileBaru === false) {
+                    throw new RuntimeException('Gagal menyimpan berkas pengumpulan tugas.');
+                }
+
+                $data['file'] = $fileBaru;
             } else {
                 $data['file'] = null;
             }
@@ -49,11 +62,22 @@ final class PengumpulanTugasService
             $data['file'] = null;
         }
 
-        $pengumpulan = PengumpulanTugas::updateOrCreate(
-            ['tugas_id' => $tugas->id, 'siswa_id' => $siswa->id],
-            $data
-        );
+        try {
+            $pengumpulan = PengumpulanTugas::updateOrCreate(
+                ['tugas_id' => $tugas->id, 'siswa_id' => $siswa->id],
+                $data
+            );
+        } catch (Throwable $e) {
+            if ($fileBaru !== null) {
+                Storage::disk('public')->delete($fileBaru);
+            }
 
+            throw $e;
+        }
+
+        if ($fileLama && $fileLama !== $pengumpulan->file) {
+            Storage::disk('public')->delete($fileLama);
+        }
 
         if ($tugas->tipe === 'essai' && $this->adaIsiJawaban($jawabanBersih)) {
             PeriksaJawabanTugasAI::dispatch($pengumpulan->id);
@@ -62,7 +86,6 @@ final class PengumpulanTugasService
         return $pengumpulan;
     }
 
-     
     public function simpanNilai(Tugas $tugas, array $nilai): int
     {
         if ($nilai === []) {
@@ -92,14 +115,11 @@ final class PengumpulanTugasService
         return $tersimpan;
     }
 
-     
     public function jadwalkanPemeriksaanAi(Tugas $tugas): int
     {
         if ($tugas->tipe !== 'essai') {
             return 0;
         }
-
-
 
         $ids = $tugas->pengumpulan()
             ->whereNotNull('jawaban')
@@ -108,13 +128,13 @@ final class PengumpulanTugasService
             ->pluck('id');
 
         foreach ($ids as $id) {
+            PengumpulanTugas::whereKey($id)->update(['koreksi_ai_gagal' => false]);
             PeriksaJawabanTugasAI::dispatch((int) $id);
         }
 
         return $ids->count();
     }
 
-     
     private function bersihkanJawaban(array $jawaban): array
     {
         $bersih = [];
@@ -126,7 +146,6 @@ final class PengumpulanTugasService
         return $bersih;
     }
 
-     
     private function adaIsiJawaban(?array $jawaban): bool
     {
         if (! is_array($jawaban)) {
@@ -142,4 +161,3 @@ final class PengumpulanTugasService
         return false;
     }
 }
-

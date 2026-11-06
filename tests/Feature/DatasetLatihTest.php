@@ -115,6 +115,33 @@ test('snapshot ditulis lalu dimuat kembali utuh', function () {
         ->and($svc->alasanFiturTidakCocok($dimuat))->toBeNull();
 });
 
+test('snapshot yang diperbarui menggantikan berkas tanpa meninggalkan file sementara', function () {
+    $svc = app(DatasetLatihService::class);
+    $lama = ddlSnapshot();
+    $baru = ddlSnapshot();
+    $baru['versi'] = 'dataset-uji-baru';
+
+    $svc->tulis($lama);
+    $svc->tulis($baru);
+
+    expect($svc->muat()['versi'])->toBe('dataset-uji-baru')
+        ->and(Storage::allFiles('ml'))->toBe([DatasetLatihService::PATH]);
+});
+
+test('snapshot lama tetap utuh jika data baru gagal diserialisasi', function () {
+    $svc = app(DatasetLatihService::class);
+    $lama = ddlSnapshot();
+    $svc->tulis($lama);
+    $resource = fopen('php://memory', 'r');
+
+    expect(fn () => $svc->tulis(['resource' => $resource]))
+        ->toThrow(JsonException::class);
+    fclose($resource);
+
+    expect($svc->muat())->toEqual($lama)
+        ->and(Storage::allFiles('ml'))->toBe([DatasetLatihService::PATH]);
+});
+
 test('snapshot tidak lengkap ditolak sebagai dataset', function () {
     $svc = app(DatasetLatihService::class);
 

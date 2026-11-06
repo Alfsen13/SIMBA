@@ -13,10 +13,8 @@ use App\Models\Tugas;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
- 
 class FiturPertemuanService
 {
-     
     public const FEATURES = [
         'frekuensi_akses_pertemuan',
         'rata_durasi_belajar',
@@ -59,7 +57,6 @@ class FiturPertemuanService
         return array_values(array_diff(self::FEATURES, self::FEATURE_DIABAIKAN));
     }
 
-     
     public function hitung(int $siswaId, Pertemuan $pertemuan): array
     {
         $tugasIds = Tugas::where('pertemuan_id', $pertemuan->id)->pluck('id');
@@ -122,7 +119,6 @@ class FiturPertemuanService
         ];
     }
 
-     
     public function simpan(int $siswaId, Pertemuan $pertemuan): ?FiturSiswaHistory
     {
         if (! $pertemuan->dibuka) {
@@ -134,14 +130,11 @@ class FiturPertemuanService
             [
                 ...$this->hitung($siswaId, $pertemuan),
 
-
-
                 'tanggal' => now()->startOfDay(),
             ]
         );
     }
 
-     
     public function simpanUntukPertemuan(Pertemuan $pertemuan): int
     {
         $siswaIds = $this->siswaKelas($pertemuan->kelas_id);
@@ -152,7 +145,6 @@ class FiturPertemuanService
         return $siswaIds->count();
     }
 
-     
     public function backfill(?int $kelasId = null): int
     {
         $pertemuans = Pertemuan::query()
@@ -164,19 +156,157 @@ class FiturPertemuanService
 
         $disimpan = 0;
         foreach ($pertemuans->groupBy('kelas_id') as $idKelas => $daftar) {
-            $siswaIds = $this->siswaKelas((int) $idKelas);
-            foreach ($daftar as $pertemuan) {
-                foreach ($siswaIds as $siswaId) {
-                    $this->simpan($siswaId, $pertemuan);
-                    $disimpan++;
-                }
+            foreach ($this->siswaKelas((int) $idKelas)->chunk(200) as $siswaIds) {
+                $disimpan += $this->simpanBatch($siswaIds->all(), $daftar);
             }
         }
 
         return $disimpan;
     }
 
-     
+    /**
+     * Hitung semua fitur untuk satu batch siswa dengan pembacaan data per
+     * kelas, bukan query terpisah untuk setiap pasangan siswa-pertemuan.
+     *
+     * @param  array<int, int>  $siswaIds
+     */
+    private function simpanBatch(array $siswaIds, Collection $pertemuans): int
+    {
+        $pertemuanIds = $pertemuans->pluck('id')->all();
+        $tugas = Tugas::whereIn('pertemuan_id', $pertemuanIds)->get(['id', 'pertemuan_id']);
+        $kuis = Kuis::whereIn('pertemuan_id', $pertemuanIds)->get(['id', 'pertemuan_id']);
+        $tugasPerPertemuan = $tugas->groupBy('pertemuan_id');
+        $tugasKePertemuan = $tugas->pluck('pertemuan_id', 'id');
+        $kuisKePertemuan = $kuis->pluck('pertemuan_id', 'id');
+        $tugasIds = $tugas->pluck('id')->all();
+        $kuisIds = $kuis->pluck('id')->all();
+
+        $aktivitas = [];
+        foreach (AktivitasLog::whereIn('siswa_id', $siswaIds)
+            ->whereIn('pertemuan_id', $pertemuanIds)
+            ->get(['siswa_id', 'pertemuan_id', 'metadata']) as $log) {
+            $siswaId = (int) $log->siswa_id;
+            $pertemuanId = (int) $log->pertemuan_id;
+            $aktivitas[$siswaId][$pertemuanId] ??= ['jumlah' => 0, 'durasi' => []];
+            $aktivitas[$siswaId][$pertemuanId]['jumlah']++;
+
+            $durasi = (float) ($log->metadata['durasi_menit'] ?? 0);
+            if ($durasi > 0) {
+                $aktivitas[$siswaId][$pertemuanId]['durasi'][] = $durasi;
+            }
+        }
+
+        $nilai = [];
+        if ($kuisIds !== []) {
+            foreach (KuisHasil::whereIn('siswa_id', $siswaIds)
+                ->whereIn('kuis_id', $kuisIds)
+                ->get(['siswa_id', 'kuis_id', 'skor']) as $hasil) {
+                $siswaId = (int) $hasil->siswa_id;
+                $pertemuanId = (int) $kuisKePertemuan[$hasil->kuis_id];
+                $nilai[$siswaId][$pertemuanId] ??= ['jumlah' => 0, 'total' => 0.0];
+                $nilai[$siswaId][$pertemuanId]['jumlah']++;
+                $nilai[$siswaId][$pertemuanId]['total'] += (float) $hasil->skor;
+            }
+        }
+
+        $pengumpulan = [];
+        if ($tugasIds !== []) {
+            foreach (PengumpulanTugas::whereIn('siswa_id', $siswaIds)
+                ->whereIn('tugas_id', $tugasIds)
+                ->get(['siswa_id', 'tugas_id', 'nilai']) as $baris) {
+                $siswaId = (int) $baris->siswa_id;
+                $pertemuanId = (int) $tugasKePertemuan[$baris->tugas_id];
+                $pengumpulan[$siswaId][$pertemuanId] = ($pengumpulan[$siswaId][$pertemuanId] ?? 0) + 1;
+
+                if ($baris->nilai !== null) {
+                    $nilai[$siswaId][$pertemuanId] ??= ['jumlah' => 0, 'total' => 0.0];
+                    $nilai[$siswaId][$pertemuanId]['jumlah']++;
+                    $nilai[$siswaId][$pertemuanId]['total'] += (float) $baris->nilai;
+                }
+            }
+        }
+
+        $kehadiran = [];
+        foreach (Kehadiran::whereIn('siswa_id', $siswaIds)
+            ->whereIn('pertemuan_id', $pertemuanIds)
+            ->get(['siswa_id', 'pertemuan_id', 'status']) as $baris) {
+            $kehadiran[(int) $baris->siswa_id][(int) $baris->pertemuan_id] = $baris->status;
+        }
+
+        $now = now();
+        $rows = [];
+        foreach ($siswaIds as $siswaId) {
+            $siswaId = (int) $siswaId;
+            $jumlahAksesSampai = 0;
+            $jumlahPertemuanSampai = 0;
+            $jumlahKehadiran = 0;
+            $jumlahHadir = 0;
+            $nilaiSebelumnya = null;
+
+            foreach ($pertemuans as $pertemuan) {
+                $pertemuanId = (int) $pertemuan->id;
+                $jumlahPertemuanSampai++;
+                $aktivitasPertemuan = $aktivitas[$siswaId][$pertemuanId] ?? null;
+                $jumlahAktivitas = $aktivitasPertemuan['jumlah'] ?? 0;
+                $jumlahAksesSampai += $jumlahAktivitas > 0 ? 1 : 0;
+
+                $statusKehadiran = $kehadiran[$siswaId][$pertemuanId] ?? null;
+                if ($statusKehadiran !== null) {
+                    $jumlahKehadiran++;
+                    $jumlahHadir += in_array($statusKehadiran, Kehadiran::STATUS_HADIR, true) ? 1 : 0;
+                }
+
+                $nilaiPertemuan = $nilai[$siswaId][$pertemuanId] ?? null;
+                $rataNilai = $nilaiPertemuan && $nilaiPertemuan['jumlah'] > 0
+                    ? round($nilaiPertemuan['total'] / $nilaiPertemuan['jumlah'], 1)
+                    : null;
+                $tren = $rataNilai !== null && $nilaiSebelumnya !== null
+                    ? round($rataNilai - $nilaiSebelumnya, 1)
+                    : null;
+
+                $jumlahTugas = $tugasPerPertemuan->get($pertemuanId, collect())->count();
+                $terkumpul = $pengumpulan[$siswaId][$pertemuanId] ?? 0;
+                $durasi = $aktivitasPertemuan['durasi'] ?? [];
+                $rows[] = [
+                    'siswa_id' => $siswaId,
+                    'pertemuan_id' => $pertemuanId,
+                    'tanggal' => $now->toDateString(),
+                    'frekuensi_akses_pertemuan' => $jumlahAktivitas,
+                    'rata_durasi_belajar' => $durasi === [] ? null : round(array_sum($durasi) / count($durasi), 1),
+                    'persen_tugas_terkumpul' => $jumlahTugas > 0 ? round($terkumpul / $jumlahTugas * 100, 1) : null,
+                    'tren_nilai' => $tren,
+                    'persen_kehadiran' => $jumlahKehadiran > 0 ? round($jumlahHadir / $jumlahKehadiran * 100, 1) : null,
+                    'rata_nilai' => $rataNilai,
+                    'jumlah_pertemuan_tidak_aktif' => $jumlahPertemuanSampai - $jumlahAksesSampai,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+
+                $nilaiSebelumnya = $rataNilai;
+            }
+        }
+
+        foreach (array_chunk($rows, 500) as $batch) {
+            FiturSiswaHistory::upsert(
+                $batch,
+                ['siswa_id', 'pertemuan_id'],
+                [
+                    'tanggal',
+                    'frekuensi_akses_pertemuan',
+                    'rata_durasi_belajar',
+                    'persen_tugas_terkumpul',
+                    'tren_nilai',
+                    'persen_kehadiran',
+                    'rata_nilai',
+                    'jumlah_pertemuan_tidak_aktif',
+                    'updated_at',
+                ]
+            );
+        }
+
+        return count($rows);
+    }
+
     public function nilaiPertemuan(int $siswaId, Pertemuan $pertemuan): ?float
     {
 
@@ -201,7 +331,6 @@ class FiturPertemuanService
         return $semua->isNotEmpty() ? round((float) $semua->avg(), 1) : null;
     }
 
-     
     public function targetBerikutnya(int $siswaId, Pertemuan $pertemuan): ?float
     {
         $berikutnya = $this->pertemuanBerikutnya($pertemuan);
@@ -227,7 +356,6 @@ class FiturPertemuanService
             ->first();
     }
 
-     
     public function pertemuanSampai(Pertemuan $pertemuan): Collection
     {
         return Pertemuan::where('kelas_id', $pertemuan->kelas_id)
@@ -237,7 +365,6 @@ class FiturPertemuanService
             ->get();
     }
 
-     
     protected function siswaKelas(int $kelasId): Collection
     {
         return User::where('role', 'pelajar')
@@ -245,4 +372,3 @@ class FiturPertemuanService
             ->pluck('id');
     }
 }
-
