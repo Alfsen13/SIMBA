@@ -75,6 +75,8 @@ return [
         'info_belajar_mandiri' => 'Sebagai pelajar jalur belajar mandiri, hanya kelas yang dibuka untuk umum yang bisa kamu ikuti.',
         'ditolak_belajar_mandiri' => 'Kelas ini bukan kelas terbuka untuk umum, sehingga tidak bisa diikuti pelajar jalur belajar mandiri.',
         'tidak_dibuka' => 'Pendaftaran tidak tersedia karena kelas ini tidak sedang dibuka.',
+        'kapasitas_penuh' => 'Kapasitas kelas ini sudah terpenuhi.',
+        'kapasitas_terlampaui' => 'Kapasitas kelas sudah terlampaui; pendaftaran tidak dapat disetujui.',
     ],
 
     'materi' => [
@@ -159,6 +161,8 @@ return [
         'skor' => 'Skor: :skor',
         'menunggu_pemeriksaan' => 'Jawabanmu sudah dikumpulkan dan sedang diperiksa AI. Silakan buka kembali halaman ini beberapa saat lagi.',
         'penilaian_remedial_gagal' => 'Pemeriksaan AI gagal. Jawabanmu tetap tersimpan; tekan tombol di bawah untuk mencoba penilaian ulang.',
+        'generasi_tugas_menunggu' => 'Soal remedial sedang disiapkan. Silakan buka kembali halaman ini nanti.',
+        'generasi_tugas_gagal' => 'Soal remedial belum berhasil disiapkan. Guru akan menindaklanjuti.',
         'dibuat_oleh' => 'Dibuat oleh: :provider',
         'skor_risiko' => 'Skor risiko: :skor',
         'tidak_ada_mantap' => 'Tidak ada remedial. Mantap!',

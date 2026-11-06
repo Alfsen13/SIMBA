@@ -186,7 +186,21 @@ it('backfill batch mempertahankan hasil fitur aktivitas nilai tugas dan kehadira
     PengumpulanTugas::create([
         'tugas_id' => $tugas->id,
         'siswa_id' => $this->siswa->id,
+        'file' => 'tugas/hasil.pdf',
         'nilai' => 70,
+    ]);
+    $tugasTimer = Tugas::create([
+        'judul' => 'Tugas Timer Backfill',
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'pertemuan_id' => $this->pertemuans[0]->id,
+        'tipe' => 'upload',
+    ]);
+    PengumpulanTugas::create([
+        'tugas_id' => $tugasTimer->id,
+        'siswa_id' => $this->siswa->id,
+        'dimulai_pada' => now()->subMinutes(5),
+        'batas_kerjakan' => now()->addMinutes(55),
     ]);
 
     $service = app(FiturPertemuanService::class);
@@ -195,6 +209,7 @@ it('backfill batch mempertahankan hasil fitur aktivitas nilai tugas dan kehadira
         $expected[$pertemuan->id] = $service->hitung($this->siswa->id, $pertemuan);
     }
 
+    expect($expected[$this->pertemuans[0]->id]['persen_tugas_terkumpul'])->toBe(50.0);
     expect($service->backfill($this->kelas->id))->toBe(2);
 
     foreach ($this->pertemuans as $pertemuan) {

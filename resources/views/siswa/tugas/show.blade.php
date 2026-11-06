@@ -40,7 +40,7 @@
         <p class="whitespace-pre-wrap">{{ $tugas->deskripsi ?: __('siswa.tugas.tidak_ada_deskripsi') }}</p>
     </x-card>
 
-    @if($pengumpulan)
+    @if($pengumpulan?->sudahDikumpulkan())
         <div class="mt-4 {{ $pengumpulan->terlambat ? 'bg-red-50 border-red-200 dark:border-red-800' : 'bg-green-50 dark:bg-green-500/10 border-green-200' }} rounded-lg shadow-sm border p-4">
             <div class="flex items-center gap-2">
                 <h2 class="font-semibold {{ $pengumpulan->terlambat ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400' }}">

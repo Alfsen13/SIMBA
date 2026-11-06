@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\KategoriMataPelajaran;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +16,8 @@ class MataPelajaranSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->master() as $kategori => $daftar) {
+            KategoriMataPelajaran::firstOrCreate(['nama' => $kategori]);
+
             foreach ($daftar as $mapel) {
                 DB::table('mata_pelajaran')->updateOrInsert(
                     ['kode' => $mapel['kode']],

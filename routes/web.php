@@ -122,6 +122,7 @@ Route::prefix('pengajar')->name('pengajar.')->middleware(['auth', 'role:pengajar
     Route::get('fitur-siswa', [FiturSiswaController::class, 'index'])->name('fitur-siswa');
     Route::post('fitur-siswa/{siswa}', [FiturSiswaController::class, 'update'])->name('fitur-siswa.update');
     Route::get('remedial', [GuruRemedial::class, 'index'])->name('remedial.index');
+    Route::post('remedial/{remedial}/retry-generation', [GuruRemedial::class, 'retryGeneration'])->name('remedial.retry-generation');
     Route::get('remedial/{remedial}', [GuruRemedial::class, 'show'])->name('remedial.show');
     Route::get('notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi');
     Route::post('notifikasi/{notifikasi}/read', [NotifikasiController::class, 'read'])->name('notifikasi.read');

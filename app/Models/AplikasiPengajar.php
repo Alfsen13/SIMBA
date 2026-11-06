@@ -41,4 +41,9 @@ class AplikasiPengajar extends Model
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
+
+    public function kategoriMataPelajaran(): BelongsTo
+    {
+        return $this->belongsTo(KategoriMataPelajaran::class, 'kategori_mapel', 'nama');
+    }
 }

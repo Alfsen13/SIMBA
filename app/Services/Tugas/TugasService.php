@@ -54,7 +54,9 @@ final class TugasService
 
             ->where(fn ($q) => $q->whereNull('pertemuan_id')->orWhereHas('pertemuan', fn ($p) => $p->dibuka()))
             ->with('kelas')
-            ->withCount(['pengumpulan as sudah_dikumpulkan' => fn ($q) => $q->where('siswa_id', $siswa->id)])
+            ->withCount(['pengumpulan as sudah_dikumpulkan' => fn ($q) => $q
+                ->where('siswa_id', $siswa->id)
+                ->where(fn ($q) => $q->whereNotNull('file')->orWhereJsonLength('jawaban', '>', 0))])
             ->latest()
             ->paginate(10);
     }

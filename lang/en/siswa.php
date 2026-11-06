@@ -75,6 +75,8 @@ return [
         'info_belajar_mandiri' => 'As a self-learning student, you can only join classes that are open to the public.',
         'ditolak_belajar_mandiri' => 'This class is not open to the public, so self-learning students cannot join it.',
         'tidak_dibuka' => 'Enrollment is unavailable because this class is not currently open.',
+        'kapasitas_penuh' => 'This class has reached its capacity.',
+        'kapasitas_terlampaui' => 'Class capacity has been exceeded; the enrollment cannot be approved.',
     ],
 
     'materi' => [
@@ -159,6 +161,8 @@ return [
         'skor' => 'Score: :skor',
         'menunggu_pemeriksaan' => 'Your answers have been submitted and are being reviewed by AI. Please reopen this page in a moment.',
         'penilaian_remedial_gagal' => 'AI grading failed. Your answers are saved; use the button below to retry the review.',
+        'generasi_tugas_menunggu' => 'Remedial questions are being prepared. Please revisit this page later.',
+        'generasi_tugas_gagal' => 'Remedial questions could not be prepared. Your teacher will follow up.',
         'dibuat_oleh' => 'Created by: :provider',
         'skor_risiko' => 'Risk score: :skor',
         'tidak_ada_mantap' => 'No remedial material. Great job!',

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Web\PengelolaOperator;
 
 use App\Http\Controllers\Controller;
-use App\Models\MataPelajaran;
+use App\Models\KategoriMataPelajaran;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class OperatorController extends Controller
@@ -21,12 +22,9 @@ class OperatorController extends Controller
 
     public function create(): View
     {
-        $kategoriList = MataPelajaran::query()
-            ->select('kategori')
-            ->whereNotNull('kategori')
-            ->distinct()
-            ->orderBy('kategori')
-            ->pluck('kategori', 'kategori');
+        $kategoriList = KategoriMataPelajaran::query()
+            ->orderBy('nama')
+            ->pluck('nama', 'nama');
 
         return view('pengelola-operator.operator.create', compact('kategoriList'));
     }
@@ -37,7 +35,7 @@ class OperatorController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
-            'kategori_mapel' => ['required', 'string', 'max:100'],
+            'kategori_mapel' => ['required', 'string', 'max:100', Rule::exists('kategori_mata_pelajaran', 'nama')],
         ]);
 
         User::create([
@@ -56,22 +54,23 @@ class OperatorController extends Controller
 
     public function edit(User $operator): View
     {
-        $kategoriList = MataPelajaran::query()
-            ->select('kategori')
-            ->whereNotNull('kategori')
-            ->distinct()
-            ->orderBy('kategori')
-            ->pluck('kategori', 'kategori');
+        $this->authorizeOperatorTarget($operator);
+
+        $kategoriList = KategoriMataPelajaran::query()
+            ->orderBy('nama')
+            ->pluck('nama', 'nama');
 
         return view('pengelola-operator.operator.edit', compact('operator', 'kategoriList'));
     }
 
     public function update(Request $request, User $operator): RedirectResponse
     {
+        $this->authorizeOperatorTarget($operator);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$operator->id],
-            'kategori_mapel' => ['required', 'string', 'max:100'],
+            'kategori_mapel' => ['required', 'string', 'max:100', Rule::exists('kategori_mata_pelajaran', 'nama')],
             'password' => ['nullable', 'string', 'min:8'],
         ]);
 
@@ -92,6 +91,8 @@ class OperatorController extends Controller
 
     public function destroy(User $operator): RedirectResponse
     {
+        $this->authorizeOperatorTarget($operator);
+
         if ($operator->id === auth()->id()) {
             return back()->with('error', 'Tidak dapat menghapus akun sendiri.');
         }
@@ -99,5 +100,10 @@ class OperatorController extends Controller
         $operator->delete();
 
         return redirect()->route('pengelola-operator.operator.index')->with('success', 'Akun operator berhasil dihapus.');
+    }
+
+    private function authorizeOperatorTarget(User $operator): void
+    {
+        abort_unless($operator->role === 'operator', 403);
     }
 }

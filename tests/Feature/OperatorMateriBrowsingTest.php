@@ -3,6 +3,7 @@
 use App\Models\Kelas;
 use App\Models\MataPelajaran;
 use App\Models\Materi;
+use App\Models\PengajarKompetensi;
 use App\Models\User;
 
 beforeEach(function () {
@@ -72,4 +73,59 @@ test('operator cannot browse materials outside their subject category', function
 
     $this->get(route('operator.kelas.materi', $kelas))
         ->assertForbidden();
+});
+
+test('operator cannot delete a subject used by a class', function () {
+    $mataPelajaran = MataPelajaran::create([
+        'kode' => 'matematika',
+        'nama' => 'Matematika',
+        'kategori' => 'Matematika',
+    ]);
+    $kelas = Kelas::factory()->create(['mata_pelajaran_id' => $mataPelajaran->id]);
+
+    $this->actingAs($this->operator)
+        ->from(route('operator.mata-pelajaran.index'))
+        ->delete(route('operator.mata-pelajaran.destroy', $mataPelajaran))
+        ->assertRedirect(route('operator.mata-pelajaran.index'))
+        ->assertSessionHas('error');
+
+    expect($mataPelajaran->fresh())->not->toBeNull()
+        ->and($kelas->fresh()->mata_pelajaran_id)->toBe($mataPelajaran->id);
+});
+
+test('operator cannot delete a subject used by a teacher competency', function () {
+    $mataPelajaran = MataPelajaran::create([
+        'kode' => 'fisika',
+        'nama' => 'Fisika',
+        'kategori' => 'Matematika',
+    ]);
+    $pengajar = User::factory()->pengajar()->create();
+    $kompetensi = PengajarKompetensi::create([
+        'user_id' => $pengajar->id,
+        'mata_pelajaran_id' => $mataPelajaran->id,
+    ]);
+
+    $this->actingAs($this->operator)
+        ->from(route('operator.mata-pelajaran.index'))
+        ->delete(route('operator.mata-pelajaran.destroy', $mataPelajaran))
+        ->assertRedirect(route('operator.mata-pelajaran.index'))
+        ->assertSessionHas('error');
+
+    expect($mataPelajaran->fresh())->not->toBeNull()
+        ->and($kompetensi->fresh()->mata_pelajaran_id)->toBe($mataPelajaran->id);
+});
+
+test('operator can delete an unused subject in their category', function () {
+    $mataPelajaran = MataPelajaran::create([
+        'kode' => 'kimia',
+        'nama' => 'Kimia',
+        'kategori' => 'Matematika',
+    ]);
+
+    $this->actingAs($this->operator)
+        ->delete(route('operator.mata-pelajaran.destroy', $mataPelajaran))
+        ->assertRedirect(route('operator.mata-pelajaran.index'))
+        ->assertSessionHas('success');
+
+    expect(MataPelajaran::find($mataPelajaran->id))->toBeNull();
 });

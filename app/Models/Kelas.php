@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Database\Factories\KelasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Kelas extends Model
 {
@@ -31,6 +33,11 @@ class Kelas extends Model
     public function mataPelajaran(): BelongsTo
     {
         return $this->belongsTo(MataPelajaran::class);
+    }
+
+    public function kategoriMataPelajaran(): BelongsTo
+    {
+        return $this->belongsTo(KategoriMataPelajaran::class, 'kategori', 'nama');
     }
 
     /** Pengajuan pengajar mengisi kelas ini (bahan rencana ajar untuk tinjauan operator). */
@@ -76,5 +83,26 @@ class Kelas extends Model
     public function kuis(): HasMany
     {
         return $this->hasMany(Kuis::class);
+    }
+
+    public function scopeBelumPenuh(Builder $query): Builder
+    {
+        $table = $query->getModel()->getTable();
+
+        return $query->where(function (Builder $query) use ($table) {
+            $query->whereNull("{$table}.kapasitas")
+                ->orWhere("{$table}.kapasitas", '>', DB::table('kelas_siswa')
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('kelas_siswa.kelas_id', "{$table}.id")
+                    ->whereIn('kelas_siswa.status', ['active', 'pending']));
+        });
+    }
+
+    public function jumlahAnggotaAktifDanMenunggu(): int
+    {
+        return DB::table('kelas_siswa')
+            ->where('kelas_id', $this->id)
+            ->whereIn('status', ['active', 'pending'])
+            ->count();
     }
 }

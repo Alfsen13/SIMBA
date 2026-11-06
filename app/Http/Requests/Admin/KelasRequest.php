@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\MataPelajaran;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class KelasRequest extends FormRequest
 {
@@ -37,6 +39,27 @@ class KelasRequest extends FormRequest
             'status' => ['nullable', Rule::in(['draft', 'dibuka', 'ditutup', 'arsip'])],
             'aturan_kelayakan' => ['nullable', Rule::in(['sesuai_profil', 'sesuai_jenjang', 'terbuka', 'khusus'])],
             'periode' => 'nullable|string|max:100',
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if ($validator->errors()->has('mata_pelajaran_id') || $validator->errors()->has('kategori')) {
+                    return;
+                }
+
+                $mapelId = $this->input('mata_pelajaran_id');
+                if (! $mapelId) {
+                    return;
+                }
+
+                $mapel = MataPelajaran::find($mapelId);
+                if ($mapel && $this->input('kategori') !== $mapel->kategori) {
+                    $validator->errors()->add('kategori', 'Kategori kelas harus sesuai dengan kategori mata pelajaran.');
+                }
+            },
         ];
     }
 }

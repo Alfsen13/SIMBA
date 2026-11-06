@@ -1,10 +1,10 @@
 <?php
 
+use App\Models\KategoriMataPelajaran;
+use App\Models\MataPelajaran;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-
-use App\Models\MataPelajaran;
 
 uses(RefreshDatabase::class);
 
@@ -15,6 +15,7 @@ test('calon pengajar bisa mendaftar dengan data dasar', function () {
         'kode' => 'matematika', 'nama' => 'Matematika',
         'kategori' => 'Matematika & Ilmu Alam', 'aktif' => true,
     ]);
+    KategoriMataPelajaran::create(['nama' => 'Matematika & Ilmu Alam']);
 
     $this->post(route('register'), [
         'name' => 'Guru Baru',

@@ -10,6 +10,20 @@ use OpenSpout\Reader\XLSX\Reader as XlsxReader;
 
 class KelasImport
 {
+    private const array REQUIRED_HEADERS = [
+        'nama_kelas',
+        'mata_pelajaran',
+        'kategori',
+        'jalur',
+        'jenjang',
+        'tingkat',
+        'kapasitas',
+        'periode',
+        'status',
+        'aturan_kelayakan',
+        'deskripsi',
+    ];
+
     public int $imported = 0;
 
     public array $errors = [];
@@ -27,6 +41,7 @@ class KelasImport
                 $this->processSheet($sheet);
             }
             $reader->close();
+
             return;
         }
 
@@ -58,7 +73,7 @@ class KelasImport
 
             if ($isHeader) {
                 $headers = array_map(function ($h) {
-                    $h = strtolower(trim((string) $h));
+                    $h = strtolower(trim(str_replace("\u{FEFF}", '', (string) $h)));
                     $h = str_replace(["\u{00A0}", ' '], [' ', ' '], $h);
                     $h = preg_replace('/\s+/', '_', $h);
                     return match ($h) {
@@ -70,6 +85,23 @@ class KelasImport
                         default => $h,
                     };
                 }, $cells);
+                $missingHeaders = array_diff(self::REQUIRED_HEADERS, $headers);
+                $duplicateHeaders = array_diff_assoc($headers, array_unique($headers));
+
+                if ($missingHeaders !== [] || $duplicateHeaders !== []) {
+                    $messages = [];
+
+                    if ($missingHeaders !== []) {
+                        $messages[] = 'Kolom wajib tidak ditemukan: '.implode(', ', $missingHeaders).'.';
+                    }
+                    if ($duplicateHeaders !== []) {
+                        $messages[] = 'Header duplikat: '.implode(', ', array_unique($duplicateHeaders)).'.';
+                    }
+
+                    $this->errors[] = 'Baris 1: '.implode(' ', $messages);
+
+                    return;
+                }
                 $isHeader = false;
                 continue;
             }
@@ -79,6 +111,9 @@ class KelasImport
             }
 
             $this->processRow($headers, $cells);
+        }
+        if ($isHeader) {
+            $this->errors[] = 'Baris 1: Header template tidak ditemukan.';
         }
     }
 
@@ -91,7 +126,11 @@ class KelasImport
             foreach ($headers as $idx => $header) {
                 $row[$header] = $cells[$idx] ?? null;
             }
-
+            foreach (self::REQUIRED_HEADERS as $header) {
+                if ($this->val($row[$header] ?? null) === null) {
+                    throw new \Exception("Kolom '{$header}' wajib diisi.");
+                }
+            }
             $namaKelas = trim((string) ($row['nama_kelas'] ?? ''));
             if ($namaKelas === '' || strtolower($namaKelas) === 'nama_kelas') {
                 throw new \Exception('nama_kelas wajib diisi.');
@@ -120,6 +159,14 @@ class KelasImport
             $periode = $this->val($row['periode'] ?? null);
             $kategori = $this->val($row['kategori'] ?? null) ?? ($mapel->kategori ?? null);
             $deskripsi = $this->val($row['deskripsi'] ?? null);
+
+            if ($kategori !== null && ! DB::table('kategori_mata_pelajaran')->where('nama', $kategori)->exists()) {
+                throw new \Exception("kategori '{$kategori}' tidak ditemukan.");
+            }
+
+            if ($mapel && $kategori !== $mapel->kategori) {
+                throw new \Exception("kategori '{$kategori}' tidak sesuai dengan mata_pelajaran '{$mapel->nama}'.");
+            }
 
             Kelas::create([
                 'nama_kelas' => $namaKelas,

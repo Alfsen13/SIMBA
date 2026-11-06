@@ -48,6 +48,20 @@
                     </div>
                 </div>
 
+                @if($remedial->generasi_gagal_at && empty($remedial->tugas_remedial))
+                    <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                        <p>{{ __('guru_analitik.remedial.generation_failed_message') }}</p>
+                        <form method="POST" action="{{ route('pengajar.remedial.retry-generation', $remedial) }}" class="mt-3">
+                            @csrf
+                            <x-btn-secondary type="submit" size="sm">{{ __('guru_analitik.remedial.retry_generation') }}</x-btn-secondary>
+                        </form>
+                    </div>
+                @elseif(empty($remedial->tugas_remedial))
+                    <div class="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
+                        {{ __('guru_analitik.remedial.generation_pending') }}
+                    </div>
+                @endif
+
                 @if(empty($remedial->tugas_remedial) && $remedial->latihan)
                     <div class="border-t pt-6 mb-4">
                         <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">

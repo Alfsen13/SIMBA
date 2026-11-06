@@ -22,7 +22,7 @@ class MateriObserver
     {
         if ($materi->wasChanged('file_path')) {
             $materi->babSummary()->delete();
-            $materi->document?->delete();
+            $this->removeDocumentArtifacts($materi);
             if (! $materi->document_id) {
                 $this->syncDocument($materi);
             }
@@ -31,7 +31,21 @@ class MateriObserver
 
     public function deleted(Materi $materi): void
     {
-        $materi->document?->delete();
+        $this->removeDocumentArtifacts($materi);
+    }
+
+    private function removeDocumentArtifacts(Materi $materi): void
+    {
+        $document = $materi->document;
+        $kategori = $document?->kategori ?? $materi->kelas?->kategori;
+        $paths = ['summaries/materi_'.$materi->id.'.txt'];
+
+        if ($kategori) {
+            $paths[] = 'summaries/'.$kategori.'/materi_'.$materi->id.'.txt';
+        }
+
+        Storage::disk('public')->delete($paths);
+        $document?->delete();
     }
 
     private function syncDocument(Materi $materi): void

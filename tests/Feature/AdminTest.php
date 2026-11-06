@@ -50,6 +50,85 @@ test('operator can reject a pending user', function () {
         ->and($user->verified_at)->not->toBeNull();
 });
 
+test('operator berkategori tidak dapat membuka atau mengubah akun pengajar di luar kategorinya', function () {
+    $this->operator->update(['kategori_mapel' => 'Matematika']);
+    $pengajarLainKategori = User::factory()->pengajar()->verified()->create();
+    AplikasiPengajar::create([
+        'user_id' => $pengajarLainKategori->id,
+        'kategori_mapel' => 'Bahasa Indonesia',
+    ]);
+
+    $this->actingAs($this->operator)
+        ->get(route('operator.users.show', $pengajarLainKategori))
+        ->assertForbidden();
+
+    $this->get(route('operator.users.berkas', [
+        'user' => $pengajarLainKategori,
+        'jenis' => 'cv',
+    ]))->assertForbidden();
+
+    $this->get(route('operator.users.edit', $pengajarLainKategori))
+        ->assertForbidden();
+
+    $this->put(route('operator.users.update', $pengajarLainKategori), [
+        'name' => 'Pengajar Diubah',
+        'email' => $pengajarLainKategori->email,
+        'role' => 'pelajar',
+    ])->assertForbidden();
+
+    expect($pengajarLainKategori->refresh()->name)->not->toBe('Pengajar Diubah');
+});
+
+test('operator tidak dapat memberikan peran operator', function () {
+    $pelajar = User::factory()->verified()->create(['role' => 'pelajar']);
+
+    $this->actingAs($this->operator)
+        ->put(route('operator.users.update', $pelajar), [
+            'name' => $pelajar->name,
+            'email' => $pelajar->email,
+            'role' => 'operator',
+        ])
+        ->assertSessionHasErrors('role');
+
+    expect($pelajar->refresh()->role)->toBe('pelajar');
+});
+
+test('operator tidak dapat mengelola akun operator yang sudah ada', function () {
+    $operatorLain = User::factory()->operator()->create();
+
+    $this->actingAs($this->operator)
+        ->get(route('operator.users.edit', $operatorLain))
+        ->assertForbidden();
+
+    $this->put(route('operator.users.update', $operatorLain), [
+        'name' => 'Operator Diubah',
+        'email' => $operatorLain->email,
+        'role' => 'pelajar',
+    ])->assertForbidden();
+
+    expect($operatorLain->refresh()->role)->toBe('operator')
+        ->and($operatorLain->name)->not->toBe('Operator Diubah');
+});
+
+test('operator tidak dapat memverifikasi atau menolak akun operator', function (string $action) {
+    $operatorLain = User::factory()->operator()->create([
+        'status' => 'pending',
+        'verified_by' => null,
+        'verified_at' => null,
+    ]);
+
+    $this->actingAs($this->operator)
+        ->post(route('operator.users.'.$action, $operatorLain))
+        ->assertForbidden();
+
+    expect($operatorLain->refresh()->status)->toBe('pending')
+        ->and($operatorLain->verified_by)->toBeNull()
+        ->and($operatorLain->verified_at)->toBeNull();
+})->with([
+    'verifikasi' => 'verify',
+    'penolakan' => 'reject',
+]);
+
 test('operator import menolak berkas xls yang tidak didukung parser', function () {
     $this->actingAs($this->operator)
         ->post(route('operator.import.users'), [

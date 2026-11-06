@@ -37,4 +37,9 @@ class PengumpulanTugas extends Model
     {
         return $this->belongsTo(User::class, 'siswa_id');
     }
+
+    public function sudahDikumpulkan(): bool
+    {
+        return $this->file !== null || (is_array($this->jawaban) && $this->jawaban !== []);
+    }
 }

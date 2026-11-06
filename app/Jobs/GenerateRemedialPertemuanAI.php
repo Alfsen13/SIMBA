@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\MateriRemedial;
+use App\Notifications\RemedialTersedia;
 use App\Services\RemedialService;
 use App\Services\RemedialTugasService;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -49,7 +50,12 @@ class GenerateRemedialPertemuanAI implements ShouldBeUnique, ShouldQueue
             ->first();
 
         if ($remedialAda) {
+            $perluNotifikasi = empty($remedialAda->tugas_remedial);
+            $remedialAda->update(['generasi_gagal_at' => null]);
             $this->pastikanTugasRemedial($remedialAda);
+            if ($perluNotifikasi) {
+                $remedialAda->siswa?->notify(new RemedialTersedia($remedialAda->id));
+            }
 
             return;
         }
@@ -76,6 +82,7 @@ class GenerateRemedialPertemuanAI implements ShouldBeUnique, ShouldQueue
 
         if ($remedial) {
             $this->pastikanTugasRemedial($remedial);
+            $remedial->siswa?->notify(new RemedialTersedia($remedial->id));
         }
     }
 
@@ -89,6 +96,17 @@ class GenerateRemedialPertemuanAI implements ShouldBeUnique, ShouldQueue
 
     public function failed(\Throwable $e): void
     {
+        $remedial = MateriRemedial::query()
+            ->where('siswa_id', $this->siswaId)
+            ->where('pertemuan_id', $this->pertemuanId)
+            ->where('status', '!=', 'selesai')
+            ->latest('id')
+            ->first();
+
+        if ($remedial && empty($remedial->tugas_remedial)) {
+            $remedial->update(['generasi_gagal_at' => now()]);
+        }
+
         Log::error('GenerateRemedialPertemuanAI gagal untuk siswa {siswa_id}, pertemuan {pertemuan_id}: {msg}', [
             'siswa_id' => $this->siswaId,
             'pertemuan_id' => $this->pertemuanId,

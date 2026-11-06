@@ -23,10 +23,12 @@ use App\Models\Pertemuan;
 use App\Models\PrediksiAi;
 use App\Models\Tugas;
 use App\Models\User;
+use App\Notifications\RemedialTersedia;
 use App\Services\AIProviderService;
 use App\Services\RemedialService;
 use App\Services\RemedialTugasService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 
@@ -118,7 +120,8 @@ test('kolom baru materi_remedial benar-benar ada di skema', function () {
 
     expect($kolom)->toContain('pertemuan_id')
         ->and($kolom)->toContain('sumber')
-        ->and($kolom)->toContain('skor_pertemuan');
+        ->and($kolom)->toContain('skor_pertemuan')
+        ->and($kolom)->toContain('generasi_gagal_at');
 });
 
 test('skor pertemuan memakai bobot 80 tugas dan 20 kuis saat keduanya ada', function () {
@@ -256,6 +259,8 @@ test('remedial risiko global tidak memblokir remedial pertemuan', function () {
 // ---------------------------------------------------------------------------
 
 test('generateForPertemuan menyimpan baris dengan pertemuan, sumber, dan skor', function () {
+    Notification::fake();
+
     $this->mock(AIProviderService::class, function ($mock) {
         $mock->shouldReceive('send')
             ->once()
@@ -275,6 +280,56 @@ test('generateForPertemuan menyimpan baris dengan pertemuan, sumber, dan skor', 
         ->and($hasil->prediksi_ai_id)->toBeNull()
         ->and($hasil->topik_lemah)->toContain('Pertemuan Fotosintesis')
         ->and($hasil->status)->toBe('belum_dibaca');
+
+    Notification::assertNothingSent();
+});
+
+test('job pertemuan menotifikasi siswa setelah soal remedial berhasil dibuat', function () {
+    Notification::fake();
+    $remedial = remPertRiwayat($this->siswa->id, $this->pertemuan->id, 'belum_dibaca');
+    $this->mock(RemedialTugasService::class, function ($mock) {
+        $mock->shouldReceive('generateTugas')
+            ->once()
+            ->andReturnUsing(function (MateriRemedial $remedial) {
+                $remedial->update(['tugas_remedial' => [['pertanyaan' => 'Soal siap.']]]);
+
+                return true;
+            });
+    });
+
+    (new GenerateRemedialPertemuanAI($this->siswa->id, $this->pertemuan->id))
+        ->handle(app(RemedialService::class));
+
+    Notification::assertSentTo($this->siswa, RemedialTersedia::class);
+});
+
+test('kegagalan akhir generasi tugas pertemuan dapat dilihat dan dicoba ulang guru', function () {
+    Queue::fake();
+    $remedial = remPertRiwayat($this->siswa->id, $this->pertemuan->id, 'belum_dibaca');
+
+    (new GenerateRemedialPertemuanAI($this->siswa->id, $this->pertemuan->id))
+        ->failed(new RuntimeException('Pembuatan soal gagal'));
+
+    expect($remedial->fresh()->generasi_gagal_at)->not->toBeNull();
+
+    $this->actingAs($this->guru)
+        ->get(route('pengajar.remedial.show', $remedial))
+        ->assertOk()
+        ->assertSee(__('guru_analitik.remedial.generation_failed_message'))
+        ->assertSee(route('pengajar.remedial.retry-generation', $remedial), escape: false);
+
+    $this->post(route('pengajar.remedial.retry-generation', $remedial))
+        ->assertRedirect()
+        ->assertSessionHas('success', __('guru_analitik.remedial.retry_scheduled'));
+
+    Queue::assertPushed(GenerateRemedialPertemuanAI::class, fn (GenerateRemedialPertemuanAI $job) => (
+        $job->siswaId === $this->siswa->id && $job->pertemuanId === $this->pertemuan->id
+    ));
+
+    $guruLain = User::factory()->pengajar()->verified()->create();
+    $this->actingAs($guruLain)
+        ->post(route('pengajar.remedial.retry-generation', $remedial))
+        ->assertForbidden();
 });
 
 test('generateForPertemuan meneruskan kegagalan output AI agar job dapat mencoba ulang', function () {

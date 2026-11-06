@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UserRequest extends FormRequest
 {
@@ -22,8 +23,7 @@ class UserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,'.$userId,
-            'role' => 'required|in:pengajar,pelajar,operator',
+            'role' => ['required', Rule::in(['pengajar', 'pelajar'])],
         ];
     }
 }
-

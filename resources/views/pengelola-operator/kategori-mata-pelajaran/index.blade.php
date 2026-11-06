@@ -29,7 +29,7 @@
                         <tr>
                             <td class="px-6 py-3 text-slate-900 dark:text-slate-100">
                                 <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
-                                    {{ $kategori->kategori }}
+                                    {{ $kategori->nama }}
                                 </span>
                             </td>
                             <td class="px-6 py-3 text-slate-600 dark:text-slate-400 text-xs">
@@ -37,8 +37,8 @@
                             </td>
                             <td class="px-6 py-3 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('pengelola-operator.kategori-mata-pelajaran.edit', $kategori->kategori) }}" class="text-xs text-emerald-700 dark:text-emerald-400 hover:underline">Edit</a>
-                                    <form action="{{ route('pengelola-operator.kategori-mata-pelajaran.destroy', $kategori->kategori) }}" method="POST" onsubmit="return confirm('Hapus kategori ini?')">
+                                    <a href="{{ route('pengelola-operator.kategori-mata-pelajaran.edit', $kategori->nama) }}" class="text-xs text-emerald-700 dark:text-emerald-400 hover:underline">Edit</a>
+                                    <form action="{{ route('pengelola-operator.kategori-mata-pelajaran.destroy', $kategori->nama) }}" method="POST" onsubmit="return confirm('Hapus kategori ini?')">
                                         @csrf
                                         @method('DELETE')
                                         <button class="text-xs text-red-600 dark:text-red-400 hover:underline">Hapus</button>

@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Web\Siswa;
 
 use App\Http\Controllers\Controller;
-use App\Models\JalurPendidikan;
 use App\Models\JenjangPendidikan;
 use App\Models\PengajuanPerubahanPendidikan;
-use App\Models\ProfilPendidikan;
 use App\Models\TingkatPendidikan;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class PengajuanPerubahanPendidikanController extends Controller
@@ -76,15 +77,6 @@ class PengajuanPerubahanPendidikanController extends Controller
                 ->with('error', 'Profil pendidikan belum lengkap.');
         }
 
-        $adaAktif = $user->pengajuanPerubahanPendidikan()
-            ->whereIn('status', ['pending', 'under_review'])
-            ->exists();
-
-        if ($adaAktif) {
-            return redirect()->route('pelajar.pengajuan-pendidikan.index')
-                ->with('error', 'Masih ada pengajuan perubahan pendidikan yang sedang diproses.');
-        }
-
         $jalur = $profil->jalur;
         $jenjangList = JenjangPendidikan::where('aktif', true)
             ->where('jalur_id', $jalur->id)
@@ -102,14 +94,16 @@ class PengajuanPerubahanPendidikanController extends Controller
             }
         }
 
-        $tingkatList = TingkatPendidikan::where('aktif', true)
-            ->whereIn('jenjang_id', $jenjangList)
-            ->pluck('id');
-
         $validated = $request->validate([
             'jenis' => ['required', 'in:kenaikan_kelas,perpindahan_jenjang'],
             'jenjang_id' => ['required', 'integer', 'in:'.$jenjangList->implode(',')],
-            'tingkat_id' => ['required', 'integer', 'in:'.$tingkatList->implode(',')],
+            'tingkat_id' => [
+                'required',
+                'integer',
+                Rule::exists('tingkat_pendidikan', 'id')
+                    ->where('aktif', true)
+                    ->where('jenjang_id', $request->input('jenjang_id')),
+            ],
             'alasan' => ['required', 'string', 'min:10', 'max:1000'],
         ], [
             'jenis.required' => 'Jenis pengajuan wajib dipilih.',
@@ -117,21 +111,38 @@ class PengajuanPerubahanPendidikanController extends Controller
             'jenjang_id.required' => 'Jenjang tujuan wajib dipilih.',
             'jenjang_id.in' => 'Jenjang tujuan tidak sesuai dengan jalur pendidikan kamu.',
             'tingkat_id.required' => 'Tingkat tujuan wajib dipilih.',
-            'tingkat_id.in' => 'Tingkat tujuan tidak sesuai dengan jalur pendidikan kamu.',
+            'tingkat_id.exists' => 'Tingkat tujuan tidak sesuai dengan jenjang yang dipilih.',
             'alasan.required' => 'Alasan pengajuan wajib diisi.',
             'alasan.min' => 'Alasan minimal 10 karakter.',
             'alasan.max' => 'Alasan maksimal 1000 karakter.',
         ]);
 
-        PengajuanPerubahanPendidikan::create([
-            'user_id' => $user->id,
-            'jalur_id' => $jalur->id,
-            'jenjang_id' => $validated['jenjang_id'],
-            'tingkat_id' => $validated['tingkat_id'],
-            'jenis' => $validated['jenis'],
-            'status' => 'pending',
-            'catatan_operator' => $validated['alasan'],
-        ]);
+        $dibuat = DB::transaction(function () use ($user, $jalur, $validated): bool {
+            User::query()->lockForUpdate()->findOrFail($user->id);
+
+            if ($user->pengajuanPerubahanPendidikan()
+                ->whereIn('status', ['pending', 'under_review'])
+                ->exists()) {
+                return false;
+            }
+
+            PengajuanPerubahanPendidikan::create([
+                'user_id' => $user->id,
+                'jalur_id' => $jalur->id,
+                'jenjang_id' => $validated['jenjang_id'],
+                'tingkat_id' => $validated['tingkat_id'],
+                'jenis' => $validated['jenis'],
+                'status' => 'pending',
+                'catatan_operator' => $validated['alasan'],
+            ]);
+
+            return true;
+        });
+
+        if (! $dibuat) {
+            return redirect()->route('pelajar.pengajuan-pendidikan.index')
+                ->with('error', 'Masih ada pengajuan perubahan pendidikan yang sedang diproses.');
+        }
 
         return redirect()->route('pelajar.pengajuan-pendidikan.index')
             ->with('success', 'Pengajuan perubahan pendidikan berhasil dikirim. Menunggu review operator.');

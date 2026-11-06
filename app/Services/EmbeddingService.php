@@ -242,7 +242,10 @@ class EmbeddingService
 
         $scoredChunks = [];
         $incompatibleDimensions = 0;
-        $q->with('document:id,original_name,materi_id')
+        $q->with([
+            'document:id,original_name,materi_id',
+            'document.materi:id,judul',
+        ])
             ->select(['id', 'content', 'embedding', 'document_id', 'page_start', 'page_end'])
             ->chunkById(500, function ($batch) use ($queryEmbedding, $minScore, &$scoredChunks, &$incompatibleDimensions) {
                 foreach ($batch as $chunk) {

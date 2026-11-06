@@ -212,3 +212,75 @@ it('menghapus ringkasan lama jika file materi pengganti gagal diproses', functio
     expect(MateriBabSummary::where('materi_id', $materi->id)->exists())->toBeFalse()
         ->and(Document::where('materi_id', $materi->id)->value('status'))->toBe('failed');
 });
+
+it('menghapus teks hasil ekstraksi saat file materi diganti', function () {
+    Bus::fake();
+    Storage::fake('public');
+
+    $guru = mrssGuru();
+    $kelas = mrssKelas($guru);
+    $materi = Materi::factory()->create([
+        'kelas_id' => $kelas->id,
+        'guru_id' => $guru->id,
+        'file_path' => null,
+        'file_type' => null,
+    ]);
+    Document::create([
+        'name' => 'Materi lama',
+        'original_name' => 'lama.txt',
+        'path' => 'materi/lama.txt',
+        'type' => 'txt',
+        'status' => 'completed',
+        'user_id' => $guru->id,
+        'materi_id' => $materi->id,
+        'kelas_id' => $kelas->id,
+        'kategori' => $kelas->kategori,
+    ]);
+    $kategoriPath = 'summaries/'.$kelas->kategori.'/materi_'.$materi->id.'.txt';
+    $legacyPath = 'summaries/materi_'.$materi->id.'.txt';
+    Storage::disk('public')->put($kategoriPath, 'teks lama');
+    Storage::disk('public')->put($legacyPath, 'teks lama');
+    Storage::disk('public')->put('summaries/tidak-terkait.txt', 'tetap ada');
+    Storage::disk('public')->put('materi/baru.txt', 'teks baru');
+
+    $materi->update([
+        'file_path' => 'materi/baru.txt',
+        'file_type' => 'txt',
+    ]);
+
+    expect(Storage::disk('public')->exists($kategoriPath))->toBeFalse()
+        ->and(Storage::disk('public')->exists($legacyPath))->toBeFalse()
+        ->and(Storage::disk('public')->exists('summaries/tidak-terkait.txt'))->toBeTrue()
+        ->and(Document::where('materi_id', $materi->id)->count())->toBe(1);
+});
+
+it('menghapus teks hasil ekstraksi saat materi dihapus', function () {
+    Storage::fake('public');
+
+    $guru = mrssGuru();
+    $kelas = mrssKelas($guru);
+    $materi = Materi::factory()->create([
+        'kelas_id' => $kelas->id,
+        'guru_id' => $guru->id,
+        'file_path' => null,
+        'file_type' => null,
+    ]);
+    Document::create([
+        'name' => 'Materi',
+        'original_name' => 'materi.txt',
+        'path' => 'materi/materi.txt',
+        'type' => 'txt',
+        'status' => 'completed',
+        'user_id' => $guru->id,
+        'materi_id' => $materi->id,
+        'kelas_id' => $kelas->id,
+        'kategori' => $kelas->kategori,
+    ]);
+    $summaryPath = 'summaries/'.$kelas->kategori.'/materi_'.$materi->id.'.txt';
+    Storage::disk('public')->put($summaryPath, 'teks ekstraksi');
+
+    $materi->delete();
+
+    expect(Storage::disk('public')->exists($summaryPath))->toBeFalse()
+        ->and(Document::where('materi_id', $materi->id)->exists())->toBeFalse();
+});

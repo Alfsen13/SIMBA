@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -35,6 +36,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Kelas::class, 'kelas_siswa', 'siswa_id', 'kelas_id')
             ->wherePivot('status', 'active')
             ->withPivot(['status']);
+    }
+
+    public function kategoriMataPelajaran(): BelongsTo
+    {
+        return $this->belongsTo(KategoriMataPelajaran::class, 'kategori_mapel', 'nama');
     }
 
      
@@ -119,4 +125,3 @@ class User extends Authenticatable
         return $this->role === 'operator';
     }
 }
-

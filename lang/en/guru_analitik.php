@@ -199,6 +199,12 @@ return [
         'status_unread' => 'Not Read',
         'status_done' => 'Completed',
         'status_read' => 'Read',
+        'generation_failed' => 'Question generation failed',
+        'generation_failed_message' => 'Remedial questions could not be generated after several attempts. The student was not notified; try generating them again.',
+        'generation_pending' => 'Remedial questions are being generated.',
+        'retry_generation' => 'Retry question generation',
+        'retry_scheduled' => 'Remedial question generation has been rescheduled.',
+        'retry_unavailable' => 'The remedial source could not be determined for retry.',
         'view' => 'View',
 
         'fallback_title' => 'Remedial Material',

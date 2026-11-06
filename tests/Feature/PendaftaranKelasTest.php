@@ -15,9 +15,9 @@ function pkAjukan(User $siswa, Kelas $kelas, string $status = 'pending'): void
 }
 
 beforeEach(function () {
-    $this->operator = User::factory()->operator()->create();
     $this->guru = User::factory()->pengajar()->verified()->create();
-    $this->kelas = Kelas::factory()->create(['guru_id' => $this->guru->id]);
+    $this->kelas = Kelas::factory()->create(['guru_id' => $this->guru->id, 'kategori' => 'Matematika']);
+    $this->operator = User::factory()->operator()->create(['kategori_mapel' => 'Matematika']);
     $this->siswa = User::factory()->verified()->create(['role' => 'pelajar']);
 });
 
@@ -71,6 +71,87 @@ it('siswa yang ditolak boleh mengajukan ulang', function () {
         ->and(DB::table('kelas_siswa')->count())->toBe(1);
 });
 
+it('kelas penuh dihitung dari anggota aktif dan pengajuan pending lalu disembunyikan', function () {
+    $kelasPenuh = Kelas::factory()->create([
+        'status' => 'dibuka',
+        'kapasitas' => 2,
+        'kategori' => 'Matematika',
+    ]);
+    $siswaAktif = User::factory()->verified()->create(['role' => 'pelajar']);
+    $siswaPending = User::factory()->verified()->create(['role' => 'pelajar']);
+    $siswaAktif->semuaKelasDiikuti()->attach($kelasPenuh->id, ['status' => 'active']);
+    pkAjukan($siswaPending, $kelasPenuh);
+
+    $this->actingAs($this->siswa)
+        ->get(route('pelajar.kelas.available'))
+        ->assertOk()
+        ->assertDontSee($kelasPenuh->nama_kelas);
+});
+
+it('siswa tidak dapat mendaftar jika anggota aktif dan pending sudah memenuhi kapasitas', function () {
+    $kelasPenuh = Kelas::factory()->create([
+        'status' => 'dibuka',
+        'kapasitas' => 2,
+        'kategori' => 'Matematika',
+    ]);
+    $siswaAktif = User::factory()->verified()->create(['role' => 'pelajar']);
+    $siswaPending = User::factory()->verified()->create(['role' => 'pelajar']);
+    $siswaAktif->semuaKelasDiikuti()->attach($kelasPenuh->id, ['status' => 'active']);
+    pkAjukan($siswaPending, $kelasPenuh);
+
+    $this->actingAs($this->siswa)
+        ->from(route('pelajar.kelas.available'))
+        ->post(route('pelajar.kelas.enroll', $kelasPenuh))
+        ->assertRedirect(route('pelajar.kelas.available'))
+        ->assertSessionHas('error', __('siswa.kelas.kapasitas_penuh'));
+
+    expect(DB::table('kelas_siswa')->where('kelas_id', $kelasPenuh->id)->count())->toBe(2);
+});
+
+it('operator dapat menyetujui pengajuan yang sudah memesan kursi dalam kapasitas', function () {
+    $kelasTerbatas = Kelas::factory()->create([
+        'status' => 'dibuka',
+        'kapasitas' => 2,
+        'kategori' => 'Matematika',
+    ]);
+    $siswaAktif = User::factory()->verified()->create(['role' => 'pelajar']);
+    $siswaAktif->semuaKelasDiikuti()->attach($kelasTerbatas->id, ['status' => 'active']);
+    pkAjukan($this->siswa, $kelasTerbatas);
+
+    $this->actingAs($this->operator)
+        ->post(route('operator.pendaftaran-kelas.setujui', [
+            'kelas' => $kelasTerbatas->id,
+            'siswa' => $this->siswa->id,
+        ]))
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect(DB::table('kelas_siswa')->where('kelas_id', $kelasTerbatas->id)->where('status', 'active')->count())->toBe(2);
+});
+
+it('operator tidak dapat menyetujui pengajuan jika kapasitas sudah terlampaui', function () {
+    $kelasTerlampaui = Kelas::factory()->create([
+        'status' => 'dibuka',
+        'kapasitas' => 1,
+        'kategori' => 'Matematika',
+    ]);
+    $siswaAktif = User::factory()->verified()->create(['role' => 'pelajar']);
+    $siswaPending = User::factory()->verified()->create(['role' => 'pelajar']);
+    $siswaAktif->semuaKelasDiikuti()->attach($kelasTerlampaui->id, ['status' => 'active']);
+    pkAjukan($siswaPending, $kelasTerlampaui);
+
+    $this->actingAs($this->operator)
+        ->post(route('operator.pendaftaran-kelas.setujui', [
+            'kelas' => $kelasTerlampaui->id,
+            'siswa' => $siswaPending->id,
+        ]))
+        ->assertRedirect()
+        ->assertSessionHas('error', __('siswa.kelas.kapasitas_terlampaui'));
+
+    expect(DB::table('kelas_siswa')->where('kelas_id', $kelasTerlampaui->id)->where('status', 'active')->count())->toBe(1)
+        ->and(DB::table('kelas_siswa')->where('kelas_id', $kelasTerlampaui->id)->where('status', 'pending')->count())->toBe(1);
+});
+
 it('menangani pendaftaran serentak tanpa membuat duplikat atau error server', function () {
     $duplikatDisisipkan = false;
 
@@ -121,6 +202,7 @@ it('operator tidak dapat menyetujui pendaftaran kelas yang sudah ditutup', funct
     $kelasDitutup = Kelas::factory()->create([
         'guru_id' => $this->guru->id,
         'status' => 'ditutup',
+        'kategori' => 'Matematika',
     ]);
     pkAjukan($this->siswa, $kelasDitutup);
 
@@ -133,6 +215,34 @@ it('operator tidak dapat menyetujui pendaftaran kelas yang sudah ditutup', funct
 
     expect(DB::table('kelas_siswa')
         ->where('kelas_id', $kelasDitutup->id)
+        ->where('siswa_id', $this->siswa->id)
+        ->value('status'))->toBe('pending');
+});
+
+it('operator hanya dapat melihat dan memproses pengajuan pada kategorinya', function () {
+    $kelasLain = Kelas::factory()->create([
+        'guru_id' => $this->guru->id,
+        'kategori' => 'Bahasa Inggris',
+    ]);
+    pkAjukan($this->siswa, $kelasLain);
+
+    $this->actingAs($this->operator)
+        ->get(route('operator.pendaftaran-kelas.index'))
+        ->assertOk()
+        ->assertDontSee($kelasLain->nama_kelas);
+
+    $this->post(route('operator.pendaftaran-kelas.setujui', [
+        'kelas' => $kelasLain->id,
+        'siswa' => $this->siswa->id,
+    ]))->assertForbidden();
+
+    $this->post(route('operator.pendaftaran-kelas.tolak', [
+        'kelas' => $kelasLain->id,
+        'siswa' => $this->siswa->id,
+    ]))->assertForbidden();
+
+    expect(DB::table('kelas_siswa')
+        ->where('kelas_id', $kelasLain->id)
         ->where('siswa_id', $this->siswa->id)
         ->value('status'))->toBe('pending');
 });

@@ -51,6 +51,8 @@ class UserController extends Controller
       
     public function show(User $user): View
     {
+        $this->authorizeUserManagement($user);
+
         $user->loadMissing([
             'profilPendidikan.jalur',
             'profilPendidikan.jenjang',
@@ -67,6 +69,8 @@ class UserController extends Controller
       */
     public function berkas(User $user, string $jenis)
     {
+        $this->authorizeUserManagement($user);
+
         $path = match ($jenis) {
             'cv' => $user->aplikasiPengajar?->cv_path,
             'ijazah' => $user->aplikasiPengajar?->ijazah_path,
@@ -98,6 +102,8 @@ class UserController extends Controller
        */
     public function viewer(User $user, string $jenis, ?string $filename = null): View
     {
+        $this->authorizeUserManagement($user);
+
         $path = match ($jenis) {
             'cv' => $user->aplikasiPengajar?->cv_path,
             'ijazah' => $user->aplikasiPengajar?->ijazah_path,
@@ -120,17 +126,48 @@ class UserController extends Controller
       
     public function edit(User $user): View
     {
+        $this->authorizeUserManagement($user);
+
         return view('admin.users.edit', compact('user'));
     }
 
       
     public function update(UserRequest $request, User $user): RedirectResponse
     {
+        $this->authorizeUserManagement($user);
+
         $validated = $request->validated();
 
         $user->update($validated);
 
         return redirect()->route('operator.users.index')->with('success', 'User berhasil diupdate.');
+    }
+
+    private function authorizeUserManagement(User $user): void
+    {
+        $auth = auth()->user();
+
+        if ($auth->role !== 'operator') {
+            return;
+        }
+
+        abort_if($user->role === 'operator', 403, 'Pengelolaan akun operator hanya dapat dilakukan oleh pengelola operator.');
+
+        if (! $auth->kategori_mapel) {
+            return;
+        }
+
+        if ($user->role === 'pelajar') {
+            return;
+        }
+
+        $kategori = $user->aplikasiPengajar?->kategori_mapel;
+
+        abort_unless(
+            $kategori && $kategori === $auth->kategori_mapel,
+            403,
+            'Tidak berwenang mengelola akun di luar kategori ini.'
+        );
     }
 
       
@@ -140,11 +177,7 @@ class UserController extends Controller
             return back()->with('error', 'Tidak dapat menghapus akun sendiri.');
         }
 
-        $auth = auth()->user();
-        if ($auth->role === 'operator' && $auth->kategori_mapel && $user->role !== 'pelajar') {
-            $kategori = $user->aplikasiPengajar?->kategori_mapel;
-            abort_unless($kategori && $kategori === $auth->kategori_mapel, 403, 'Tidak berwenang menghapus akun pada kategori ini.');
-        }
+        $this->authorizeUserManagement($user);
 
         DB::transaction(function () use ($user) {
             $user->loadMissing(['aplikasiPengajar', 'profilPendidikan']);
@@ -190,8 +223,9 @@ class UserController extends Controller
     public function verify(User $user): RedirectResponse
     {
         $auth = auth()->user();
+        $this->authorizeUserManagement($user);
 
-        // Operator hanya dibatasi kategori untuk verifikasi pengajar/operator dalam kategori yang sama.
+        // Operator hanya dibatasi kategori saat memverifikasi pengajar.
         // Pelajar dapat diverifikasi oleh semua operator.
         if ($auth->role === 'operator' && $auth->kategori_mapel && $user->role !== 'pelajar') {
             $kategori = $user->aplikasiPengajar?->kategori_mapel;
@@ -211,8 +245,9 @@ class UserController extends Controller
     public function reject(User $user): RedirectResponse
     {
         $auth = auth()->user();
+        $this->authorizeUserManagement($user);
 
-        // Operator hanya dibatasi kategori untuk penolakan pengajar/operator dalam kategori yang sama.
+        // Operator hanya dibatasi kategori saat menolak pengajar.
         // Pelajar dapat ditolak oleh semua operator.
         if ($auth->role === 'operator' && $auth->kategori_mapel && $user->role !== 'pelajar') {
             $kategori = $user->aplikasiPengajar?->kategori_mapel;

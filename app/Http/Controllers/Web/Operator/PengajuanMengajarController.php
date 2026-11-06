@@ -22,6 +22,8 @@ class PengajuanMengajarController extends Controller
 {
     public function show(Kelas $kelas): View
     {
+        $this->authorize('view', $kelas);
+
         $pengajuanList = PengajuanPengajarKelas::with(['pengajar.aplikasiPengajar'])
             ->where('kelas_id', $kelas->id)
             ->orderByRaw("CASE status WHEN 'pending' THEN 0 WHEN 'disetujui' THEN 1 ELSE 2 END")
@@ -33,6 +35,8 @@ class PengajuanMengajarController extends Controller
 
     public function setujui(PengajuanPengajarKelas $pengajuan): RedirectResponse
     {
+        $this->authorize('view', $pengajuan->kelas);
+
         if ($pengajuan->status !== PengajuanPengajarKelas::STATUS_PENDING) {
             return back()->with('error', __('operator.pengajuan_mengajar.sudah_diproses'));
         }
@@ -82,6 +86,8 @@ class PengajuanMengajarController extends Controller
 
     public function tolak(Request $request, PengajuanPengajarKelas $pengajuan): RedirectResponse
     {
+        $this->authorize('view', $pengajuan->kelas);
+
         if ($pengajuan->status !== PengajuanPengajarKelas::STATUS_PENDING) {
             return back()->with('error', __('operator.pengajuan_mengajar.sudah_diproses'));
         }
@@ -108,6 +114,8 @@ class PengajuanMengajarController extends Controller
 
     public function berkas(PengajuanPengajarKelas $pengajuan): StreamedResponse
     {
+        $this->authorize('view', $pengajuan->kelas);
+
         abort_unless(
             $pengajuan->berkas_path && Storage::disk('local')->exists($pengajuan->berkas_path),
             404,
@@ -125,6 +133,8 @@ class PengajuanMengajarController extends Controller
      */
     public function profilBerkas(PengajuanPengajarKelas $pengajuan, string $jenis): StreamedResponse
     {
+        $this->authorize('view', $pengajuan->kelas);
+
         $path = match ($jenis) {
             'cv' => $pengajuan->pengajar->aplikasiPengajar?->cv_path,
             'ijazah' => $pengajuan->pengajar->aplikasiPengajar?->ijazah_path,

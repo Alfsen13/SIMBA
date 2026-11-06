@@ -26,6 +26,7 @@ class MateriRemedial extends Model
         'mastery_alasan',
         'dinilai_at',
         'penilaian_gagal_at',
+        'generasi_gagal_at',
         'provider_llm',
         'status',
         'generated_at',
@@ -42,6 +43,7 @@ class MateriRemedial extends Model
             'skor_pertemuan' => 'float',
             'dinilai_at' => 'datetime',
             'penilaian_gagal_at' => 'datetime',
+            'generasi_gagal_at' => 'datetime',
             'generated_at' => 'datetime',
         ];
     }

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\MateriRemedial;
 use App\Models\PrediksiAi;
+use App\Notifications\RemedialTersedia;
 use App\Services\RemedialService;
 use App\Services\RemedialTugasService;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -47,7 +48,12 @@ class GenerateRemedialAI implements ShouldBeUnique, ShouldQueue
             ->first();
 
         if ($remedialAda) {
+            $perluNotifikasi = empty($remedialAda->tugas_remedial);
+            $remedialAda->update(['generasi_gagal_at' => null]);
             $this->pastikanTugasRemedial($remedialAda);
+            if ($perluNotifikasi) {
+                $remedialAda->siswa?->notify(new RemedialTersedia($remedialAda->id));
+            }
 
             return;
         }
@@ -77,6 +83,7 @@ class GenerateRemedialAI implements ShouldBeUnique, ShouldQueue
 
         if ($remedial) {
             $this->pastikanTugasRemedial($remedial);
+            $remedial->siswa?->notify(new RemedialTersedia($remedial->id));
         }
     }
 
@@ -90,6 +97,17 @@ class GenerateRemedialAI implements ShouldBeUnique, ShouldQueue
 
     public function failed(\Throwable $e): void
     {
+        $remedial = MateriRemedial::query()
+            ->where('prediksi_ai_id', $this->prediksiAiId)
+            ->where('siswa_id', $this->siswaId)
+            ->where('status', '!=', 'selesai')
+            ->latest('id')
+            ->first();
+
+        if ($remedial && empty($remedial->tugas_remedial)) {
+            $remedial->update(['generasi_gagal_at' => now()]);
+        }
+
         Log::error('GenerateRemedialAI gagal untuk siswa {siswa_id} dan prediksi {prediksi_id}: {msg}', [
             'siswa_id' => $this->siswaId,
             'prediksi_id' => $this->prediksiAiId,

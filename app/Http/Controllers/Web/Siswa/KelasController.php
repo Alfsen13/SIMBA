@@ -46,6 +46,7 @@ class KelasController extends Controller
 
         $availableKelas = Kelas::whereNotIn('id', $terpakai)
             ->where('status', 'dibuka')
+            ->belumPenuh()
             ->when($this->hanyaTerbuka($user), fn ($q) => $q->where('aturan_kelayakan', 'terbuka'))
             ->when($request->filled('search'), function ($q) use ($request) {
                 $q->where(function ($query) use ($request) {
@@ -75,41 +76,66 @@ class KelasController extends Controller
     {
         $user = Auth::user();
 
-        if ($kelas->status !== 'dibuka') {
+        $hasil = DB::transaction(function () use ($kelas, $user): string {
+            $kelas = Kelas::query()->lockForUpdate()->findOrFail($kelas->id);
+
+            if ($kelas->status !== 'dibuka') {
+                return 'ditutup';
+            }
+
+            $sudahAda = DB::table('kelas_siswa')
+                ->where('siswa_id', $user->id)
+                ->where('kelas_id', $kelas->id)
+                ->whereIn('status', ['active', 'pending'])
+                ->exists();
+
+            if ($sudahAda) {
+                return 'sudah_terdaftar';
+            }
+
+            if ($this->hanyaTerbuka($user) && $kelas->aturan_kelayakan !== 'terbuka') {
+                return 'tidak_memenuhi_syarat';
+            }
+
+            if ($kelas->kapasitas !== null && $kelas->jumlahAnggotaAktifDanMenunggu() >= $kelas->kapasitas) {
+                return 'penuh';
+            }
+
+            $existing = DB::table('kelas_siswa')
+                ->where('siswa_id', $user->id)
+                ->where('kelas_id', $kelas->id)
+                ->first();
+
+            if ($existing) {
+                DB::table('kelas_siswa')->where('id', $existing->id)->update([
+                    'status' => 'pending',
+                    'approved_by' => null,
+                    'approved_at' => null,
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $user->semuaKelasDiikuti()->firstOrCreate(
+                    ['kelas.id' => $kelas->id],
+                    [],
+                    ['status' => 'pending'],
+                );
+            }
+
+            return 'terkirim';
+        });
+
+        if ($hasil === 'ditutup') {
             return back()->with('error', __('siswa.kelas.tidak_dibuka'));
         }
 
-        $sudahAda = DB::table('kelas_siswa')
-            ->where('siswa_id', $user->id)
-            ->where('kelas_id', $kelas->id)
-            ->whereIn('status', ['active', 'pending'])
-            ->exists();
+        abort_if($hasil === 'sudah_terdaftar', 409, 'Kamu sudah terdaftar atau sedang menunggu validasi di kelas ini.');
 
-        abort_if($sudahAda, 409, 'Kamu sudah terdaftar atau sedang menunggu validasi di kelas ini.');
-
-        if ($this->hanyaTerbuka($user) && $kelas->aturan_kelayakan !== 'terbuka') {
+        if ($hasil === 'tidak_memenuhi_syarat') {
             return back()->with('error', __('siswa.kelas.ditolak_belajar_mandiri'));
         }
 
-        $existing = DB::table('kelas_siswa')
-            ->where('siswa_id', $user->id)
-            ->where('kelas_id', $kelas->id)
-            ->first();
-
-        if ($existing) {
-
-            DB::table('kelas_siswa')->where('id', $existing->id)->update([
-                'status' => 'pending',
-                'approved_by' => null,
-                'approved_at' => null,
-                'updated_at' => now(),
-            ]);
-        } else {
-            $user->semuaKelasDiikuti()->firstOrCreate(
-                ['kelas.id' => $kelas->id],
-                [],
-                ['status' => 'pending'],
-            );
+        if ($hasil === 'penuh') {
+            return back()->with('error', __('siswa.kelas.kapasitas_penuh'));
         }
 
         return redirect()->route('pelajar.kelas.index')

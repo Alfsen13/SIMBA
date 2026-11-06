@@ -1,7 +1,10 @@
 <?php
 
+use App\Models\KategoriMataPelajaran;
+use App\Models\MataPelajaran;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Row;
@@ -103,6 +106,209 @@ test('template impor kelas tetap menyediakan header dan contoh kelas', function 
         ->assertHeader('content-disposition', 'attachment; filename="template-import-kelas.csv"')
         ->assertSeeText('nama_kelas,mata_pelajaran,kategori')
         ->assertSeeText('Matematika Kelas 4 SD');
+});
+
+test('operator import kelas menolak header template yang hilang atau salah eja', function () {
+    $csvContent = "nama_kelas,mata_pelajaran,kategori,jalur,jenjang,tingkat,kapasitas,periode,status,aturan_kelayakan,deskripsi\n"
+        ."Kelas Tidak Lengkap,Matematika,Matematika,Formal,SD,Kelas 4,30,2026/2027 Ganjil,dibuka,sesuai_profil,Deskripsi kelas\n";
+
+    $this->actingAs($this->operator)
+        ->post(route('operator.import.kelas'), [
+            'file' => createCsvUpload(str_replace('tingkat', 'tinggkat', $csvContent)),
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success', '0 kelas berhasil diimport.')
+        ->assertSessionHas('import_errors');
+
+    $this->assertDatabaseMissing('kelas', ['nama_kelas' => 'Kelas Tidak Lengkap']);
+});
+
+test('operator import kelas menolak metadata wajib yang kosong dan menerima template ber-BOM yang lengkap', function () {
+    $headers = 'nama_kelas,mata_pelajaran,kategori,jalur,jenjang,tingkat,kapasitas,periode,status,aturan_kelayakan,deskripsi';
+    $row = 'Kelas Lengkap,Matematika,Matematika & Ilmu Alam,Formal,SD,Kelas 4,30,2026/2027 Ganjil,dibuka,sesuai_profil,Pembelajaran matematika.';
+
+    $this->actingAs($this->operator)
+        ->post(route('operator.import.kelas'), [
+            'file' => createCsvUpload($headers."\n".str_replace(',SD,', ',,', $row)."\n"),
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success', '0 kelas berhasil diimport.')
+        ->assertSessionHas('import_errors');
+
+    $this->assertDatabaseMissing('kelas', ['nama_kelas' => 'Kelas Lengkap']);
+
+    $jalurId = DB::table('jalur_pendidikan')->insertGetId([
+        'kode' => 'formal',
+        'nama' => 'Formal',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $jenjangId = DB::table('jenjang_pendidikan')->insertGetId([
+        'jalur_id' => $jalurId,
+        'kode' => 'sd',
+        'nama' => 'SD',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('tingkat_pendidikan')->insert([
+        'jenjang_id' => $jenjangId,
+        'kode' => 'kelas_4',
+        'nama' => 'Kelas 4',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('mata_pelajaran')->insert([
+        'kode' => 'matematika',
+        'nama' => 'Matematika',
+        'kategori' => 'Matematika & Ilmu Alam',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    KategoriMataPelajaran::create(['nama' => 'Matematika & Ilmu Alam']);
+
+    $this->actingAs($this->operator)
+        ->post(route('operator.import.kelas'), [
+            'file' => createCsvUpload("\u{FEFF}".$headers."\n".$row."\n"),
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success', '1 kelas berhasil diimport.');
+
+    $this->assertDatabaseHas('kelas', [
+        'nama_kelas' => 'Kelas Lengkap',
+        'jalur_id' => $jalurId,
+        'jenjang_id' => $jenjangId,
+        'tingkat_id' => DB::table('tingkat_pendidikan')->where('jenjang_id', $jenjangId)->value('id'),
+        'mata_pelajaran_id' => DB::table('mata_pelajaran')->where('kode', 'matematika')->value('id'),
+    ]);
+});
+
+test('operator import kelas menolak kategori yang tidak sesuai dengan mapel atau katalog', function () {
+    $jalurId = DB::table('jalur_pendidikan')->insertGetId([
+        'kode' => 'formal',
+        'nama' => 'Formal',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $jenjangId = DB::table('jenjang_pendidikan')->insertGetId([
+        'jalur_id' => $jalurId,
+        'kode' => 'sd',
+        'nama' => 'SD',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('tingkat_pendidikan')->insert([
+        'jenjang_id' => $jenjangId,
+        'kode' => 'kelas_4',
+        'nama' => 'Kelas 4',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('mata_pelajaran')->insert([
+        'kode' => 'matematika',
+        'nama' => 'Matematika',
+        'kategori' => 'Matematika & Ilmu Alam',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    KategoriMataPelajaran::create(['nama' => 'Matematika & Ilmu Alam']);
+    KategoriMataPelajaran::create(['nama' => 'Bahasa & Komunikasi']);
+
+    $headers = 'nama_kelas,mata_pelajaran,kategori,jalur,jenjang,tingkat,kapasitas,periode,status,aturan_kelayakan,deskripsi';
+    $rows = [
+        'Kelas Kategori Salah,Matematika,Bahasa & Komunikasi,Formal,SD,Kelas 4,30,2026/2027 Ganjil,dibuka,sesuai_profil,Deskripsi',
+        'Kelas Kategori Tidak Terdaftar,Matematika,Kategori Karangan,Formal,SD,Kelas 4,30,2026/2027 Ganjil,dibuka,sesuai_profil,Deskripsi',
+    ];
+
+    $this->actingAs($this->operator)
+        ->post(route('operator.import.kelas'), [
+            'file' => createCsvUpload($headers."\n".implode("\n", $rows)."\n"),
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success', '0 kelas berhasil diimport.')
+        ->assertSessionHas('import_errors');
+
+    $this->assertDatabaseMissing('kelas', ['nama_kelas' => 'Kelas Kategori Salah']);
+    $this->assertDatabaseMissing('kelas', ['nama_kelas' => 'Kelas Kategori Tidak Terdaftar']);
+});
+
+test('pengelola operator tidak dapat mengubah atau menghapus akun non-operator', function (string $role) {
+    $manager = User::factory()->create(['role' => 'pengelola_operator', 'status' => 'verified']);
+    $target = User::factory()->verified()->create(['role' => $role]);
+
+    $this->actingAs($manager)
+        ->get(route('pengelola-operator.operator.edit', $target))
+        ->assertForbidden();
+
+    $this->put(route('pengelola-operator.operator.update', $target), [
+        'name' => 'Nama Diubah',
+        'email' => 'diubah@example.test',
+        'kategori_mapel' => 'Matematika',
+    ])->assertForbidden();
+
+    $this->delete(route('pengelola-operator.operator.destroy', $target))
+        ->assertForbidden();
+
+    expect($target->fresh())->not->toBeNull()
+        ->and($target->fresh()->name)->not->toBe('Nama Diubah')
+        ->and($target->fresh()->email)->not->toBe('diubah@example.test');
+})->with([
+    'pelajar' => 'pelajar',
+    'pengajar' => 'pengajar',
+]);
+
+test('pengelola operator tetap dapat mengelola akun operator', function () {
+    $manager = User::factory()->create(['role' => 'pengelola_operator', 'status' => 'verified']);
+    $target = User::factory()->operator()->create();
+    MataPelajaran::create([
+        'kode' => 'matematika',
+        'nama' => 'Matematika',
+        'kategori' => 'Matematika',
+    ]);
+    KategoriMataPelajaran::create(['nama' => 'Matematika']);
+
+    $this->actingAs($manager)
+        ->get(route('pengelola-operator.operator.edit', $target))
+        ->assertOk();
+
+    $this->put(route('pengelola-operator.operator.update', $target), [
+        'name' => 'Operator Diperbarui',
+        'email' => 'operator-baru@example.test',
+        'kategori_mapel' => 'Matematika',
+    ])->assertRedirect(route('pengelola-operator.operator.index'));
+
+    expect($target->fresh()->name)->toBe('Operator Diperbarui')
+        ->and($target->fresh()->email)->toBe('operator-baru@example.test');
+
+    $this->delete(route('pengelola-operator.operator.destroy', $target))
+        ->assertRedirect(route('pengelola-operator.operator.index'));
+
+    expect(User::find($target->id))->toBeNull();
+});
+
+test('pengelola operator tidak dapat menetapkan kategori yang tidak terdaftar', function () {
+    $manager = User::factory()->create(['role' => 'pengelola_operator', 'status' => 'verified']);
+    $target = User::factory()->operator()->create(['kategori_mapel' => 'Matematika']);
+
+    $this->actingAs($manager)
+        ->from(route('pengelola-operator.operator.create'))
+        ->post(route('pengelola-operator.operator.store'), [
+            'name' => 'Operator Baru',
+            'email' => 'operator-baru@example.test',
+            'password' => 'password123',
+            'kategori_mapel' => 'Kategori Tidak Ada',
+        ])
+        ->assertRedirect(route('pengelola-operator.operator.create'))
+        ->assertSessionHasErrors('kategori_mapel');
+
+    $this->assertDatabaseMissing('users', ['email' => 'operator-baru@example.test']);
+
+    $this->put(route('pengelola-operator.operator.update', $target), [
+        'name' => $target->name,
+        'email' => $target->email,
+        'kategori_mapel' => 'Kategori Tidak Ada',
+    ])->assertSessionHasErrors('kategori_mapel');
+
+    expect($target->fresh()->kategori_mapel)->toBe('Matematika');
 });
 
 test('operator import requires valid file', function () {

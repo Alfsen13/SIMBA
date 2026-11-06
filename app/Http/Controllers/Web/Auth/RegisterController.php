@@ -7,13 +7,18 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\AplikasiPengajar;
 use App\Models\JalurPendidikan;
 use App\Models\JenjangPendidikan;
+use App\Models\KategoriMataPelajaran;
 use App\Models\MataPelajaran;
 use App\Models\TingkatPendidikan;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Throwable;
 
 class RegisterController extends Controller
 {
@@ -44,13 +49,13 @@ class RegisterController extends Controller
         $jenjangMap = $jenjangRows->groupBy('jalur_id')->map(fn ($g) => $g->map(fn ($r) => ['id' => $r->id, 'nama' => $r->nama])->values());
         $tingkatMap = $tingkatRows->groupBy('jenjang_id')->map(fn ($g) => $g->map(fn ($r) => ['id' => $r->id, 'nama' => $r->nama])->values());
 
-        $kategoriMapelList = MataPelajaran::query()
-            ->whereNotNull('kategori')
-            ->distinct()
-            ->orderBy('kategori')
-            ->pluck('kategori');
+        $kategoriMapelList = KategoriMataPelajaran::query()
+            ->whereHas('mataPelajaran', fn ($query) => $query->where('aktif', true))
+            ->orderBy('nama')
+            ->pluck('nama');
 
         $mapelByKategori = MataPelajaran::query()
+            ->where('aktif', true)
             ->whereNotNull('kategori')
             ->orderBy('kategori')
             ->orderBy('nama')
@@ -74,29 +79,43 @@ class RegisterController extends Controller
     public function register(RegisterRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-
         $validated['password'] = Hash::make($validated['password']);
         $validated['status'] = 'pending';
 
-        $userData = collect($validated)
-            ->except(['jalur_id', 'jenjang_id', 'tingkat_id', 'institusi', 'program', 'minat'])
-            ->except(self::FIELD_APLIKASI)
-            ->all();
+        $storedFiles = [];
+        try {
+            $user = DB::transaction(function () use ($request, $validated, &$storedFiles): User {
+                $userData = collect($validated)
+                    ->except(['jalur_id', 'jenjang_id', 'tingkat_id', 'institusi', 'program', 'minat'])
+                    ->except(self::FIELD_APLIKASI)
+                    ->all();
 
-        $user = User::create($userData);
+                $user = User::create($userData);
 
-        if ($request->filled('jalur_id')) {
-            $user->profilPendidikan()->create(collect([
-                'jalur_id' => $request->input('jalur_id'),
-                'jenjang_id' => $request->input('jenjang_id'),
-                'tingkat_id' => $request->input('tingkat_id'),
-                'institusi' => $request->input('institusi'),
-                'program' => $request->input('program'),
-                'minat' => $request->input('minat'),
-            ])->filter(fn ($v) => $v !== null && $v !== '')->all());
+                if (! empty($validated['jalur_id'])) {
+                    $user->profilPendidikan()->create(collect([
+                        'jalur_id' => $validated['jalur_id'],
+                        'jenjang_id' => $validated['jenjang_id'] ?? null,
+                        'tingkat_id' => $validated['tingkat_id'] ?? null,
+                        'institusi' => $validated['institusi'] ?? null,
+                        'program' => $validated['program'] ?? null,
+                        'minat' => $validated['minat'] ?? null,
+                    ])->filter(fn ($value) => $value !== null && $value !== '')->all());
+                }
+
+                $this->simpanAplikasiPengajar($request, $validated, $user, $storedFiles);
+
+                return $user;
+            });
+        } catch (Throwable $exception) {
+            if ($storedFiles !== [] && ! Storage::disk('public')->delete($storedFiles)) {
+                Log::error('Gagal membersihkan berkas pendaftaran setelah transaksi dibatalkan.', [
+                    'files' => $storedFiles,
+                ]);
+            }
+
+            throw $exception;
         }
-
-        $this->simpanAplikasiPengajar($request, $user);
 
         Auth::login($user);
         $request->session()->regenerate();
@@ -109,7 +128,7 @@ class RegisterController extends Controller
      * satu field terisi, supaya pendaftaran pengajar polos (NIP saja) tidak
      * menghasilkan baris aplikasi kosong.
      */
-    private function simpanAplikasiPengajar(RegisterRequest $request, User $user): void
+    private function simpanAplikasiPengajar(RegisterRequest $request, array $validated, User $user, array &$storedFiles): void
     {
         $adaIsi = collect(self::FIELD_APLIKASI)->contains(
             fn ($f) => $request->filled($f) || $request->hasFile($f)
@@ -121,22 +140,27 @@ class RegisterController extends Controller
 
         $data = [
             'user_id' => $user->id,
-            'pendidikan_tertinggi' => $request->input('pendidikan_tertinggi'),
-            'pengalaman_mengajar' => $request->input('pengalaman_mengajar'),
-            'kategori_mapel' => $request->input('kategori_mapel'),
-            'mata_pelajaran' => $request->input('mata_pelajaran', []),
-            'jenjang_dan_tingkat' => $request->input('jenjang_dan_tingkat'),
+            'pendidikan_tertinggi' => $validated['pendidikan_tertinggi'] ?? null,
+            'pengalaman_mengajar' => $validated['pengalaman_mengajar'] ?? null,
+            'kategori_mapel' => $validated['kategori_mapel'] ?? null,
+            'mata_pelajaran' => $validated['mata_pelajaran'] ?? [],
+            'jenjang_dan_tingkat' => $validated['jenjang_dan_tingkat'] ?? null,
             'status_aplikasi' => 'pending',
         ];
 
         foreach (['cv', 'ijazah'] as $berkas) {
             if ($request->hasFile($berkas)) {
-                $data[$berkas . '_path'] = $request->file($berkas)
-                    ->store('aplikasi_pengajar/' . $berkas, 'public');
+                $path = $request->file($berkas)->store('aplikasi_pengajar/' . $berkas, 'public');
+
+                if ($path === false) {
+                    throw new \RuntimeException('Gagal menyimpan berkas pendaftaran.');
+                }
+
+                $storedFiles[] = $path;
+                $data[$berkas . '_path'] = $path;
             }
         }
 
         AplikasiPengajar::create($data);
     }
 }
-

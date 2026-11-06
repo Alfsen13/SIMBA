@@ -76,6 +76,8 @@ class FiturPertemuanService
         if ($tugasIds->isNotEmpty()) {
             $terkumpul = PengumpulanTugas::where('siswa_id', $siswaId)
                 ->whereIn('tugas_id', $tugasIds)
+                ->get(['file', 'jawaban'])
+                ->filter(fn (PengumpulanTugas $pengumpulan) => $pengumpulan->sudahDikumpulkan())
                 ->count();
             $persenTugas = round($terkumpul / $tugasIds->count() * 100, 1);
         }
@@ -213,10 +215,12 @@ class FiturPertemuanService
         if ($tugasIds !== []) {
             foreach (PengumpulanTugas::whereIn('siswa_id', $siswaIds)
                 ->whereIn('tugas_id', $tugasIds)
-                ->get(['siswa_id', 'tugas_id', 'nilai']) as $baris) {
+                ->get(['siswa_id', 'tugas_id', 'nilai', 'file', 'jawaban']) as $baris) {
                 $siswaId = (int) $baris->siswa_id;
                 $pertemuanId = (int) $tugasKePertemuan[$baris->tugas_id];
-                $pengumpulan[$siswaId][$pertemuanId] = ($pengumpulan[$siswaId][$pertemuanId] ?? 0) + 1;
+                if ($baris->sudahDikumpulkan()) {
+                    $pengumpulan[$siswaId][$pertemuanId] = ($pengumpulan[$siswaId][$pertemuanId] ?? 0) + 1;
+                }
 
                 if ($baris->nilai !== null) {
                     $nilai[$siswaId][$pertemuanId] ??= ['jumlah' => 0, 'total' => 0.0];

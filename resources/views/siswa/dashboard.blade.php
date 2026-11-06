@@ -131,7 +131,7 @@
                             $deadline = $t->deadline;
                             $isOverdue = $deadline && $deadline->isPast();
                             $isNear = $deadline && $deadline->isFuture() && $deadline->diffInDays(now()) <= 3;
-                            $isSubmitted = $t->pengumpulan !== null;
+                            $isSubmitted = $t->pengumpulan?->sudahDikumpulkan() ?? false;
                         @endphp
                         <a href="{{ route('pelajar.tugas.show', $t) }}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group {{ $isOverdue && !$isSubmitted ? 'bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-800' : '' }}">
                             <div class="w-2 h-2 shrink-0 rounded-full mt-1.5 self-start {{ $isOverdue && !$isSubmitted ? 'bg-red-500' : ($isNear && !$isSubmitted ? 'bg-amber-400' : ($isSubmitted ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600')) }}"></div>

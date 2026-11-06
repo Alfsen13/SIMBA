@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Web\Operator;
 
 use App\Http\Controllers\Controller;
+use App\Models\JenjangPendidikan;
 use App\Models\PengajuanPerubahanPendidikan;
 use App\Models\ProfilPendidikan;
+use App\Models\TingkatPendidikan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -45,25 +47,60 @@ class PengajuanPerubahanPendidikanController extends Controller
             'catatan_operator' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        DB::transaction(function () use ($pengajuan, $validated) {
+        $hasil = DB::transaction(function () use ($pengajuan, $validated): string {
+            $pengajuanTerkunci = PengajuanPerubahanPendidikan::query()
+                ->lockForUpdate()
+                ->findOrFail($pengajuan->id);
+
+            if (! in_array($pengajuanTerkunci->status, ['pending', 'under_review', 'revision_required'], true)) {
+                return 'sudah_diproses';
+            }
+
+            $tujuanValid = $pengajuanTerkunci->jenjang_id !== null
+                && $pengajuanTerkunci->tingkat_id !== null
+                && JenjangPendidikan::query()
+                    ->whereKey($pengajuanTerkunci->jenjang_id)
+                    ->where('jalur_id', $pengajuanTerkunci->jalur_id)
+                    ->where('aktif', true)
+                    ->exists()
+                && TingkatPendidikan::query()
+                    ->whereKey($pengajuanTerkunci->tingkat_id)
+                    ->where('jenjang_id', $pengajuanTerkunci->jenjang_id)
+                    ->where('aktif', true)
+                    ->exists();
+
+            if (! $tujuanValid) {
+                return 'tujuan_tidak_valid';
+            }
+
             $profil = ProfilPendidikan::firstOrCreate(
-                ['user_id' => $pengajuan->user_id],
-                ['jalur_id' => $pengajuan->jalur_id]
+                ['user_id' => $pengajuanTerkunci->user_id],
+                ['jalur_id' => $pengajuanTerkunci->jalur_id]
             );
 
             $profil->update([
-                'jalur_id' => $pengajuan->jalur_id,
-                'jenjang_id' => $pengajuan->jenjang_id,
-                'tingkat_id' => $pengajuan->tingkat_id,
+                'jalur_id' => $pengajuanTerkunci->jalur_id,
+                'jenjang_id' => $pengajuanTerkunci->jenjang_id,
+                'tingkat_id' => $pengajuanTerkunci->tingkat_id,
             ]);
 
-            $pengajuan->update([
+            $pengajuanTerkunci->update([
                 'status' => 'approved',
                 'reviewed_by' => Auth::id(),
                 'reviewed_at' => now(),
-                'catatan_operator' => $validated['catatan_operator'] ?: $pengajuan->catatan_operator,
+                'catatan_operator' => $validated['catatan_operator'] ?: $pengajuanTerkunci->catatan_operator,
             ]);
+
+            return 'disetujui';
         });
+
+        if ($hasil === 'sudah_diproses') {
+            return back()->with('error', 'Pengajuan ini sudah diproses sebelumnya.');
+        }
+
+        if ($hasil === 'tujuan_tidak_valid') {
+            return back()->with('error', 'Tujuan pendidikan pada pengajuan sudah tidak aktif atau tidak valid. Profil siswa tidak diubah.');
+        }
 
         return redirect()->route('operator.pengajuan-perubahan-pendidikan.index')
             ->with('success', 'Pengajuan berhasil disetujui. Profil pendidikan siswa telah diperbarui.');
@@ -82,12 +119,28 @@ class PengajuanPerubahanPendidikanController extends Controller
             'catatan_operator.min' => 'Catatan revisi minimal 5 karakter.',
         ]);
 
-        $pengajuan->update([
-            'status' => 'revision_required',
-            'reviewed_by' => Auth::id(),
-            'reviewed_at' => now(),
-            'catatan_operator' => $validated['catatan_operator'],
-        ]);
+        $dimintaRevisi = DB::transaction(function () use ($pengajuan, $validated): bool {
+            $pengajuanTerkunci = PengajuanPerubahanPendidikan::query()
+                ->lockForUpdate()
+                ->findOrFail($pengajuan->id);
+
+            if (! in_array($pengajuanTerkunci->status, ['pending', 'under_review'], true)) {
+                return false;
+            }
+
+            $pengajuanTerkunci->update([
+                'status' => 'revision_required',
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+                'catatan_operator' => $validated['catatan_operator'],
+            ]);
+
+            return true;
+        });
+
+        if (! $dimintaRevisi) {
+            return back()->with('error', 'Pengajuan ini sudah diproses sebelumnya.');
+        }
 
         return redirect()->route('operator.pengajuan-perubahan-pendidikan.index')
             ->with('success', 'Permintaan revisi berhasil dikirim.');
@@ -106,12 +159,28 @@ class PengajuanPerubahanPendidikanController extends Controller
             'catatan_operator.min' => 'Alasan penolakan minimal 5 karakter.',
         ]);
 
-        $pengajuan->update([
-            'status' => 'rejected',
-            'reviewed_by' => Auth::id(),
-            'reviewed_at' => now(),
-            'catatan_operator' => $validated['catatan_operator'],
-        ]);
+        $ditolak = DB::transaction(function () use ($pengajuan, $validated): bool {
+            $pengajuanTerkunci = PengajuanPerubahanPendidikan::query()
+                ->lockForUpdate()
+                ->findOrFail($pengajuan->id);
+
+            if (! in_array($pengajuanTerkunci->status, ['pending', 'under_review', 'revision_required'], true)) {
+                return false;
+            }
+
+            $pengajuanTerkunci->update([
+                'status' => 'rejected',
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+                'catatan_operator' => $validated['catatan_operator'],
+            ]);
+
+            return true;
+        });
+
+        if (! $ditolak) {
+            return back()->with('error', 'Pengajuan ini sudah diproses sebelumnya.');
+        }
 
         return redirect()->route('operator.pengajuan-perubahan-pendidikan.index')
             ->with('success', 'Pengajuan berhasil ditolak.');

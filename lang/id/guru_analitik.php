@@ -199,6 +199,12 @@ return [
         'status_unread' => 'Belum Dibaca',
         'status_done' => 'Sudah Dikerjakan',
         'status_read' => 'Sudah Dibaca',
+        'generation_failed' => 'Soal gagal dibuat',
+        'generation_failed_message' => 'Soal remedial gagal dibuat setelah beberapa percobaan. Siswa belum diberi notifikasi; coba buat ulang.',
+        'generation_pending' => 'Soal remedial sedang dibuat.',
+        'retry_generation' => 'Coba buat soal lagi',
+        'retry_scheduled' => 'Pembuatan soal remedial dijadwalkan ulang.',
+        'retry_unavailable' => 'Tidak dapat menentukan sumber remedial untuk percobaan ulang.',
         'view' => 'Lihat',
 
         'fallback_title' => 'Materi Remedial',

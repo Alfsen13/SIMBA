@@ -90,6 +90,10 @@ class MataPelajaranController extends Controller
         $user = auth()->user();
         abort_unless($user->kategori_mapel && $mataPelajaran->kategori === $user->kategori_mapel, 403);
 
+        if ($mataPelajaran->kelas()->exists() || $mataPelajaran->pengajarKompetensi()->exists()) {
+            return back()->with('error', 'Mata pelajaran tidak dapat dihapus karena masih digunakan.');
+        }
+
         $mataPelajaran->delete();
 
         return redirect()->route('operator.mata-pelajaran.index')->with('success', 'Mata pelajaran berhasil dihapus.');

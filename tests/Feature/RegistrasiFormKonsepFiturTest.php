@@ -9,10 +9,12 @@
 
 use App\Models\JalurPendidikan;
 use App\Models\JenjangPendidikan;
+use App\Models\KategoriMataPelajaran;
 use App\Models\MataPelajaran;
 use App\Models\TingkatPendidikan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
@@ -51,6 +53,8 @@ test('form registrasi memuat opsi master pendidikan aktif', function () {
 });
 
 test('select kategori mapel hanya menawarkan kategori master aktif', function () {
+    KategoriMataPelajaran::create(['nama' => 'Matematika & Ilmu Alam']);
+    KategoriMataPelajaran::create(['nama' => 'Kategori Nonaktif']);
     MataPelajaran::create(['kode' => 'fisika', 'nama' => 'Fisika', 'kategori' => 'Matematika & Ilmu Alam', 'aktif' => true]);
     MataPelajaran::create(['kode' => 'kimia', 'nama' => 'Kimia', 'kategori' => 'Matematika & Ilmu Alam', 'aktif' => true]);
     MataPelajaran::create(['kode' => 'seni', 'nama' => 'Seni Budaya', 'kategori' => null, 'aktif' => true]);
@@ -62,10 +66,12 @@ test('select kategori mapel hanya menawarkan kategori master aktif', function ()
     // Catatan: `&` di-escape Blade menjadi `&amp;` di HTML.
     expect($html)->toContain('value="Matematika &amp; Ilmu Alam"')
         ->not->toContain('value="Kategori Nonaktif"')
+        ->not->toContain('Mapel Lama')
         ->not->toContain('value="null"');
 });
 
 test('kategori mapel di luar master ditolak', function () {
+    KategoriMataPelajaran::create(['nama' => 'Ilmu Sosial & Humaniora']);
     MataPelajaran::create(['kode' => 'ppkn', 'nama' => 'PPKn', 'kategori' => 'Ilmu Sosial & Humaniora', 'aktif' => true]);
 
     $this->post(route('register'), [
@@ -81,9 +87,31 @@ test('kategori mapel di luar master ditolak', function () {
     $this->assertDatabaseCount('users', 0);
 });
 
+test('klaim mapel katalog harus aktif dan sesuai kategori yang dipilih', function () {
+    KategoriMataPelajaran::create(['nama' => 'Matematika & Ilmu Alam']);
+    KategoriMataPelajaran::create(['nama' => 'Ilmu Sosial']);
+    MataPelajaran::create(['kode' => 'matematika', 'nama' => 'Matematika', 'kategori' => 'Matematika & Ilmu Alam', 'aktif' => true]);
+    MataPelajaran::create(['kode' => 'sejarah', 'nama' => 'Sejarah', 'kategori' => 'Ilmu Sosial', 'aktif' => true]);
+    MataPelajaran::create(['kode' => 'lama', 'nama' => 'Mapel Lama', 'kategori' => 'Matematika & Ilmu Alam', 'aktif' => false]);
+
+    $this->post(route('register'), [
+        'name' => 'Guru Klaim Mapel',
+        'email' => 'guru.klaim@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'pengajar',
+        'nip' => '19870010',
+        'kategori_mapel' => 'Matematika & Ilmu Alam',
+        'mata_pelajaran' => ['Sejarah', 'Mapel Lama'],
+    ])->assertSessionHasErrors(['mata_pelajaran.0', 'mata_pelajaran.1']);
+
+    $this->assertDatabaseCount('users', 0);
+});
+
 test('pendaftaran calon pengajar menyimpan aplikasi beserta berkasnya', function () {
     Storage::fake('public');
 
+    KategoriMataPelajaran::create(['nama' => 'Matematika & Ilmu Alam']);
     MataPelajaran::create([
         'kode' => 'matematika', 'nama' => 'Matematika',
         'kategori' => 'Matematika & Ilmu Alam', 'aktif' => true,
@@ -127,6 +155,35 @@ test('pendaftaran calon pengajar menyimpan aplikasi beserta berkasnya', function
     Storage::disk('public')->assertExists($aplikasi->ijazah_path);
 });
 
+test('pendaftaran membatalkan data dan membersihkan berkas jika penyimpanan aplikasi gagal', function () {
+    Storage::fake('public');
+    KategoriMataPelajaran::create(['nama' => 'Matematika']);
+    MataPelajaran::create(['kode' => 'matematika', 'nama' => 'Matematika', 'kategori' => 'Matematika', 'aktif' => true]);
+
+    DB::statement("CREATE TRIGGER fail_aplikasi_pengajar BEFORE INSERT ON aplikasi_pengajar BEGIN SELECT RAISE(ABORT, 'Simulated application storage failure.'); END");
+    $this->withoutExceptionHandling();
+
+    try {
+        expect(fn () => $this->post(route('register'), [
+            'name' => 'Guru Gagal',
+            'email' => 'guru.gagal@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'pengajar',
+            'nip' => '19870011',
+            'kategori_mapel' => 'Matematika',
+            'pendidikan_tertinggi' => 'S1',
+            'cv' => UploadedFile::fake()->create('cv.pdf', 128, 'application/pdf'),
+        ]))->toThrow(\Illuminate\Database\QueryException::class);
+    } finally {
+        DB::statement('DROP TRIGGER IF EXISTS fail_aplikasi_pengajar');
+    }
+
+    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseCount('aplikasi_pengajar', 0);
+    expect(Storage::disk('public')->allFiles('aplikasi_pengajar'))->toBe([]);
+});
+
 test('pendaftaran pengajar tanpa data aplikasi tidak membuat baris aplikasi', function () {
     $this->post(route('register'), [
         'name' => 'Guru Polos',
@@ -163,6 +220,69 @@ test('pendaftaran pelajar menyimpan nisn dan profil tanpa baris aplikasi', funct
     $this->assertDatabaseHas('users', ['nisn' => '0091234567', 'role' => 'pelajar']);
     $this->assertDatabaseHas('profil_pendidikan', ['institusi' => 'SMPN 1', 'minat' => 'Matematika']);
     $this->assertDatabaseCount('aplikasi_pengajar', 0);
+});
+
+test('registrasi pelajar menolak jenjang yang tidak termasuk jalur pilihan', function () {
+    $jalurFormal = JalurPendidikan::create(['kode' => 'formal', 'nama' => 'Formal', 'urutan' => 1, 'aktif' => true]);
+    $jalurNonformal = JalurPendidikan::create(['kode' => 'nonformal', 'nama' => 'Nonformal', 'urutan' => 2, 'aktif' => true]);
+    $jenjang = JenjangPendidikan::create(['jalur_id' => $jalurNonformal->id, 'kode' => 'paket-b', 'nama' => 'Paket B', 'urutan' => 1, 'aktif' => true]);
+    $tingkat = TingkatPendidikan::create(['jenjang_id' => $jenjang->id, 'kode' => 'kelas-9', 'nama' => 'Kelas 9', 'urutan' => 1, 'aktif' => true]);
+
+    $this->post(route('register'), [
+        'name' => 'Siswa Jenjang Salah',
+        'email' => 'siswa.jenjang.salah@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'pelajar',
+        'nisn' => '0091234568',
+        'jalur_id' => $jalurFormal->id,
+        'jenjang_id' => $jenjang->id,
+        'tingkat_id' => $tingkat->id,
+    ])->assertSessionHasErrors('jenjang_id');
+
+    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseCount('profil_pendidikan', 0);
+});
+
+test('registrasi pelajar menolak tingkat dari jenjang lain', function () {
+    $jalur = JalurPendidikan::create(['kode' => 'formal', 'nama' => 'Formal', 'urutan' => 1, 'aktif' => true]);
+    $jenjangSmp = JenjangPendidikan::create(['jalur_id' => $jalur->id, 'kode' => 'smp', 'nama' => 'SMP', 'urutan' => 1, 'aktif' => true]);
+    $jenjangSma = JenjangPendidikan::create(['jalur_id' => $jalur->id, 'kode' => 'sma', 'nama' => 'SMA', 'urutan' => 2, 'aktif' => true]);
+    $tingkatSma = TingkatPendidikan::create(['jenjang_id' => $jenjangSma->id, 'kode' => 'kelas-10', 'nama' => 'Kelas 10', 'urutan' => 1, 'aktif' => true]);
+
+    $this->post(route('register'), [
+        'name' => 'Siswa Tingkat Salah',
+        'email' => 'siswa.tingkat.salah@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'pelajar',
+        'nisn' => '0091234569',
+        'jalur_id' => $jalur->id,
+        'jenjang_id' => $jenjangSmp->id,
+        'tingkat_id' => $tingkatSma->id,
+    ])->assertSessionHasErrors('tingkat_id');
+
+    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseCount('profil_pendidikan', 0);
+});
+
+test('registrasi pengajar menolak data profil pendidikan khusus pelajar', function () {
+    KategoriMataPelajaran::create(['nama' => 'Matematika']);
+    $jalur = JalurPendidikan::create(['kode' => 'formal', 'nama' => 'Formal', 'urutan' => 1, 'aktif' => true]);
+
+    $this->post(route('register'), [
+        'name' => 'Guru Dengan Profil Siswa',
+        'email' => 'guru.profil.siswa@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'pengajar',
+        'nip' => '19870012',
+        'kategori_mapel' => 'Matematika',
+        'jalur_id' => $jalur->id,
+    ])->assertSessionHasErrors('jalur_id');
+
+    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseCount('profil_pendidikan', 0);
 });
 
 test('unggahan cv bukan pdf/doc ditolak', function () {

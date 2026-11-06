@@ -12,7 +12,6 @@ use App\Models\Pertemuan;
 use App\Models\PrediksiAi;
 use App\Models\Tugas;
 use App\Models\User;
-use App\Notifications\RemedialTersedia;
 use App\Notifications\RisikoTinggiDetected;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -496,8 +495,6 @@ PROMPT;
             'generated_at' => now(),
         ]);
 
-        $siswa->notify(new RemedialTersedia($remedial->id));
-
         return $remedial;
     }
 
@@ -619,8 +616,6 @@ PROMPT;
             'status' => 'belum_dibaca',
             'generated_at' => now(),
         ]);
-
-        $siswa->notify(new RemedialTersedia($remedial->id));
 
         return $remedial;
     }

@@ -94,6 +94,60 @@ test('siswa dapat mengumpulkan jawaban esai dan memicu penilaian AI', function (
     });
 });
 
+test('tugas timer yang baru dimulai tetap dapat dikumpulkan dan belum berstatus selesai', function () {
+    $siswa = User::factory()->verified()->create();
+    $siswa->kelasDiikuti()->attach($this->kelas->id);
+    $tugas = Tugas::factory()->denganTimer()->create([
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+    ]);
+
+    $this->actingAs($siswa)
+        ->post(route('pelajar.tugas.mulai', $tugas))
+        ->assertRedirect(route('pelajar.tugas.show', $tugas));
+
+    $this->get(route('pelajar.tugas.show', $tugas))
+        ->assertOk()
+        ->assertSee('name="file"', false)
+        ->assertDontSee(__('siswa.tugas.sudah_dikumpulkan'));
+
+    $this->get(route('pelajar.tugas.index'))
+        ->assertOk()
+        ->assertSee(__('siswa.shared.status_belum'))
+        ->assertDontSee(__('siswa.shared.status_dikumpulkan'));
+
+    $this->get(route('pelajar.dashboard'))
+        ->assertOk()
+        ->assertSee($tugas->judul)
+        ->assertDontSee(__('siswa.shared.status_selesai'));
+});
+
+test('tugas timer menunjukkan status dikumpulkan setelah file benar-benar dikirim', function () {
+    $siswa = User::factory()->verified()->create();
+    $siswa->kelasDiikuti()->attach($this->kelas->id);
+    $tugas = Tugas::factory()->denganTimer()->create([
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+    ]);
+
+    $this->actingAs($siswa)
+        ->post(route('pelajar.tugas.mulai', $tugas))
+        ->assertRedirect();
+
+    $this->post(route('pelajar.tugas.submit', $tugas), [
+        'file' => UploadedFile::fake()->create('jawaban.pdf', 100, 'application/pdf'),
+    ])->assertRedirect();
+
+    $this->get(route('pelajar.tugas.show', $tugas))
+        ->assertOk()
+        ->assertSee(__('siswa.tugas.sudah_dikumpulkan'))
+        ->assertDontSee('name="file"', false);
+
+    $this->get(route('pelajar.tugas.index'))
+        ->assertOk()
+        ->assertSee(__('siswa.shared.status_dikumpulkan'));
+});
+
 test('upload tugas menolak ekstensi yang tidak didukung oleh formulir', function () {
     $siswa = User::factory()->verified()->create();
     $siswa->kelasDiikuti()->attach($this->kelas->id);

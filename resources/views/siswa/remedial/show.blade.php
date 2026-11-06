@@ -85,7 +85,16 @@
         </x-card>
     @endif
 
-    @if(! empty($remedial->tugas_remedial))
+    @if(empty($remedial->tugas_remedial))
+        <div class="p-4 rounded-lg border text-sm
+            {{ $remedial->generasi_gagal_at
+                ? 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300'
+                : 'border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300' }}">
+            {{ $remedial->generasi_gagal_at
+                ? __('siswa.remedial.generasi_tugas_gagal')
+                : __('siswa.remedial.generasi_tugas_menunggu') }}
+        </div>
+    @elseif(! empty($remedial->tugas_remedial))
         <x-card padding="true" class="mt-4">
             <h2 class="font-semibold text-slate-900 dark:text-slate-100 mb-1">{{ __('siswa.remedial.tugas_remedial') }}</h2>
             <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">

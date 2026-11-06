@@ -55,6 +55,9 @@
                                     {{ $r->generated_at?->format('d M Y') ?: '-' }}
                                 </x-td>
                                 <x-td>
+                                    @if($r->generasi_gagal_at)
+                                        <x-badge variant="danger" dot="true">{{ __('guru_analitik.remedial.generation_failed') }}</x-badge>
+                                    @endif
                                     <a
                                         href="{{ route('pengajar.remedial.show', $r) }}"
                                         class="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300"

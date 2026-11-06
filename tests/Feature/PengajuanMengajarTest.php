@@ -22,8 +22,8 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->guru = User::factory()->pengajar()->verified()->create();
-    $this->operator = User::factory()->operator()->verified()->create();
-    $this->kelas = Kelas::factory()->create(['guru_id' => null]);
+    $this->operator = User::factory()->operator()->verified()->create(['kategori_mapel' => 'Matematika']);
+    $this->kelas = Kelas::factory()->create(['guru_id' => null, 'kategori' => 'Matematika']);
 });
 
 function pengajuanBuatRow(Kelas $kelas, User $guru, array $extra = []): PengajuanPengajarKelas
@@ -254,4 +254,41 @@ test('unduh profil berkas 404 untuk jenis tak dikenal atau berkas kosong', funct
     $this->actingAs($this->operator)
         ->get(route('operator.pengajuan-mengajar.profil-berkas', ['pengajuan' => $pengajuan, 'jenis' => 'ktp']))
         ->assertNotFound();
+});
+
+test('operator tidak dapat melihat atau mengelola pengajuan kelas kategori lain', function () {
+    $kelasLain = Kelas::factory()->create([
+        'guru_id' => null,
+        'kategori' => 'Bahasa Inggris',
+    ]);
+    $pengajuan = pengajuanBuatRow($kelasLain, $this->guru, [
+        'berkas_path' => 'pengajuan/silabus.pdf',
+    ]);
+
+    Storage::fake('local');
+    Storage::disk('local')->put('pengajuan/silabus.pdf', 'private');
+    Storage::fake('public');
+    Storage::disk('public')->put('aplikasi_pengajar/cv/cv.pdf', 'private');
+    AplikasiPengajar::create([
+        'user_id' => $this->guru->id,
+        'cv_path' => 'aplikasi_pengajar/cv/cv.pdf',
+    ]);
+
+    $this->actingAs($this->operator)
+        ->get(route('operator.pengajuan-mengajar.show', $kelasLain))
+        ->assertForbidden();
+
+    $this->post(route('operator.pengajuan-mengajar.setujui', $pengajuan))
+        ->assertForbidden();
+    $this->post(route('operator.pengajuan-mengajar.tolak', $pengajuan), ['catatan' => 'Ditolak'])
+        ->assertForbidden();
+    $this->get(route('operator.pengajuan-mengajar.berkas', $pengajuan))
+        ->assertForbidden();
+    $this->get(route('operator.pengajuan-mengajar.profil-berkas', [
+        'pengajuan' => $pengajuan,
+        'jenis' => 'cv',
+    ]))->assertForbidden();
+
+    expect($pengajuan->fresh()->status)->toBe(PengajuanPengajarKelas::STATUS_PENDING)
+        ->and($kelasLain->fresh()->guru_id)->toBeNull();
 });

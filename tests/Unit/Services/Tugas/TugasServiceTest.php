@@ -350,7 +350,11 @@ it('daftar siswa menampilkan status sudah dikumpulkan per siswa', function () {
         'tipe' => 'upload',
     ], $guru->id);
 
-    PengumpulanTugas::create(['tugas_id' => $tugas->id, 'siswa_id' => $siswa->id]);
+    PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'file' => 'pengumpulan/jawaban.pdf',
+    ]);
 
     $daftar = $svc->daftarUntukSiswa($siswa);
 

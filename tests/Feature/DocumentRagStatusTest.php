@@ -3,9 +3,13 @@
 use App\Jobs\ProcessDocument;
 use App\Models\Document;
 use App\Models\DocumentChunk;
+use App\Models\Kelas;
+use App\Models\Materi;
+use App\Models\Pertemuan;
 use App\Models\User;
 use App\Services\DocumentService;
 use App\Services\EmbeddingService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 
@@ -137,4 +141,68 @@ it('RAG hanya mencari chunk dari dokumen yang selesai diproses', function () {
 
     expect($hasil)->toHaveCount(1)
         ->and($hasil[0]['content'])->toBe('materi valid');
+});
+
+it('pencarian RAG tidak menambah query relasi per dokumen', function () {
+    if (DB::connection()->getDriverName() === 'sqlite') {
+        DB::connection()->getPdo()->sqliteCreateFunction(
+            'JSON_LENGTH',
+            fn (?string $json): int => count(json_decode($json ?? '[]', true) ?: [])
+        );
+    }
+
+    $guru = User::factory()->pengajar()->verified()->create();
+    $kelas = Kelas::factory()->create(['guru_id' => $guru->id]);
+    $pertemuan = Pertemuan::create([
+        'kelas_id' => $kelas->id,
+        'nama_pertemuan' => 'Pertemuan RAG',
+        'urutan' => 1,
+    ]);
+
+    $buatDokumen = function (int $index) use ($guru, $kelas, $pertemuan): void {
+        $materi = Materi::factory()->create([
+            'judul' => "Materi {$index}",
+            'kelas_id' => $kelas->id,
+            'guru_id' => $guru->id,
+            'pertemuan_id' => $pertemuan->id,
+        ]);
+        $document = Document::create([
+            'name' => "Dokumen {$index}",
+            'original_name' => "dokumen-{$index}.txt",
+            'path' => "documents/dokumen-{$index}.txt",
+            'type' => 'txt',
+            'status' => 'completed',
+            'user_id' => $guru->id,
+            'materi_id' => $materi->id,
+            'kelas_id' => $kelas->id,
+        ]);
+        $document->chunks()->create([
+            'content' => "Isi materi {$index}",
+            'embedding' => [1.0, 0.0],
+            'chunk_index' => 0,
+        ]);
+    };
+
+    $buatDokumen(1);
+    $embedding = mock(EmbeddingService::class)->makePartial();
+    $embedding->shouldReceive('embed')->andReturn([1.0, 0.0]);
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $hasilSatuDokumen = $embedding->searchChunks('materi', minScore: 0.5);
+    $querySatuDokumen = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    $buatDokumen(2);
+    $buatDokumen(3);
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $hasilTigaDokumen = $embedding->searchChunks('materi', minScore: 0.5);
+    $queryTigaDokumen = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($hasilSatuDokumen)->toHaveCount(1)
+        ->and($hasilTigaDokumen)->toHaveCount(3)
+        ->and($queryTigaDokumen)->toBe($querySatuDokumen);
 });
