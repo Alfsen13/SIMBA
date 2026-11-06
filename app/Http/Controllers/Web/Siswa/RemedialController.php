@@ -16,9 +16,8 @@ class RemedialController extends Controller
     public function index(): View
     {
         $remedials = MateriRemedial::where('siswa_id', Auth::id())
-            ->with('prediksiAi')
             ->latest('generated_at')
-            ->get();
+            ->paginate(20);
 
         return view('siswa.remedial.index', compact('remedials'));
     }
@@ -66,6 +65,7 @@ class RemedialController extends Controller
             'bloom_tercapai' => null,
             'mastery_alasan' => null,
             'dinilai_at' => null,
+            'penilaian_gagal_at' => null,
             'status' => 'dibaca',
         ]);
 
@@ -82,7 +82,10 @@ class RemedialController extends Controller
             abort(403);
         }
 
-        if ($remedial->jawaban_remedial !== null && $remedial->hasil_remedial === null) {
+        if ($remedial->jawaban_remedial !== null
+            && $remedial->hasil_remedial === null
+            && $remedial->penilaian_gagal_at === null
+        ) {
             return back()->with('error', 'Jawabanmu masih menunggu penilaian AI.');
         }
 
@@ -92,6 +95,7 @@ class RemedialController extends Controller
             'bloom_tercapai' => null,
             'mastery_alasan' => null,
             'dinilai_at' => null,
+            'penilaian_gagal_at' => null,
             'status' => 'dibaca',
         ]);
 

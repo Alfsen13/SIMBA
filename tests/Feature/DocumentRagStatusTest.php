@@ -124,6 +124,11 @@ it('RAG hanya mencari chunk dari dokumen yang selesai diproses', function () {
         'embedding' => [1.0, 0.0],
         'chunk_index' => 0,
     ]);
+    $completed->chunks()->create([
+        'content' => 'embedding lama tidak kompatibel',
+        'embedding' => [1.0, 0.0, 10.0],
+        'chunk_index' => 1,
+    ]);
 
     $embedding = mock(EmbeddingService::class)->makePartial();
     $embedding->shouldReceive('embed')->once()->with('materi')->andReturn([1.0, 0.0]);

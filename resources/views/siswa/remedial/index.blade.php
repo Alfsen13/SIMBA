@@ -6,7 +6,7 @@
 <div class="py-6">
     <x-page-header
         :title="__('siswa.remedial.title')"
-        :subtitle="__('siswa.remedial.subtitle', ['jumlah' => $remedials->count()])"
+        :subtitle="__('siswa.remedial.subtitle', ['jumlah' => $remedials->total()])"
     />
 
     @if($remedials->isEmpty())
@@ -63,5 +63,6 @@
             @endforeach
         </div>
     @endif
+    {{ $remedials->links() }}
 </div>
 @endsection

@@ -131,6 +131,7 @@ Route::prefix('pengajar')->name('pengajar.')->middleware(['auth', 'role:pengajar
         Route::get('/', [AiSettingController::class, 'edit'])->name('edit');
         Route::put('/', [AiSettingController::class, 'update'])->name('update');
         Route::post('/test', [AiSettingController::class, 'test'])->name('test');
+        Route::post('/models', [AiSettingController::class, 'models'])->middleware('throttle:5,1')->name('models');
     });
 });
 
@@ -172,6 +173,7 @@ Route::prefix('pelajar')->name('pelajar.')->middleware(['auth', 'role:pelajar'])
         Route::get('/', [AiSettingController::class, 'edit'])->name('edit');
         Route::put('/', [AiSettingController::class, 'update'])->name('update');
         Route::post('/test', [AiSettingController::class, 'test'])->name('test');
+        Route::post('/models', [AiSettingController::class, 'models'])->middleware('throttle:5,1')->name('models');
     });
 });
 

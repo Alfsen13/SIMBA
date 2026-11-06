@@ -157,8 +157,13 @@
                     </div>
                 @endforeach
             @elseif($remedial->jawaban_remedial)
-                <div class="p-4 rounded-lg border border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-500/10 text-sm text-blue-700 dark:text-blue-300">
-                    {{ __('siswa.remedial.menunggu_pemeriksaan') }}
+                <div class="p-4 rounded-lg border text-sm
+                    {{ $remedial->penilaian_gagal_at
+                        ? 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300'
+                        : 'border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300' }}">
+                    {{ $remedial->penilaian_gagal_at
+                        ? __('siswa.remedial.penilaian_remedial_gagal')
+                        : __('siswa.remedial.menunggu_pemeriksaan') }}
                 </div>
                 <form method="POST" action="{{ route('pelajar.remedial.submit', $remedial) }}" class="mt-3">
                     @csrf

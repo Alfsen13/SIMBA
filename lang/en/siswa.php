@@ -158,6 +158,7 @@ return [
         'kirim_ulang_penilaian' => 'Resubmit for review',
         'skor' => 'Score: :skor',
         'menunggu_pemeriksaan' => 'Your answers have been submitted and are being reviewed by AI. Please reopen this page in a moment.',
+        'penilaian_remedial_gagal' => 'AI grading failed. Your answers are saved; use the button below to retry the review.',
         'dibuat_oleh' => 'Created by: :provider',
         'skor_risiko' => 'Risk score: :skor',
         'tidak_ada_mantap' => 'No remedial material. Great job!',

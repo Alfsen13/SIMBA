@@ -158,6 +158,7 @@ return [
         'kirim_ulang_penilaian' => 'Kirim ulang untuk diperiksa',
         'skor' => 'Skor: :skor',
         'menunggu_pemeriksaan' => 'Jawabanmu sudah dikumpulkan dan sedang diperiksa AI. Silakan buka kembali halaman ini beberapa saat lagi.',
+        'penilaian_remedial_gagal' => 'Pemeriksaan AI gagal. Jawabanmu tetap tersimpan; tekan tombol di bawah untuk mencoba penilaian ulang.',
         'dibuat_oleh' => 'Dibuat oleh: :provider',
         'skor_risiko' => 'Skor risiko: :skor',
         'tidak_ada_mantap' => 'Tidak ada remedial. Mantap!',

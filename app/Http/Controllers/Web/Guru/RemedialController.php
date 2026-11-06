@@ -15,9 +15,14 @@ class RemedialController extends Controller
         $guruId = Auth::id();
         $kelasIds = Kelas::where('guru_id', $guruId)->pluck('id');
 
-        $remedials = MateriRemedial::whereHas('siswa.kelasDiikuti', function ($q) use ($kelasIds) {
-            $q->whereIn('kelas_id', $kelasIds);
-        })->with(['siswa', 'prediksiAi'])->latest('generated_at')->get();
+        $remedials = MateriRemedial::query()
+            ->select(['id', 'siswa_id', 'topik_lemah', 'status', 'provider_llm', 'generated_at'])
+            ->whereHas('siswa.kelasDiikuti', function ($q) use ($kelasIds) {
+                $q->whereIn('kelas_id', $kelasIds);
+            })
+            ->with(['siswa:id,name'])
+            ->latest('generated_at')
+            ->paginate(20);
 
         return view('guru.remedial.index', compact('remedials'));
     }

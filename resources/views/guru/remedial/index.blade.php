@@ -5,7 +5,7 @@
 @section('content')
     <x-page-header
         :title="__('guru_analitik.remedial.page_title')"
-        :subtitle="__('guru_analitik.remedial.count', ['jumlah' => $remedials->count()])"
+        :subtitle="__('guru_analitik.remedial.count', ['count' => $remedials->total()])"
     />
 
     @if($remedials->isEmpty())
@@ -32,7 +32,7 @@
                         @foreach($remedials as $r)
                             <x-tr>
                                 <x-td muted>
-                                    {{ $loop->iteration }}
+                                    {{ $remedials->firstItem() + $loop->index }}
                                 </x-td>
                                 <x-td class="font-medium text-slate-900 dark:text-slate-100">
                                     {{ $r->siswa?->name ?: '-' }}
@@ -80,6 +80,11 @@
                     </tbody>
                 </table>
             </div>
+            @if ($remedials->hasPages())
+                <div class="p-4 border-t border-slate-100 dark:border-slate-800">
+                    {{ $remedials->links() }}
+                </div>
+            @endif
         </x-card>
     @endif
 @endsection

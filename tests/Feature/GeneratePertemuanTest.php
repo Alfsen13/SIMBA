@@ -45,7 +45,7 @@ it('mengenerate pertemuan secara sinkron saat Ollama aktif', function () {
         ->andReturn(true);
 
     $this->mock(AIProviderService::class)
-        ->shouldReceive('sendLocalPreferred')
+        ->shouldReceive('send')
         ->once()
         ->andReturn(json_encode([
             ['nama_pertemuan' => 'Aljabar Dasar', 'deskripsi' => 'Pengenalan aljabar', 'urutan' => 1],
@@ -113,8 +113,8 @@ it('kirim notifikasi ke guru saat generate pertemuan sinkron gagal', function ()
         ->andReturn(true);
 
     $this->mock(AIProviderService::class)
-        ->shouldReceive('sendLocalPreferred')
-        ->once()
+        ->shouldReceive('send')
+        ->times(3)
         ->andThrow(new RuntimeException('Semua provider AI gagal.'));
 
     $guru = User::factory()->verified()->pengajar()->create();
@@ -131,6 +131,7 @@ it('kirim notifikasi ke guru saat generate pertemuan sinkron gagal', function ()
 
     expect(Pertemuan::where('kelas_id', $kelas->id)->count())->toBe(0);
 
+    Notification::assertSentToTimes($guru, GeneratePertemuanGagal::class, 1);
     Notification::assertSentTo($guru, GeneratePertemuanGagal::class, function ($notif) use ($kelas) {
         return $notif->kelasNama === $kelas->nama_kelas
             && str_contains($notif->alasan, 'Semua provider AI gagal');

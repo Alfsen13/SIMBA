@@ -10,6 +10,7 @@ use App\Services\RAGService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -117,7 +118,16 @@ class AITutorController extends Controller
 
         $kategori = $pertemuan->kelas?->kategori;
         $rag = app(RAGService::class);
-        $context = $rag->buildContext($validated['question'], $kategori, $materiId, $pertemuan->id);
+        try {
+            $context = $rag->buildContext($validated['question'], $kategori, $materiId, $pertemuan->id);
+        } catch (\Throwable $e) {
+            Log::error('AI Tutor RAG retrieval gagal', [
+                'pertemuan_id' => $pertemuan->id,
+                'msg' => $e->getMessage(),
+            ]);
+
+            return response()->json(['error' => 'Pencarian materi sementara tidak tersedia'], 503);
+        }
 
         $prompt = '';
         if ($context) {

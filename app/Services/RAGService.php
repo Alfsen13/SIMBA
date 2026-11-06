@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
-
 class RAGService
 {
     protected EmbeddingService $embedding;
@@ -34,13 +32,7 @@ class RAGService
         $k = $k ?? $this->topK;
         $minScore = $minScore ?? $this->minScore;
 
-        try {
-            return $this->embedding->searchChunks($query, $k, $minScore, $kategori, $materiId, $pertemuanId);
-        } catch (\Throwable $e) {
-            Log::warning('RAG retrieve gagal: {msg}', ['msg' => $e->getMessage()]);
-
-            return [];
-        }
+        return $this->embedding->searchChunks($query, $k, $minScore, $kategori, $materiId, $pertemuanId);
     }
 
     public function buildContext(string $query, ?string $kategori = null, ?int $materiId = null, ?int $pertemuanId = null): string
@@ -131,4 +123,3 @@ class RAGService
         return ! empty($chunks);
     }
 }
-

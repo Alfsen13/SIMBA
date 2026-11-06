@@ -27,15 +27,17 @@ class GeminiService
         $contents = $this->buildContents($prompt, $history);
 
         try {
-            $response = Http::timeout($timeout)->post("{$this->endpoint}?key={$this->apiKey}", [
-                'contents' => $contents,
-                'safetySettings' => [
-                    ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
-                    ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_ONLY_HIGH'],
-                    ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_ONLY_HIGH'],
-                    ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
-                ],
-            ]);
+            $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])
+                ->timeout($timeout)
+                ->post($this->endpoint, [
+                    'contents' => $contents,
+                    'safetySettings' => [
+                        ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                        ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                        ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                        ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                    ],
+                ]);
         } catch (\Throwable $e) {
             throw new RuntimeException('Gagal terhubung ke Gemini: '.$e->getMessage());
         }
@@ -69,8 +71,9 @@ class GeminiService
 
         try {
             $response = Http::withOptions(['stream' => true])
+                ->withHeaders(['x-goog-api-key' => $this->apiKey])
                 ->timeout($timeout)
-                ->post("{$streamUrl}?alt=sse&key={$this->apiKey}", [
+                ->post("{$streamUrl}?alt=sse", [
                     'contents' => $contents,
                     'safetySettings' => [
                         ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_NONE'],

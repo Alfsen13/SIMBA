@@ -192,7 +192,7 @@ return [
     'remedial' => [
         'page_title' => 'Materi Remedial',
         'detail_title' => 'Detail Remedial',
-        'count' => ':jumlah materi',
+        'count' => ':count materi',
         'empty' => 'Belum ada materi remedial yang tersedia.',
         'student_name' => 'Nama Siswa',
         'weak_topic' => 'Topik Lemah',

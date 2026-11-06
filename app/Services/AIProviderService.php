@@ -283,7 +283,7 @@ class AIProviderService
                 array_merge($this->prepareHistory($history, $systemPrompt), [['role' => 'user', 'content' => $prompt]])
             );
 
-            if ($result !== null) {
+            if ($result !== null && trim($result) !== '') {
                 return $result;
             }
 
@@ -312,12 +312,30 @@ class AIProviderService
                 options: $setting->options ?? [],
             );
 
-            $custom->chatStream(
-                array_merge($this->prepareHistory($history, $systemPrompt), [['role' => 'user', 'content' => $prompt]]),
-                fn (string $chunk) => yield $chunk
-            );
+            $hasOutput = false;
 
-            return;
+            try {
+                foreach ($custom->chatStream(
+                    array_merge($this->prepareHistory($history, $systemPrompt), [['role' => 'user', 'content' => $prompt]])
+                ) as $chunk) {
+                    $hasOutput = true;
+                    yield $chunk;
+                }
+
+                if ($hasOutput) {
+                    return;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AIProvider: user stream failed, fallback global', [
+                    'user_id' => $user->id,
+                    'provider' => $setting->provider,
+                    'error' => $e->getMessage(),
+                ]);
+
+                if ($hasOutput) {
+                    throw $e;
+                }
+            }
         }
 
         yield from $this->sendStreamLocalPreferred($prompt, $history, $systemPrompt);

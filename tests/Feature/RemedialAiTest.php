@@ -540,6 +540,46 @@ test('job penilaian melempar kegagalan agar antrean dapat mencoba ulang', functi
     expect($this->remedial->refresh()->status)->toBe('dibaca');
 });
 
+test('kegagalan akhir penilaian tersimpan dan siswa dapat mengirim ulang penilaian', function () {
+    Queue::fake();
+    $answers = ['Jawaban 1.', 'Jawaban 2.', 'Jawaban 3.'];
+    $this->remedial->update([
+        'tugas_remedial' => json_decode(remedialGenerateJson(), true)['soal'],
+        'jawaban_remedial' => $answers,
+        'status' => 'dibaca',
+    ]);
+
+    (new NilaiRemedialTugasAI($this->remedial->id))->failed(new RuntimeException('Provider AI gagal'));
+
+    $this->actingAs($this->siswa)
+        ->get(route('pelajar.remedial.show', $this->remedial))
+        ->assertOk()
+        ->assertSee(__('siswa.remedial.penilaian_remedial_gagal'));
+
+    $this->actingAs($this->siswa)
+        ->post(route('pelajar.remedial.submit', $this->remedial), ['jawaban' => $answers])
+        ->assertRedirect(route('pelajar.remedial.show', $this->remedial));
+
+    expect($this->remedial->refresh()->penilaian_gagal_at)->toBeNull();
+    Queue::assertPushed(NilaiRemedialTugasAI::class);
+});
+
+test('siswa dapat mereset jawaban setelah kegagalan akhir penilaian remedial', function () {
+    $this->remedial->update([
+        'jawaban_remedial' => ['Jawaban 1.', 'Jawaban 2.', 'Jawaban 3.'],
+        'status' => 'dibaca',
+    ]);
+
+    (new NilaiRemedialTugasAI($this->remedial->id))->failed(new RuntimeException('Provider AI gagal'));
+
+    $this->actingAs($this->siswa)
+        ->post(route('pelajar.remedial.reset', $this->remedial))
+        ->assertRedirect();
+
+    expect($this->remedial->refresh()->jawaban_remedial)->toBeNull()
+        ->and($this->remedial->penilaian_gagal_at)->toBeNull();
+});
+
 test('siswa lain tidak dapat mengumpulkan jawaban remedial orang lain', function () {
     $siswaLain = User::factory()->verified()->create();
 

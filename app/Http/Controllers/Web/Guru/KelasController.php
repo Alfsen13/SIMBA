@@ -8,7 +8,6 @@ use App\Jobs\GeneratePertemuanJob;
 use App\Jobs\SaranMateriJob;
 use App\Models\Kelas;
 use App\Models\PengajuanPengajarKelas;
-use App\Notifications\GeneratePertemuanGagal;
 use App\Services\OllamaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -179,14 +178,6 @@ class KelasController extends Controller
                 'kelas' => $kelas->id,
                 'msg' => $e->getMessage(),
             ]);
-
-            try {
-                if ($kelas->guru_id) {
-                    $kelas->guru?->notify(new GeneratePertemuanGagal($kelas->nama_kelas, $e->getMessage(), app()->getLocale()));
-                }
-            } catch (\Throwable $notifE) {
-                Log::warning('generatePertemuan: gagal kirim notifikasi: {msg}', ['msg' => $notifE->getMessage()]);
-            }
 
             return back()->with('error', 'Generate pertemuan gagal: '.$e->getMessage());
         }

@@ -1,8 +1,11 @@
 <?php
 
+use App\Models\User;
+use App\Models\UserAiSetting;
 use App\Services\AIProviderService;
 use App\Services\GeminiService;
 use App\Services\OllamaService;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
     $this->geminiMock = $this->mock(GeminiService::class);
@@ -50,6 +53,88 @@ test('send throws when all providers fail', function () {
 
     expect(fn () => $this->provider->send('Halo'))
         ->toThrow(RuntimeException::class, 'Semua provider AI gagal');
+});
+
+test('sendForUser falls back globally when the personal provider returns an empty answer', function () {
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://example.test/*' => Http::response([
+            'choices' => [['message' => ['content' => '   ']]],
+        ]),
+    ]);
+
+    $setting = new UserAiSetting;
+    $setting->setRawAttributes([
+        'provider' => 'custom',
+        'endpoint' => 'https://example.test/v1/chat/completions',
+        'model' => 'custom-model',
+        'enabled' => true,
+        'options' => json_encode([]),
+    ]);
+
+    $user = Mockery::mock(User::class)->makePartial();
+    $user->shouldReceive('getAttribute')->with('aiSetting')->andReturn($setting);
+
+    $this->ollamaMock
+        ->shouldReceive('send')
+        ->once()
+        ->andReturn('Respons dari provider global');
+
+    expect($this->provider->sendForUser($user, 'Halo'))
+        ->toBe('Respons dari provider global');
+});
+
+test('sendStreamForUser yields chunks from the personal provider', function () {
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://example.test/*' => Http::response(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"Halo\"}}]}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\"!\"}}]}\n\ndata: [DONE]\n\n"
+        ),
+    ]);
+
+    $setting = new UserAiSetting;
+    $setting->setRawAttributes([
+        'provider' => 'custom',
+        'endpoint' => 'https://example.test/v1/chat/completions',
+        'model' => 'custom-model',
+        'enabled' => true,
+        'options' => json_encode([]),
+    ]);
+
+    $user = Mockery::mock(User::class)->makePartial();
+    $user->shouldReceive('getAttribute')->with('aiSetting')->andReturn($setting);
+
+    expect(iterator_to_array($this->provider->sendStreamForUser($user, 'Halo'), false))
+        ->toBe(['Halo', '!']);
+});
+
+test('sendStreamForUser falls back globally when the personal stream fails before yielding', function () {
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://example.test/*' => Http::response([], 503),
+    ]);
+
+    $setting = new UserAiSetting;
+    $setting->setRawAttributes([
+        'provider' => 'custom',
+        'endpoint' => 'https://example.test/v1/chat/completions',
+        'model' => 'custom-model',
+        'enabled' => true,
+        'options' => json_encode([]),
+    ]);
+
+    $user = Mockery::mock(User::class)->makePartial();
+    $user->shouldReceive('getAttribute')->with('aiSetting')->andReturn($setting);
+
+    $this->ollamaMock
+        ->shouldReceive('sendStream')
+        ->once()
+        ->andReturn((function () {
+            yield 'Jawaban global';
+        })());
+
+    expect(iterator_to_array($this->provider->sendStreamForUser($user, 'Halo'), false))
+        ->toBe(['Jawaban global']);
 });
 
 test('sendLocalPreferred calls Ollama first', function () {

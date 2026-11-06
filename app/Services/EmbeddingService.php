@@ -96,13 +96,15 @@ class EmbeddingService
             throw new RuntimeException('API key Gemini tidak dikonfigurasi.');
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:embedContent?key={$apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:embedContent";
 
         try {
-            $response = Http::timeout(30)->post($url, [
-                'model' => "models/{$this->model}",
-                'content' => ['parts' => [['text' => $text]]],
-            ]);
+            $response = Http::withHeaders(['x-goog-api-key' => $apiKey])
+                ->timeout(30)
+                ->post($url, [
+                    'model' => "models/{$this->model}",
+                    'content' => ['parts' => [['text' => $text]]],
+                ]);
         } catch (\Throwable $e) {
             throw new RuntimeException('Gagal membuat embedding: '.$e->getMessage());
         }
@@ -123,7 +125,7 @@ class EmbeddingService
             throw new RuntimeException('API key Gemini tidak dikonfigurasi.');
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:batchEmbedContents?key={$apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:batchEmbedContents";
         $allEmbeddings = [];
         $chunks = array_chunk($texts, $batchSize);
         $totalBatches = count($chunks);
@@ -138,9 +140,11 @@ class EmbeddingService
             }
 
             try {
-                $response = Http::timeout(60)->post($url, [
-                    'requests' => $requests,
-                ]);
+                $response = Http::withHeaders(['x-goog-api-key' => $apiKey])
+                    ->timeout(60)
+                    ->post($url, [
+                        'requests' => $requests,
+                    ]);
             } catch (\Throwable $e) {
                 throw new RuntimeException('Gagal membuat embedding batch: '.$e->getMessage());
             }
@@ -197,14 +201,17 @@ class EmbeddingService
 
     public function cosineSimilarity(array $vectorA, array $vectorB): float
     {
+        if (count($vectorA) !== count($vectorB)) {
+            throw new \InvalidArgumentException('Embedding harus memiliki dimensi yang sama.');
+        }
+
         $dot = 0;
         $normA = 0;
         $normB = 0;
 
-        $count = min(count($vectorA), count($vectorB));
-        for ($i = 0; $i < $count; $i++) {
-            $dot += $vectorA[$i] * $vectorB[$i];
-            $normA += $vectorA[$i] * $vectorA[$i];
+        foreach ($vectorA as $i => $value) {
+            $dot += $value * $vectorB[$i];
+            $normA += $value * $value;
             $normB += $vectorB[$i] * $vectorB[$i];
         }
 
@@ -234,10 +241,17 @@ class EmbeddingService
         }
 
         $scoredChunks = [];
+        $incompatibleDimensions = 0;
         $q->with('document:id,original_name,materi_id')
             ->select(['id', 'content', 'embedding', 'document_id', 'page_start', 'page_end'])
-            ->chunkById(500, function ($batch) use ($queryEmbedding, $minScore, &$scoredChunks) {
+            ->chunkById(500, function ($batch) use ($queryEmbedding, $minScore, &$scoredChunks, &$incompatibleDimensions) {
                 foreach ($batch as $chunk) {
+                    if (count($chunk->embedding) !== count($queryEmbedding)) {
+                        $incompatibleDimensions++;
+
+                        continue;
+                    }
+
                     $score = $this->cosineSimilarity($queryEmbedding, $chunk->embedding);
                     if ($score >= $minScore) {
                         $materi = $chunk->document?->materi;
@@ -255,6 +269,13 @@ class EmbeddingService
                     }
                 }
             });
+
+        if ($incompatibleDimensions > 0) {
+            Log::warning('EmbeddingService: chunk dilewati karena dimensi embedding tidak cocok', [
+                'count' => $incompatibleDimensions,
+                'query_dimensions' => count($queryEmbedding),
+            ]);
+        }
 
         usort($scoredChunks, fn ($a, $b) => $b['score'] <=> $a['score']);
 

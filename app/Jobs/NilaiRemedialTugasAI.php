@@ -50,6 +50,10 @@ class NilaiRemedialTugasAI implements ShouldBeUnique, ShouldQueue
 
     public function failed(\Throwable $e): void
     {
+        MateriRemedial::whereKey($this->remedialId)
+            ->whereNull('hasil_remedial')
+            ->update(['penilaian_gagal_at' => now()]);
+
         Log::error('NilaiRemedialTugasAI gagal untuk remedial {id}: {msg}', [
             'id' => $this->remedialId,
             'msg' => $e->getMessage(),

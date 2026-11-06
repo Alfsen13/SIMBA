@@ -144,6 +144,58 @@ it('mengirim riwayat chat ke AI personal pelajar dan mengembalikan referensi', f
         ->assertJsonPath('references.0.url', route('pelajar.materi.show', $materi));
 });
 
+it('mengembalikan 503 jika pencarian konteks RAG gagal', function () {
+    $guru = aiTutorGuru();
+    $kelas = aiTutorKelas($guru);
+    $pertemuan = aiTutorPertemuan($kelas);
+    $siswa = aiTutorSiswa($kelas);
+
+    $rag = Mockery::mock(RAGService::class);
+    $rag->shouldReceive('buildContext')->once()->andThrow(new RuntimeException('embedding tidak tersedia'));
+    app()->instance(RAGService::class, $rag);
+
+    $ai = Mockery::mock(AIProviderService::class);
+    $ai->shouldNotReceive('sendForUser');
+    app()->instance(AIProviderService::class, $ai);
+
+    $this->actingAs($siswa)
+        ->postJson(route('pelajar.ai-tutor.ask'), [
+            'pertemuan_id' => $pertemuan->id,
+            'question' => 'Apa materinya?',
+        ])
+        ->assertStatus(503)
+        ->assertJsonPath('error', 'Pencarian materi sementara tidak tersedia');
+});
+
+it('tetap mengirim permintaan ke AI ketika pencarian RAG berhasil tetapi tidak menemukan konteks', function () {
+    $guru = aiTutorGuru();
+    $kelas = aiTutorKelas($guru);
+    $pertemuan = aiTutorPertemuan($kelas);
+    $siswa = aiTutorSiswa($kelas);
+
+    $rag = Mockery::mock(RAGService::class);
+    $rag->shouldReceive('buildContext')->once()->andReturn('');
+    $rag->shouldReceive('getLastReferences')->once()->andReturn([]);
+    app()->instance(RAGService::class, $rag);
+
+    $ai = Mockery::mock(AIProviderService::class);
+    $ai->shouldReceive('sendForUser')
+        ->once()
+        ->withArgs(fn ($user, $prompt) => $user->is($siswa)
+            && str_contains($prompt, 'TIDAK ADA INFORMASI TERSEDIA'))
+        ->andReturn('Saya belum menemukan informasi yang cukup.');
+    app()->instance(AIProviderService::class, $ai);
+
+    $this->actingAs($siswa)
+        ->postJson(route('pelajar.ai-tutor.ask'), [
+            'pertemuan_id' => $pertemuan->id,
+            'question' => 'Apa materinya?',
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('answer', 'Saya belum menemukan informasi yang cukup.')
+        ->assertJsonPath('references', []);
+});
+
 it('menolak riwayat chat dengan role yang tidak didukung', function () {
     $guru = aiTutorGuru();
     $kelas = aiTutorKelas($guru);

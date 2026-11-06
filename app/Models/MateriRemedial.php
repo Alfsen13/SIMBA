@@ -25,6 +25,7 @@ class MateriRemedial extends Model
         'bloom_tercapai',
         'mastery_alasan',
         'dinilai_at',
+        'penilaian_gagal_at',
         'provider_llm',
         'status',
         'generated_at',
@@ -40,6 +41,7 @@ class MateriRemedial extends Model
             'bloom_tercapai' => 'boolean',
             'skor_pertemuan' => 'float',
             'dinilai_at' => 'datetime',
+            'penilaian_gagal_at' => 'datetime',
             'generated_at' => 'datetime',
         ];
     }
@@ -121,4 +123,3 @@ class MateriRemedial extends Model
         return $this->belongsTo(Pertemuan::class);
     }
 }
-

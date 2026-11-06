@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Generator;
+use GuzzleHttp\Psr7\Utils;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -39,23 +41,12 @@ class CustomAiService
     public function chat(array $messages, array $override = []): ?string
     {
         $opts = array_merge($this->options, $override);
-        $url = $this->resolveEndpoint();
-
-        $headers = ['Content-Type' => 'application/json'];
-        if ($this->apiKey) {
-            $headers['Authorization'] = 'Bearer ' . $this->apiKey;
-        }
-
-        $payload = array_filter([
-            'model'       => $opts['model'] ?? $this->model,
-            'messages'    => $messages,
-            'temperature' => $opts['temperature'] ?? 0.7,
-            'max_tokens'  => $opts['max_tokens'] ?? 4096,
-            'stream'      => false,
-        ], fn ($v) => $v !== null);
+        [$url, $headers, $payload] = $this->requestData($messages, $opts);
 
         try {
             $response = Http::timeout((int) ($opts['timeout'] ?? 60))
+                ->connectTimeout(10)
+                ->withOptions(UserAiEndpointPolicy::httpOptions($this->provider, $this->endpoint))
                 ->withHeaders($headers)
                 ->post($url, $payload);
 
@@ -65,6 +56,7 @@ class CustomAiService
                     'status'   => $response->status(),
                     'body'     => Str::limit($response->body(), 500),
                 ]);
+
                 return null;
             }
 
@@ -74,49 +66,41 @@ class CustomAiService
                 'provider' => $this->provider,
                 'error'    => $e->getMessage(),
             ]);
+
             return null;
         }
     }
 
     /**
      * Kirim pesan chat dengan streaming (untuk AI Tutor SSE).
-     * Setiap chunk dipanggil melalui $onChunk.
      */
-    public function chatStream(array $messages, callable $onChunk, array $override = []): void
+    public function chatStream(array $messages, array $override = []): Generator
     {
         $opts = array_merge($this->options, $override);
-        $url = $this->resolveEndpoint();
-
-        $headers = ['Content-Type' => 'application/json', 'Accept' => 'text/event-stream'];
-        if ($this->apiKey) {
-            $headers['Authorization'] = 'Bearer ' . $this->apiKey;
-        }
-
-        $payload = array_filter([
-            'model'       => $opts['model'] ?? $this->model,
-            'messages'    => $messages,
-            'temperature' => $opts['temperature'] ?? 0.7,
-            'max_tokens'  => $opts['max_tokens'] ?? 4096,
-            'stream'      => true,
-        ], fn ($v) => $v !== null);
+        [$url, $headers, $payload] = $this->requestData($messages, $opts, true);
+        $headers['Accept'] = 'text/event-stream';
 
         try {
             $response = Http::timeout((int) ($opts['timeout'] ?? 600))
+                ->connectTimeout(10)
                 ->withHeaders($headers)
-                ->post($url, $payload, ['stream' => true]);
+                ->withOptions(array_merge(
+                    UserAiEndpointPolicy::httpOptions($this->provider, $this->endpoint),
+                    ['stream' => true],
+                ))
+                ->post($url, $payload);
 
             if (! $response->successful()) {
                 Log::warning('Custom AI stream failed', [
                     'provider' => $this->provider,
                     'status'   => $response->status(),
                 ]);
-                return;
+                throw new \RuntimeException('Custom AI stream failed with HTTP status ' . $response->status());
             }
 
             $stream = $response->getBody();
-            $stream->rewind();
             while (! $stream->eof()) {
-                $line = trim($stream->readLine());
+                $line = trim(Utils::readLine($stream));
                 if ($line === '' || ! Str::startsWith($line, 'data:')) {
                     continue;
                 }
@@ -130,7 +114,7 @@ class CustomAiService
                 if ($decoded) {
                     $content = $this->extractStreamContent($decoded, $this->provider);
                     if ($content !== null) {
-                        $onChunk($content);
+                        yield $content;
                     }
                 }
             }
@@ -139,6 +123,7 @@ class CustomAiService
                 'provider' => $this->provider,
                 'error'    => $e->getMessage(),
             ]);
+            throw $e;
         }
     }
 
@@ -159,6 +144,80 @@ class CustomAiService
     }
 
     /**
+     * Ambil model yang dapat diakses melalui konfigurasi provider ini.
+     *
+     * @return list<string>
+     */
+    public function listModels(): array
+    {
+        [$url, $headers] = match ($this->provider) {
+            'ollama' => [
+                rtrim($this->endpoint ?? config('services.ollama.base_url', 'http://localhost:11434'), '/') . '/api/tags',
+                [],
+            ],
+            'gemini' => [
+                'https://generativelanguage.googleapis.com/v1beta/models?pageSize=100',
+                ['x-goog-api-key' => $this->apiKey ?? ''],
+            ],
+            'openai' => [
+                'https://api.openai.com/v1/models',
+                ['Authorization' => 'Bearer ' . ($this->apiKey ?? '')],
+            ],
+            'nvidia_nim' => [
+                'https://integrate.api.nvidia.com/v1/models',
+                ['Authorization' => 'Bearer ' . ($this->apiKey ?? '')],
+            ],
+            'anthropic' => [
+                'https://api.anthropic.com/v1/models?limit=100',
+                [
+                    'x-api-key' => $this->apiKey ?? '',
+                    'anthropic-version' => '2023-06-01',
+                ],
+            ],
+            default => throw new \RuntimeException('Daftar model otomatis tidak didukung untuk endpoint custom.'),
+        };
+
+        $requestOptions = array_merge(
+            ['allow_redirects' => false],
+            UserAiEndpointPolicy::httpOptions($this->provider, $this->endpoint),
+        );
+
+        $response = Http::connectTimeout(5)
+            ->timeout(20)
+            ->withOptions($requestOptions)
+            ->withHeaders($headers)
+            ->get($url);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException('Tidak dapat memuat model. Periksa API key dan endpoint.');
+        }
+
+        $models = match ($this->provider) {
+            'ollama' => collect($response->json('models', []))
+                ->pluck('name'),
+            'gemini' => collect($response->json('models', []))
+                ->filter(fn (array $model) => in_array('generateContent', $model['supportedGenerationMethods'] ?? [], true))
+                ->pluck('name')
+                ->map(fn (string $name) => preg_replace('/^models\//', '', $name)),
+            default => collect($response->json('data', []))
+                ->pluck('id'),
+        };
+
+        $models = $models
+            ->filter(fn ($model) => is_string($model) && $model !== '')
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        if ($models === []) {
+            throw new \RuntimeException('Provider tidak mengembalikan model yang dapat digunakan.');
+        }
+
+        return $models;
+    }
+
+    /**
      * Resolve endpoint URL berdasarkan provider.
      */
     private function resolveEndpoint(): string
@@ -174,6 +233,108 @@ class CustomAiService
             'custom' => $this->endpoint ?? '',
             default => throw new \InvalidArgumentException("Unknown AI provider: {$this->provider}"),
         };
+    }
+
+    /**
+     * @return array{string, array<string, string>, array<string, mixed>}
+     */
+    private function requestData(array $messages, array $options, bool $stream = false): array
+    {
+        $headers = ['Content-Type' => 'application/json'];
+        $model = $options['model'] ?? $this->model;
+
+        if ($this->provider === 'gemini') {
+            $system = [];
+            $contents = [];
+
+            foreach ($messages as $message) {
+                if (($message['role'] ?? null) === 'system') {
+                    $system[] = (string) ($message['content'] ?? '');
+
+                    continue;
+                }
+
+                $contents[] = [
+                    'role' => ($message['role'] ?? 'user') === 'assistant' ? 'model' : 'user',
+                    'parts' => [['text' => (string) ($message['content'] ?? '')]],
+                ];
+            }
+
+            $payload = ['contents' => $contents];
+            if ($system !== []) {
+                $payload['systemInstruction'] = [
+                    'parts' => [['text' => implode("\n", $system)]],
+                ];
+            }
+            if (isset($options['temperature'])) {
+                $payload['generationConfig']['temperature'] = $options['temperature'];
+            }
+            if (isset($options['max_tokens'])) {
+                $payload['generationConfig']['maxOutputTokens'] = $options['max_tokens'];
+            }
+
+            $url = $this->resolveEndpoint();
+            if ($stream) {
+                $url = str_replace(':generateContent', ':streamGenerateContent', $url) . '?alt=sse';
+            }
+            if ($this->apiKey) {
+                $headers['x-goog-api-key'] = $this->apiKey;
+            }
+
+            return [$url, $headers, $payload];
+        }
+
+        if ($this->provider === 'anthropic') {
+            $system = [];
+            $conversation = [];
+
+            foreach ($messages as $message) {
+                if (($message['role'] ?? null) === 'system') {
+                    $system[] = (string) ($message['content'] ?? '');
+
+                    continue;
+                }
+
+                $conversation[] = [
+                    'role' => ($message['role'] ?? 'user') === 'assistant' ? 'assistant' : 'user',
+                    'content' => (string) ($message['content'] ?? ''),
+                ];
+            }
+
+            $payload = [
+                'model' => $model,
+                'max_tokens' => $options['max_tokens'] ?? 4096,
+                'messages' => $conversation,
+                'stream' => $stream,
+            ];
+            if ($system !== []) {
+                $payload['system'] = implode("\n", $system);
+            }
+            if (isset($options['temperature'])) {
+                $payload['temperature'] = $options['temperature'];
+            }
+
+            $headers['x-api-key'] = $this->apiKey ?? '';
+            $headers['anthropic-version'] = '2023-06-01';
+
+            return [$this->resolveEndpoint(), $headers, $payload];
+        }
+
+        if ($this->apiKey) {
+            $headers['Authorization'] = 'Bearer '.$this->apiKey;
+        }
+
+        return [
+            $this->resolveEndpoint(),
+            $headers,
+            array_filter([
+                'model' => $model,
+                'messages' => $messages,
+                'temperature' => $options['temperature'] ?? 0.7,
+                'max_tokens' => $options['max_tokens'] ?? 4096,
+                'stream' => $stream,
+            ], fn ($value) => $value !== null),
+        ];
     }
 
     /**
@@ -210,8 +371,12 @@ class CustomAiService
     private function extractStreamContent(array $chunk, string $provider): ?string
     {
         return match ($provider) {
-            'anthropic' => $chunk['delta']['text'] ?? null,
-            default     => $chunk['choices'][0]['delta']['content'] ?? null,
+            'anthropic' => ($chunk['type'] ?? null) === 'content_block_delta'
+                && ($chunk['delta']['type'] ?? null) === 'text_delta'
+                    ? ($chunk['delta']['text'] ?? null)
+                    : null,
+            'gemini' => $chunk['candidates'][0]['content']['parts'][0]['text'] ?? null,
+            default => $chunk['choices'][0]['delta']['content'] ?? null,
         };
     }
 }
