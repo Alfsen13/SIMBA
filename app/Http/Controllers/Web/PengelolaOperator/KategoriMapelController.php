@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Web\PengelolaOperator;
 
 use App\Http\Controllers\Controller;
 use App\Models\AplikasiPengajar;
+use App\Models\Document;
+use App\Models\DocumentChunk;
 use App\Models\KategoriMataPelajaran;
 use App\Models\Kelas;
 use App\Models\MataPelajaran;
@@ -74,6 +76,8 @@ class KategoriMapelController extends Controller
             Kelas::where('kategori', $kategori)->update(['kategori' => $validated['kategori']]);
             User::where('kategori_mapel', $kategori)->update(['kategori_mapel' => $validated['kategori']]);
             AplikasiPengajar::where('kategori_mapel', $kategori)->update(['kategori_mapel' => $validated['kategori']]);
+            Document::where('kategori', $kategori)->update(['kategori' => $validated['kategori']]);
+            DocumentChunk::where('kategori', $kategori)->update(['kategori' => $validated['kategori']]);
         });
 
         return redirect()->route('pengelola-operator.kategori-mata-pelajaran.index')->with('success', __('pengelola_operator.kategori_mata_pelajaran.updated'));

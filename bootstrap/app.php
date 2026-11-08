@@ -21,10 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
-        $middleware->web(replace: [
-            \Illuminate\Cookie\Middleware\EncryptCookies::class => \App\Http\Middleware\EncryptCookies::class,
-            SetLocale::class,
-        ]);
+        $middleware->web(
+            append: [SetLocale::class],
+            replace: [
+                \Illuminate\Cookie\Middleware\EncryptCookies::class => \App\Http\Middleware\EncryptCookies::class,
+            ],
+        );
         $middleware->api(prepend: [
             ForceJsonResponse::class,
         ]);

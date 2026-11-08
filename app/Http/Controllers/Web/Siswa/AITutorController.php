@@ -114,6 +114,8 @@ class AITutorController extends Controller
             return response()->json(['error' => 'Pertemuan belum dibuka'], 403);
         }
 
+        set_time_limit(600);
+
         $materiId = $validated['materi_id'] ?? null;
 
         $kategori = $pertemuan->kelas?->kategori;

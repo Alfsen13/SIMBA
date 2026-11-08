@@ -284,3 +284,34 @@ it('menghapus teks hasil ekstraksi saat materi dihapus', function () {
     expect(Storage::disk('public')->exists($summaryPath))->toBeFalse()
         ->and(Document::where('materi_id', $materi->id)->exists())->toBeFalse();
 });
+
+it('menghapus teks kategori lama setelah kategori materi diganti', function () {
+    Storage::fake('public');
+
+    $guru = mrssGuru();
+    $kelas = mrssKelas($guru);
+    $materi = Materi::factory()->create([
+        'kelas_id' => $kelas->id,
+        'guru_id' => $guru->id,
+        'file_path' => null,
+        'file_type' => null,
+    ]);
+    Document::create([
+        'name' => 'Materi',
+        'original_name' => 'materi.txt',
+        'path' => 'materi/materi.txt',
+        'user_id' => $guru->id,
+        'materi_id' => $materi->id,
+        'kelas_id' => $kelas->id,
+        'kategori' => 'Sains',
+    ]);
+    $oldPath = 'summaries/Kategori Lama/materi_'.$materi->id.'.txt';
+    $otherPath = 'summaries/Kategori Lama/materi_'.($materi->id + 1).'.txt';
+    Storage::disk('public')->put($oldPath, 'teks ekstraksi');
+    Storage::disk('public')->put($otherPath, 'materi lain');
+
+    $materi->delete();
+
+    expect(Storage::disk('public')->exists($oldPath))->toBeFalse()
+        ->and(Storage::disk('public')->exists($otherPath))->toBeTrue();
+});

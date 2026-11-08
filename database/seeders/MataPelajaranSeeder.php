@@ -38,7 +38,7 @@ class MataPelajaranSeeder extends Seeder
     private function master(): array
     {
         return [
-            'Matematika & Ilmu Alam' => [
+            'Sains' => [
                 ['kode' => 'matematika', 'nama' => 'Matematika'],
                 ['kode' => 'fisika', 'nama' => 'Fisika'],
                 ['kode' => 'kimia', 'nama' => 'Kimia'],

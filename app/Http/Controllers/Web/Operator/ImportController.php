@@ -42,7 +42,7 @@ class ImportController extends Controller
             ? [
                 'Matematika Kelas 4 SD',
                 'Matematika',
-                'Matematika & Ilmu Alam',
+                'Sains',
                 'Formal',
                 'SD',
                 'Kelas 4',

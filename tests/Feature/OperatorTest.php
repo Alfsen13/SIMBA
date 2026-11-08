@@ -402,7 +402,8 @@ test('template impor kelas tetap menyediakan header dan contoh kelas', function 
         ->assertOk()
         ->assertHeader('content-disposition', 'attachment; filename="template-import-kelas.csv"')
         ->assertSeeText('nama_kelas,mata_pelajaran,kategori')
-        ->assertSeeText('Matematika Kelas 4 SD');
+        ->assertSeeText('Matematika Kelas 4 SD')
+        ->assertSeeText('Sains');
 });
 
 test('operator import kelas menolak header template yang hilang atau salah eja', function () {

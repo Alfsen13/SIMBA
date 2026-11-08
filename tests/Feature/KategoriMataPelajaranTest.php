@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AplikasiPengajar;
+use App\Models\Document;
 use App\Models\JalurPendidikan;
 use App\Models\JenjangPendidikan;
 use App\Models\KategoriMataPelajaran;
@@ -57,12 +58,12 @@ test('seeder mata pelajaran mengisi kategori dan idempoten', function () {
 test('form buat kelas memuat mata pelajaran sesuai kategori operator', function () {
     $this->seed(MataPelajaranSeeder::class);
 
-    $operator = User::factory()->operator()->create(['kategori_mapel' => 'Matematika & Ilmu Alam']);
+    $operator = User::factory()->operator()->create(['kategori_mapel' => 'Sains']);
 
     $this->actingAs($operator)
         ->get(route('operator.kelas.create'))
         ->assertOk()
-        ->assertSee('Matematika & Ilmu Alam')
+        ->assertSee('Sains')
         ->assertSee('Matematika')
         ->assertDontSee('Bahasa & Komunikasi')
         ->assertDontSee('Informatika')
@@ -134,7 +135,7 @@ test('operator menyimpan kelas lengkap dengan mata pelajaran dan aturan', functi
     $this->actingAs(User::factory()->operator()->create(['kategori_mapel' => $mapel->kategori]))
         ->post(route('operator.kelas.store'), [
             'nama_kelas' => 'Kelas Matematika',
-            'kategori' => 'Matematika & Ilmu Alam',
+            'kategori' => 'Sains',
             'mata_pelajaran_id' => $mapel->id,
             'jalur_id' => $jalur->id,
             'jenjang_id' => $jenjang->id,
@@ -157,7 +158,7 @@ test('operator menyimpan kelas lengkap dengan mata pelajaran dan aturan', functi
         'status' => 'ditutup',
         'aturan_kelayakan' => 'khusus',
         'periode' => '2026/2027 Ganjil',
-        'kategori' => 'Matematika & Ilmu Alam',
+        'kategori' => 'Sains',
     ]);
 });
 
@@ -422,6 +423,25 @@ test('mengubah kategori memperbarui semua referensi tanpa mengganti nama mata pe
         'user_id' => $pengajar->id,
         'kategori_mapel' => $kategoriLama,
     ]);
+    $document = Document::create([
+        'name' => 'Materi',
+        'original_name' => 'materi.txt',
+        'path' => 'documents/materi.txt',
+        'user_id' => $pengajar->id,
+        'kategori' => $kategoriLama,
+    ]);
+    $chunk = $document->chunks()->create([
+        'content' => 'Materi',
+        'chunk_index' => 0,
+        'kategori' => $kategoriLama,
+    ]);
+    $lain = Document::create([
+        'name' => 'Lain',
+        'original_name' => 'lain.txt',
+        'path' => 'documents/lain.txt',
+        'user_id' => $pengajar->id,
+        'kategori' => 'Bahasa',
+    ]);
 
     $this->actingAs(katmapPengelolaOperator())
         ->put(route('pengelola-operator.kategori-mata-pelajaran.update', $kategoriLama), [
@@ -434,7 +454,10 @@ test('mengubah kategori memperbarui semua referensi tanpa mengganti nama mata pe
         ->and($mapel->fresh()->nama)->toBe('Fisika')
         ->and($kelas->fresh()->kategori)->toBe($kategoriBaru)
         ->and($operator->fresh()->kategori_mapel)->toBe($kategoriBaru)
-        ->and($aplikasi->fresh()->kategori_mapel)->toBe($kategoriBaru);
+        ->and($aplikasi->fresh()->kategori_mapel)->toBe($kategoriBaru)
+        ->and($document->fresh()->kategori)->toBe($kategoriBaru)
+        ->and($chunk->fresh()->kategori)->toBe($kategoriBaru)
+        ->and($lain->fresh()->kategori)->toBe('Bahasa');
 });
 
 test('mengubah kategori ke nama yang sudah digunakan ditolak', function () {

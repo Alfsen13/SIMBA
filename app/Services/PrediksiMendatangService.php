@@ -185,13 +185,13 @@ class PrediksiMendatangService
             );
         }
 
-        [$imputed, $medians] = $this->impute($samples);
-
-
-        $X = array_map(fn ($r) => array_map(fn ($v) => $v / 100, $r), $imputed);
-        $y = array_map(fn ($v) => $v / 100, $targets);
-
-        [$XTrain, $yTrain, $XTest, $yTest] = $this->splitGrouped($X, $y, $siswaIds);
+        [$rawTrain, $yTrain, $rawTest, $yTest] = $this->splitGrouped($samples, $targets, $siswaIds);
+        [$train, $medians] = $this->impute($rawTrain);
+        [$test] = $this->impute($rawTest, $medians);
+        $XTrain = array_map(fn ($r) => array_map(fn ($v) => $v / 100, $r), $train);
+        $XTest = array_map(fn ($r) => array_map(fn ($v) => $v / 100, $r), $test);
+        $yTrain = array_map(fn ($v) => $v / 100, $yTrain);
+        $yTest = array_map(fn ($v) => $v / 100, $yTest);
 
         $adaUji = count($XTest) > 0;
 
@@ -273,11 +273,15 @@ class PrediksiMendatangService
 
         $versi = 'svr-'.now()->format('Ymd\THis');
 
-        Storage::put($this->modelPath(), serialize($winnerModel));
-        Storage::put($this->medianPath(), json_encode($medians, JSON_THROW_ON_ERROR));
+        if (! Storage::put($this->modelPath(), serialize($winnerModel))) {
+            throw new RuntimeException('Gagal menyimpan model regresi.');
+        }
+        if (! Storage::put($this->medianPath(), json_encode($medians, JSON_THROW_ON_ERROR))) {
+            throw new RuntimeException('Gagal menyimpan median model regresi.');
+        }
 
         $hasil = [
-            'total_samples' => count($X),
+            'total_samples' => count($samples),
             'train_samples' => count($XTrain),
             'test_samples' => count($XTest),
         ];
@@ -295,12 +299,12 @@ class PrediksiMendatangService
         $hasil['pemenang_nama'] = self::KANDIDAT[$winner];
         $hasil['benchmark'] = $benchmark;
 
-        Storage::put(
+        if (! Storage::put(
             $this->benchmarkPath(),
             json_encode([
                 'target' => self::TARGET,
                 'fitur' => FiturPertemuanService::fiturModel(),
-                'total_samples' => count($X),
+                'total_samples' => count($samples),
                 'train_samples' => count($XTrain),
                 'test_samples' => count($XTest),
                 'pemenang' => $winner,
@@ -312,7 +316,9 @@ class PrediksiMendatangService
                 'benchmark' => $benchmark,
                 'dilatih_pada' => now()->toIso8601String(),
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
-        );
+        )) {
+            throw new RuntimeException('Gagal menyimpan benchmark model regresi.');
+        }
 
         // Benchmark baru saja ditulis ulang; buang cache versi lama.
         $this->benchmarkCache = null;

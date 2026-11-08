@@ -52,6 +52,22 @@ test('seeder ulang mempertahankan perubahan akun kelas dan mata pelajaran', func
         ->and((bool) $mapel->fresh()->aktif)->toBeFalse();
 });
 
+test('seeder mempertahankan operator kategori yang sudah ada tanpa membuat akun baru', function () {
+    config(['seeding.operator_password' => 'nilai-untuk-test']);
+    $operator = User::factory()->operator()->verified()->create([
+        'email' => 'operator.lama@simba.test',
+        'kategori_mapel' => 'Sains',
+    ]);
+
+    $this->seed(DatabaseSeeder::class);
+    $this->seed(DatabaseSeeder::class);
+
+    expect(User::where('role', 'operator')->where('kategori_mapel', 'Sains')->sole()->id)->toBe($operator->id)
+        ->and(User::where('email', 'operator.sains@simba.test')->exists())->toBeFalse()
+        ->and(KategoriMataPelajaran::where('nama', 'Matematika & Ilmu Alam')->exists())->toBeFalse()
+        ->and(MataPelajaran::where('kode', 'matematika')->value('kategori'))->toBe('Sains');
+});
+
 test('seeder meminta kata sandi sebelum membuat data', function () {
     config(['seeding.operator_password' => null]);
 

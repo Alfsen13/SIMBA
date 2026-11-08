@@ -24,6 +24,24 @@
 | Clamp | Hasil prediksi di-clamp ke 0-100. |
 | Guard | Minimal 30 pasangan per target **DAN** minimal 3 siswa unik. |
 
+### Simulasi sementara
+
+`php artisan ml:train-sintetis-nilai` mengganti model SVR aktif dengan model dari
+140 siswa simulasi (980 pasangan), tanpa membuat siswa di database atau melatih
+ulang Random Forest. Snapshot disimpan di `ml/dataset_sintetis_nilai.json` pada
+disk default. Angka dan siswa pada snapshot seluruhnya sintetis.
+
+Tujuh pola terdiri dari nilai awal tinggi (>= 80) stabil atau menurun; menengah
+(60-79) meningkat, stabil, atau menurun; serta rendah (< 60) meningkat atau
+stabil. Stabil berarti perubahan per pertemuan maksimal 2 poin. Kategori hanya
+menjelaskan data simulasi, bukan keluaran baru pada aplikasi. Nilai dapat
+melintasi batas kategori selama perkembangan delapan pertemuan.
+
+Pembagian latih/uji berdasarkan siswa, dengan seluruh pola pada kedua bagian;
+median imputasi dihitung dari bagian latih saja. Metrik hanya mengukur simulasi,
+bukan akurasi pada pelajar nyata. Pelatihan `ml:train` biasa dapat mengganti
+model ini dengan model dari data nyata.
+
 ## Random Forest
 
 | Item | Nilai |

@@ -29,6 +29,10 @@ class DatabaseSeeder extends Seeder
         $this->buatAkun('pengelola_operator@simba.test', 'Pengelola Operator', 'pengelola_operator', null, $password);
 
         foreach (KategoriMataPelajaran::orderBy('nama')->pluck('nama') as $kategori) {
+            if (User::where('role', 'operator')->where('kategori_mapel', $kategori)->exists()) {
+                continue;
+            }
+
             $this->buatAkun(
                 'operator.'.Str::slug($kategori).'@simba.test',
                 "Operator {$kategori}",

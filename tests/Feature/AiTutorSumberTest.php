@@ -166,6 +166,42 @@ it('mengirim riwayat chat ke AI personal pelajar dan mengembalikan referensi', f
         ->assertJsonPath('references.0.url', route('pelajar.materi.show', $materi));
 });
 
+it('memberikan waktu eksekusi sepuluh menit untuk pencarian materi dan jawaban AI', function () {
+    $kelas = aiTutorKelas(aiTutorGuru());
+    $pertemuan = aiTutorPertemuan($kelas);
+    $siswa = aiTutorSiswa($kelas);
+    $previousLimit = (int) ini_get('max_execution_time');
+
+    $rag = Mockery::mock(RAGService::class);
+    $rag->shouldReceive('buildContext')->once()->andReturnUsing(function () {
+        expect((int) ini_get('max_execution_time'))->toBe(600);
+
+        return 'Konteks pembelajaran';
+    });
+    $rag->shouldReceive('getLastReferences')->once()->andReturn([]);
+    app()->instance(RAGService::class, $rag);
+
+    $ai = Mockery::mock(AIProviderService::class);
+    $ai->shouldReceive('sendForUser')->once()->andReturnUsing(function () {
+        expect((int) ini_get('max_execution_time'))->toBe(600);
+
+        return 'Jawaban AI';
+    });
+    app()->instance(AIProviderService::class, $ai);
+
+    try {
+        $this->actingAs($siswa)
+            ->postJson(route('pelajar.ai-tutor.ask'), [
+                'pertemuan_id' => $pertemuan->id,
+                'question' => 'Apa materinya?',
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('answer', 'Jawaban AI');
+    } finally {
+        set_time_limit($previousLimit);
+    }
+});
+
 it('mengembalikan 503 jika pencarian konteks RAG gagal', function () {
     $guru = aiTutorGuru();
     $kelas = aiTutorKelas($guru);
