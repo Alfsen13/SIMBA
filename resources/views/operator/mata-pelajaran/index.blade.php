@@ -34,17 +34,17 @@
                             <x-badge variant="default">{{ $mapel->kategori }}</x-badge>
                         </x-td>
                         <x-td align="right">
-                            <div class="flex items-center justify-end gap-2">
-                                <a href="{{ route('operator.mata-pelajaran.show', $mapel) }}" class="text-xs text-emerald-700 dark:text-emerald-400 hover:underline">
+                            <div class="flex flex-wrap items-center justify-end gap-2">
+                                <a href="{{ route('operator.mata-pelajaran.show', $mapel) }}" class="inline-flex min-h-11 items-center justify-center px-2.5 text-xs text-emerald-700 dark:text-emerald-400 hover:underline">
                                     Lihat kelas
                                 </a>
-                                <a href="{{ route('operator.mata-pelajaran.edit', $mapel) }}" class="text-xs text-emerald-700 dark:text-emerald-400 hover:underline">
+                                <a href="{{ route('operator.mata-pelajaran.edit', $mapel) }}" class="inline-flex min-h-11 items-center justify-center px-2.5 text-xs text-emerald-700 dark:text-emerald-400 hover:underline">
                                     {{ __('common.edit') }}
                                 </a>
                                 <form action="{{ route('operator.mata-pelajaran.destroy', $mapel) }}" method="POST" onsubmit="return confirm('Hapus mata pelajaran ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <x-btn-secondary type="submit" color="red" size="sm">{{ __('common.delete') }}</x-btn-secondary>
+                                    <x-btn-secondary type="submit" color="red" size="sm" class="min-h-11">{{ __('common.delete') }}</x-btn-secondary>
                                 </form>
                             </div>
                         </x-td>

@@ -133,3 +133,23 @@ it('menampilkan latihan mentah sebagai tanya-jawab di halaman guru', function ()
         ->assertSee('x-data="{ buka: false }"', false)
         ->assertDontSee('&quot;soal&quot;', false);
 });
+
+it('menghubungkan label ke tiap jawaban remedial dan memakai warna C5 yang terbaca', function () {
+    $siswa = rlSiswa();
+    $remedial = rlRemedial($siswa, json_encode(['soal' => 'Latihan?', 'jawaban' => 'Jawaban']));
+    $remedial->update([
+        'tugas_remedial' => [
+            ['pertanyaan' => 'Pertanyaan satu', 'bloom' => 'C5'],
+            ['pertanyaan' => 'Pertanyaan dua', 'bloom' => 'C5'],
+        ],
+    ]);
+
+    $this->actingAs($siswa)->get(route('pelajar.remedial.show', $remedial))
+        ->assertOk()
+        ->assertSee('for="jawaban-remedial-0"', false)
+        ->assertSee('id="jawaban-remedial-0"', false)
+        ->assertSee('for="jawaban-remedial-1"', false)
+        ->assertSee('id="jawaban-remedial-1"', false)
+        ->assertSee('bg-amber-50 text-amber-700', false)
+        ->assertSee('min-h-11 min-w-11', false);
+});

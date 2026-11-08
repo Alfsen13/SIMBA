@@ -45,6 +45,7 @@ return [
     'role_hint_pengajar' => 'Kelola kelas',
     'nip_placeholder' => 'Nomor Induk Pegawai',
     'nisn_placeholder' => 'Nomor Induk Siswa Nasional',
+    'nisn_formal_hint' => 'NISN wajib untuk jalur formal, opsional untuk jalur lainnya.',
     'password_confirm_placeholder' => 'Ulangi password',
     'name_placeholder' => 'Nama lengkap Anda',
     'logout' => 'Keluar',

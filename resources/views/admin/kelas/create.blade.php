@@ -53,13 +53,16 @@
                         </optgroup>
                     @endforeach
                 </select>
-                <p class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">Hanya mata pelajaran pada kategori yang menjadi tanggung jawab operator.</p>
+                <p class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">{{ __('operator.mapel_operator_hint') }}</p>
                 @error('mata_pelajaran_id')
                     <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                 @enderror
             </div>
 
             <input type="hidden" name="kategori" id="kategori" value="{{ old('kategori') }}">
+            @error('kategori')
+                <p role="alert" class="mb-3 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+            @enderror
 
             <div class="mb-3">
                 <label for="jalur_id" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">

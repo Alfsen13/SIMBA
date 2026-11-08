@@ -114,6 +114,65 @@ test('operator melihat daftar pengajar pengaju beserta detail bahan ajar', funct
         ->assertSee('Mengajarkan materi dasar', false);
 });
 
+test('halaman tinjauan melokalkan judul dan menyediakan kontrol responsif yang berlabel', function () {
+    AplikasiPengajar::create([
+        'user_id' => $this->guru->id,
+        'cv_path' => 'aplikasi_pengajar/cv.pdf',
+        'ijazah_path' => 'aplikasi_pengajar/ijazah.pdf',
+    ]);
+    $pengajuan = pengajuanBuatRow($this->kelas, $this->guru, [
+        'berkas_path' => 'pengajuan/silabus.pdf',
+    ]);
+    $url = route('operator.pengajuan-mengajar.show', $this->kelas);
+
+    $this->actingAs($this->operator)
+        ->get($url)
+        ->assertOk()
+        ->assertSee('<title>Tinjau Pengajuan Mengajar - Operator</title>', false);
+
+    $this->from($url)
+        ->post(route('locale.update'), ['locale' => 'en'])
+        ->assertRedirect($url);
+
+    $response = $this->get($url)
+        ->assertOk()
+        ->assertSee('<title>Review Teaching Applications - Operator</title>', false)
+        ->assertSee('for="catatan-penolakan-'.$pengajuan->id.'"', false)
+        ->assertSee('id="catatan-penolakan-'.$pengajuan->id.'"', false)
+        ->assertSee('Rejection note (optional)')
+        ->assertSee('flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center', false)
+        ->assertSee('w-full min-w-0', false);
+
+    foreach (['setujui', 'tolak'] as $action) {
+        $url = preg_quote(e(route('operator.pengajuan-mengajar.'.$action, $pengajuan)), '/');
+        expect(preg_match('/<form\b[^>]*action="'.$url.'"[^>]*>(?:(?!<\/form>).)*?<button\b[^>]*class="(?:[^"]*\s)?min-h-11(?:\s[^"]*)?"/s', $response->getContent()))->toBe(1);
+    }
+
+    foreach ([
+        route('operator.kelas.index'),
+        route('operator.pengajuan-mengajar.berkas', $pengajuan),
+        route('operator.pengajuan-mengajar.profil-berkas', ['pengajuan' => $pengajuan, 'jenis' => 'cv']),
+        route('operator.pengajuan-mengajar.profil-berkas', ['pengajuan' => $pengajuan, 'jenis' => 'ijazah']),
+    ] as $link) {
+        $link = preg_quote(e($link), '/');
+        expect(preg_match('/<a\b(?=[^>]*href="'.$link.'")(?=[^>]*class="(?:[^"]*\s)?min-h-11(?:\s[^"]*)?")[^>]*>/s', $response->getContent()))->toBe(1);
+    }
+});
+
+test('pesan persetujuan tidak memakai em dash dan mengikuti locale', function () {
+    $pengajuan = pengajuanBuatRow($this->kelas, $this->guru);
+    $url = route('operator.pengajuan-mengajar.show', $this->kelas);
+
+    $this->actingAs($this->operator)
+        ->from($url)
+        ->post(route('locale.update'), ['locale' => 'en'])
+        ->assertRedirect($url);
+
+    $this->from($url)
+        ->post(route('operator.pengajuan-mengajar.setujui', $pengajuan))
+        ->assertSessionHas('success', "Application from {$this->guru->name} was approved. This teacher now teaches the class.");
+});
+
 test('menyetujui pengajuan mengisi kelas dan otomatis menolak pengajuan lain', function () {
     Notification::fake();
 

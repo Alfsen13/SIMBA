@@ -2,6 +2,7 @@
     'name' => '',
     'type' => 'text',
     'label' => '',
+    'inputClass' => '',
     'value' => '',
     'placeholder' => '',
     'required' => false,
@@ -34,7 +35,7 @@
             @if($accept) accept="{{ $accept }}" @endif
             @if($required) required @endif
             @if($disabled) disabled @endif
-            class="w-full {{ $icon ? 'pl-9' : 'px-3' }} pr-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 @error($name) border-red-400 @enderror disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full {{ $icon ? 'pl-9' : 'px-3' }} pr-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 @error($name) border-red-400 @enderror disabled:opacity-50 disabled:cursor-not-allowed {{ $inputClass }}"
             {{ $attributes->except(['class', 'type', 'name', 'id', 'value', 'placeholder', 'required', 'disabled', 'accept']) }}>
     </div>
 

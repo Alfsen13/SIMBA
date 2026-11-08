@@ -415,8 +415,30 @@ PROMPT;
     {
         if (array_is_list($json)) {
             $kunciDikenal = ['soal', 'tujuan', 'per_soal', 'mastery'];
-            $json = collect($json)
-                ->first(fn ($item) => is_array($item) && array_intersect($kunciDikenal, array_keys($item)) !== []) ?? [];
+            $gabungan = [];
+            foreach ($json as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                foreach ($kunciDikenal as $kunci) {
+                    if (! array_key_exists($kunci, $item)) {
+                        continue;
+                    }
+
+                    if (! array_key_exists($kunci, $gabungan)) {
+                        $gabungan[$kunci] = $item[$kunci];
+
+                        continue;
+                    }
+
+                    if (is_array($gabungan[$kunci]) && is_array($item[$kunci])) {
+                        $gabungan[$kunci] = array_merge($gabungan[$kunci], $item[$kunci]);
+                    }
+                }
+            }
+
+            $json = $gabungan;
         }
 
         foreach (['tujuan', 'soal'] as $kunci) {

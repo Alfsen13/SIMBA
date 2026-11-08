@@ -163,7 +163,7 @@
                                     @if($aplikasi->cv_path)
                                         <div>
                                             <div class="flex flex-wrap items-center gap-2 text-sm">
-                                            <button type="button" onclick="toggleDoc('cv-doc')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors">
+                                            <button type="button" onclick="toggleDoc('cv-doc', this)" aria-expanded="false" aria-controls="cv-doc" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                 <span id="cv-doc-toggle">Lihat CV</span>
                                             </button>
@@ -174,7 +174,7 @@
                                             </div>
                                                 <div id="cv-doc" class="hidden mt-3">
                                                     <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-sm w-full">
-                                                        <iframe src="{{ route('operator.users.berkas', ['user' => $user, 'jenis' => 'cv']) }}" class="w-full h-[calc(100vh-400px)] min-h-[400px]" frameborder="0"></iframe>
+                                                        <iframe src="{{ route('operator.users.berkas', ['user' => $user, 'jenis' => 'cv']) }}" title="{{ __('operator.preview_cv') }}" class="w-full h-[calc(100vh-400px)] min-h-[400px]" frameborder="0"></iframe>
                                                     </div>
                                                 </div>
                                         </div>
@@ -182,7 +182,7 @@
                                     @if($aplikasi->ijazah_path)
                                         <div>
                                             <div class="flex flex-wrap items-center gap-2 text-sm">
-                                                <button type="button" onclick="toggleDoc('ijazah-doc')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors">
+                                                <button type="button" onclick="toggleDoc('ijazah-doc', this)" aria-expanded="false" aria-controls="ijazah-doc" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                     <span id="ijazah-doc-toggle">Lihat Ijazah</span>
                                                 </button>
@@ -193,7 +193,7 @@
                                             </div>
                                             <div id="ijazah-doc" class="hidden mt-3">
                                                 <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-sm w-full">
-                                                    <iframe src="{{ route('operator.users.berkas', ['user' => $user, 'jenis' => 'ijazah']) }}" class="w-full h-[calc(100vh-400px)] min-h-[400px]" frameborder="0"></iframe>
+                                                    <iframe src="{{ route('operator.users.berkas', ['user' => $user, 'jenis' => 'ijazah']) }}" title="{{ __('operator.preview_ijazah') }}" class="w-full h-[calc(100vh-400px)] min-h-[400px]" frameborder="0"></iframe>
                                                 </div>
                                             </div>
                                         </div>
@@ -243,14 +243,16 @@
     </div>
 
     <script>
-        function toggleDoc(id) {
+        function toggleDoc(id, button) {
             var el = document.getElementById(id);
             var toggle = document.getElementById(id + '-toggle');
             if (el.classList.contains('hidden')) {
                 el.classList.remove('hidden');
+                button.setAttribute('aria-expanded', 'true');
                 if (toggle) toggle.textContent = toggle.textContent.replace('Lihat', 'Sembunyikan');
             } else {
                 el.classList.add('hidden');
+                button.setAttribute('aria-expanded', 'false');
                 if (toggle) toggle.textContent = toggle.textContent.replace('Sembunyikan', 'Lihat');
             }
         }

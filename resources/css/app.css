@@ -9,6 +9,29 @@
 @layer base {
     :root { color-scheme: light; }
     .dark { color-scheme: dark; }
+
+    a[href]:not([aria-disabled='true']),
+    button:not(:disabled):not([aria-disabled='true']),
+    summary:not([aria-disabled='true']),
+    select:not(:disabled):not([aria-disabled='true']),
+    label[for]:not([aria-disabled='true']),
+    label:has(input[type='checkbox']:not(:disabled)):not([aria-disabled='true']),
+    label:has(input[type='radio']:not(:disabled)):not([aria-disabled='true']),
+    input[type='checkbox']:not(:disabled):not([aria-disabled='true']),
+    input[type='radio']:not(:disabled):not([aria-disabled='true']),
+    [role='button']:not([aria-disabled='true']),
+    [role='tab']:not([aria-disabled='true']),
+    [role='switch']:not([aria-disabled='true']) {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    select:disabled,
+    input:disabled,
+    textarea:disabled,
+    [aria-disabled='true'] {
+        cursor: not-allowed;
+    }
 }
 
 [x-cloak] { display: none !important; }

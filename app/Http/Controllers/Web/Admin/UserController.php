@@ -8,9 +8,11 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class UserController extends Controller
 {
@@ -145,29 +147,7 @@ class UserController extends Controller
 
     private function authorizeUserManagement(User $user): void
     {
-        $auth = auth()->user();
-
-        if ($auth->role !== 'operator') {
-            return;
-        }
-
-        abort_if($user->role === 'operator', 403, 'Pengelolaan akun operator hanya dapat dilakukan oleh pengelola operator.');
-
-        if (! $auth->kategori_mapel) {
-            return;
-        }
-
-        if ($user->role === 'pelajar') {
-            return;
-        }
-
-        $kategori = $user->aplikasiPengajar?->kategori_mapel;
-
-        abort_unless(
-            $kategori && $kategori === $auth->kategori_mapel,
-            403,
-            'Tidak berwenang mengelola akun di luar kategori ini.'
-        );
+        $this->authorize('manage', $user);
     }
 
       
@@ -178,17 +158,16 @@ class UserController extends Controller
         }
 
         $this->authorizeUserManagement($user);
+        $user->loadMissing('aplikasiPengajar');
+        $berkasProfil = array_values(array_filter([
+            $user->aplikasiPengajar?->cv_path,
+            $user->aplikasiPengajar?->ijazah_path,
+        ]));
 
         DB::transaction(function () use ($user) {
             $user->loadMissing(['aplikasiPengajar', 'profilPendidikan']);
 
             if ($user->aplikasiPengajar) {
-                if ($user->aplikasiPengajar->cv_path && Storage::disk('public')->exists($user->aplikasiPengajar->cv_path)) {
-                    Storage::disk('public')->delete($user->aplikasiPengajar->cv_path);
-                }
-                if ($user->aplikasiPengajar->ijazah_path && Storage::disk('public')->exists($user->aplikasiPengajar->ijazah_path)) {
-                    Storage::disk('public')->delete($user->aplikasiPengajar->ijazah_path);
-                }
                 $user->aplikasiPengajar->delete();
             }
 
@@ -216,6 +195,25 @@ class UserController extends Controller
             $user->delete();
         });
 
+        $cleanupError = null;
+        try {
+            $berkasTerhapus = $berkasProfil === [] || Storage::disk('public')->delete($berkasProfil);
+        } catch (Throwable $exception) {
+            $berkasTerhapus = false;
+            $cleanupError = $exception->getMessage();
+        }
+
+        if (! $berkasTerhapus) {
+            Log::error('Sebagian berkas profil tidak berhasil dihapus setelah akun dihapus.', [
+                'user_id' => $user->id,
+                'paths' => $berkasProfil,
+                'exception' => $cleanupError,
+            ]);
+
+            return redirect()->route('operator.users.index')
+                ->with('warning', 'Akun berhasil dihapus, tetapi berkas profil perlu dibersihkan secara manual.');
+        }
+
         return redirect()->route('operator.users.index')->with('success', 'User berhasil dihapus beserta data terkait.');
     }
 
@@ -232,11 +230,9 @@ class UserController extends Controller
             abort_unless($kategori && $kategori === $auth->kategori_mapel, 403, 'Tidak berwenang memverifikasi akun pada kategori ini.');
         }
 
-        $user->update([
-            'status' => 'verified',
-            'verified_by' => auth()->id(),
-            'verified_at' => now(),
-        ]);
+        if (! $this->ubahStatusAkunPending($user, 'verified')) {
+            return back()->with('error', 'Hanya akun yang masih menunggu yang dapat diverifikasi.');
+        }
 
         return back()->with('success', 'User berhasil diverifikasi.');
     }
@@ -254,12 +250,29 @@ class UserController extends Controller
             abort_unless($kategori && $kategori === $auth->kategori_mapel, 403, 'Tidak berwenang menolak akun pada kategori ini.');
         }
 
-        $user->update([
-            'status' => 'rejected',
-            'verified_by' => auth()->id(),
-            'verified_at' => now(),
-        ]);
+        if (! $this->ubahStatusAkunPending($user, 'rejected')) {
+            return back()->with('error', 'Hanya akun yang masih menunggu yang dapat ditolak.');
+        }
 
         return back()->with('success', 'User ditolak.');
+    }
+
+    private function ubahStatusAkunPending(User $user, string $status): bool
+    {
+        return DB::transaction(function () use ($user, $status): bool {
+            $userTerkunci = User::query()->lockForUpdate()->findOrFail($user->id);
+
+            if ($userTerkunci->status !== 'pending') {
+                return false;
+            }
+
+            $userTerkunci->update([
+                'status' => $status,
+                'verified_by' => auth()->id(),
+                'verified_at' => now(),
+            ]);
+
+            return true;
+        });
     }
 }

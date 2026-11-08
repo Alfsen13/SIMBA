@@ -180,7 +180,9 @@ Route::prefix('pelajar')->name('pelajar.')->middleware(['auth', 'role:pelajar'])
 
 Route::prefix('pengelola-operator')->name('pengelola-operator.')->middleware(['auth', 'role:pengelola_operator'])->group(function () {
     Route::get('/', [PengelolaOperatorDashboard::class, 'index'])->name('dashboard');
-    Route::resource('kategori-mata-pelajaran', PengelolaOperatorKategoriMapel::class)->parameters(['kategori-mata-pelajaran' => 'kategori']);
+    Route::resource('kategori-mata-pelajaran', PengelolaOperatorKategoriMapel::class)
+        ->except(['show'])
+        ->parameters(['kategori-mata-pelajaran' => 'kategori']);
     Route::resource('operator', PengelolaOperatorManage::class)->except(['show']);
     Route::get('notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi');
     Route::post('notifikasi/{notifikasi}/read', [NotifikasiController::class, 'read'])->name('notifikasi.read');

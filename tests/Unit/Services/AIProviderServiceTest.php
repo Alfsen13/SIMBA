@@ -40,6 +40,30 @@ test('send falls back to Ollama when Gemini fails', function () {
     expect($result)->toBe('Respons dari Ollama');
 });
 
+test('send melanjutkan fallback saat provider mengembalikan respons kosong', function () {
+    $models = [];
+
+    $this->geminiMock
+        ->shouldReceive('send')
+        ->once()
+        ->andReturn('');
+
+    $this->ollamaMock
+        ->shouldReceive('send')
+        ->twice()
+        ->andReturnUsing(function ($prompt, $history, $model) use (&$models) {
+            $models[] = $model;
+
+            return count($models) === 1 ? '' : 'Respons model fallback';
+        });
+
+    expect($this->provider->send('Halo'))->toBe('Respons model fallback')
+        ->and($models)->toBe([
+            config('services.ollama.fallback_model_1'),
+            config('services.ollama.fallback_model_2'),
+        ]);
+});
+
 test('send throws when all providers fail', function () {
     $this->geminiMock
         ->shouldReceive('send')

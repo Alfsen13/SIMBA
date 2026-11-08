@@ -1,12 +1,11 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\User;
+use App\Models\AplikasiPengajar;
 use App\Models\JalurPendidikan;
 use App\Models\JenjangPendidikan;
 use App\Models\TingkatPendidikan;
-use App\Models\ProfilPendidikan;
-use App\Models\AplikasiPengajar;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
@@ -21,6 +20,7 @@ test('alur registrasi pelajar lengkap terintegrasi', function () {
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'role' => 'pelajar',
+        'nisn' => '0091234567',
         'jalur_id' => $jalur->id,
         'jenjang_id' => $jenjang->id,
         'tingkat_id' => $tingkat->id,

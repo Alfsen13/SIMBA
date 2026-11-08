@@ -34,6 +34,12 @@ test('kolom kategori ada pada tabel mata_pelajaran', function () {
     expect(Schema::getColumnListing('mata_pelajaran'))->toContain('kategori');
 });
 
+test('kategori tidak menyediakan route show tanpa handler', function () {
+    $this->actingAs(katmapPengelolaOperator())
+        ->get('/pengelola-operator/kategori-mata-pelajaran/Bahasa%20%26%20Komunikasi')
+        ->assertMethodNotAllowed();
+});
+
 test('seeder mata pelajaran mengisi kategori dan idempoten', function () {
     $this->seed(MataPelajaranSeeder::class);
     $jumlah = MataPelajaran::count();
@@ -48,17 +54,74 @@ test('seeder mata pelajaran mengisi kategori dan idempoten', function () {
         ->and(MataPelajaran::where('aktif', false)->count())->toBe(0);
 });
 
-test('form buat kelas memuat mata pelajaran dikelompokkan per kategori', function () {
+test('form buat kelas memuat mata pelajaran sesuai kategori operator', function () {
     $this->seed(MataPelajaranSeeder::class);
 
-    $this->actingAs(katmapOperator())
+    $operator = User::factory()->operator()->create(['kategori_mapel' => 'Matematika & Ilmu Alam']);
+
+    $this->actingAs($operator)
         ->get(route('operator.kelas.create'))
         ->assertOk()
         ->assertSee('Matematika & Ilmu Alam')
-        ->assertSee('Bahasa & Komunikasi')
-        ->assertSee('Informatika')
-        ->assertSee(__('common.aturan_sesuai_profil'))
-        ->assertSee(__('operator.kelas_status_dibuka'));
+        ->assertSee('Matematika')
+        ->assertDontSee('Bahasa & Komunikasi')
+        ->assertDontSee('Informatika')
+        ->assertSee('name="aturan_kelayakan" value="sesuai_jenjang"', false)
+        ->assertSee('name="status" value="dibuka"', false);
+});
+
+test('form tambah kelas melokalkan petunjuk operator', function () {
+    $operator = User::factory()->operator()->create(['kategori_mapel' => 'Matematika']);
+    $url = route('operator.kelas.create');
+
+    $this->actingAs($operator)
+        ->get($url)
+        ->assertOk()
+        ->assertSee('Hanya mata pelajaran pada kategori yang menjadi tanggung jawab operator.');
+
+    $this->from($url)
+        ->post(route('locale.update'), ['locale' => 'en'])
+        ->assertRedirect($url);
+
+    $this->get($url)
+        ->assertOk()
+        ->assertSee('Only subjects in the category managed by this operator are available.');
+});
+
+test('daftar kelas melokalkan import dan memberi label serta nama aksesibel pada kontrol', function () {
+    $operator = User::factory()->operator()->create(['kategori_mapel' => 'Matematika']);
+    $guru = User::factory()->pengajar()->verified()->create();
+    $kelasDiampu = Kelas::factory()->create([
+        'nama_kelas' => 'Kelas Diampu',
+        'kategori' => 'Matematika',
+        'guru_id' => $guru->id,
+    ]);
+    $kelasKosong = Kelas::factory()->create([
+        'nama_kelas' => 'Kelas Kosong',
+        'kategori' => 'Matematika',
+        'guru_id' => null,
+    ]);
+    $url = route('operator.kelas.index');
+
+    $this->actingAs($operator)
+        ->from($url)
+        ->post(route('locale.update'), ['locale' => 'en'])
+        ->assertRedirect($url);
+
+    $response = $this->withSession(['import_errors' => ['Invalid class row']])
+        ->get($url)
+        ->assertOk()
+        ->assertSee('Class template (CSV/Excel)')
+        ->assertSee('Import classes')
+        ->assertSee('There was an error importing classes')
+        ->assertSee('for="kelas-import-file"', false)
+        ->assertSee('id="kelas-import-file"', false)
+        ->assertSee('Edit class '.$kelasDiampu->nama_kelas, false)
+        ->assertSee('Delete class '.$kelasDiampu->nama_kelas, false)
+        ->assertSee('Revoke teaching rights for '.$kelasDiampu->nama_kelas, false)
+        ->assertSee('Delete class '.$kelasKosong->nama_kelas, false);
+
+    expect(substr_count($response->getContent(), 'min-h-11'))->toBeGreaterThanOrEqual(11);
 });
 
 test('operator menyimpan kelas lengkap dengan mata pelajaran dan aturan', function () {
@@ -68,7 +131,7 @@ test('operator menyimpan kelas lengkap dengan mata pelajaran dan aturan', functi
     $jenjang = JenjangPendidikan::create(['jalur_id' => $jalur->id, 'kode' => 'smp', 'nama' => 'SMP', 'urutan' => 1, 'aktif' => true]);
     $tingkat = TingkatPendidikan::create(['jenjang_id' => $jenjang->id, 'kode' => 'kelas_8', 'nama' => 'Kelas 8', 'urutan' => 2, 'aktif' => true]);
 
-    $this->actingAs(katmapOperator())
+    $this->actingAs(User::factory()->operator()->create(['kategori_mapel' => $mapel->kategori]))
         ->post(route('operator.kelas.store'), [
             'nama_kelas' => 'Kelas Matematika',
             'kategori' => 'Matematika & Ilmu Alam',
@@ -153,16 +216,56 @@ test('operator tidak dapat mengubah kategori kelas tanpa menyesuaikan mata pelaj
 });
 
 test('status dan aturan kelayakan yang kosong memakai default', function () {
-    $this->actingAs(katmapOperator())
-        ->post(route('operator.kelas.store'), ['nama_kelas' => 'Kelas Polos'])
-        ->assertRedirect();
+    $jalur = JalurPendidikan::create(['kode' => 'formal', 'nama' => 'Formal', 'urutan' => 1, 'aktif' => true]);
+    $jenjang = JenjangPendidikan::create(['jalur_id' => $jalur->id, 'kode' => 'smp', 'nama' => 'SMP', 'urutan' => 1, 'aktif' => true]);
+    $tingkat = TingkatPendidikan::create(['jenjang_id' => $jenjang->id, 'kode' => 'kelas_8', 'nama' => 'Kelas 8', 'urutan' => 1, 'aktif' => true]);
+    $operator = User::factory()->operator()->create(['kategori_mapel' => 'Matematika']);
+
+    $this->actingAs($operator)
+        ->post(route('operator.kelas.store'), [
+            'nama_kelas' => 'Kelas Polos',
+            'jenjang_id' => $jenjang->id,
+            'tingkat_id' => $tingkat->id,
+        ])
+        ->assertRedirect(route('operator.kelas.index'))
+        ->assertSessionHasNoErrors();
 
     $this->assertDatabaseHas('kelas', [
         'nama_kelas' => 'Kelas Polos',
         'status' => 'dibuka',
         'aturan_kelayakan' => 'sesuai_profil',
         'mata_pelajaran_id' => null,
+        'kategori' => 'Matematika',
     ]);
+
+    $kelas = Kelas::where('nama_kelas', 'Kelas Polos')->firstOrFail();
+    $this->get(route('operator.kelas.index'))->assertSee('Kelas Polos');
+    $this->get(route('operator.kelas.edit', $kelas))->assertOk();
+    $this->put(route('operator.kelas.update', $kelas), [
+        'nama_kelas' => 'Kelas Polos Diubah',
+        'kategori' => '',
+        'jenjang_id' => $jenjang->id,
+        'tingkat_id' => $tingkat->id,
+    ])->assertRedirect(route('operator.kelas.index'))->assertSessionHasNoErrors();
+    expect($kelas->fresh()->kategori)->toBe('Matematika');
+});
+
+test('operator tidak dapat menyimpan kelas di luar kategori atau tanpa kategori operator', function () {
+    $jalur = JalurPendidikan::create(['kode' => 'formal', 'nama' => 'Formal', 'urutan' => 1, 'aktif' => true]);
+    $jenjang = JenjangPendidikan::create(['jalur_id' => $jalur->id, 'kode' => 'smp', 'nama' => 'SMP', 'urutan' => 1, 'aktif' => true]);
+    $tingkat = TingkatPendidikan::create(['jenjang_id' => $jenjang->id, 'kode' => 'kelas_8', 'nama' => 'Kelas 8', 'urutan' => 1, 'aktif' => true]);
+    $operator = User::factory()->operator()->create(['kategori_mapel' => 'Matematika']);
+    $kelas = Kelas::factory()->create(['kategori' => 'Matematika', 'mata_pelajaran_id' => null]);
+    $data = ['nama_kelas' => 'Kelas Lain', 'kategori' => 'Bahasa', 'jenjang_id' => $jenjang->id, 'tingkat_id' => $tingkat->id];
+
+    $this->actingAs($operator)->post(route('operator.kelas.store'), $data)->assertSessionHasErrors('kategori');
+    $this->put(route('operator.kelas.update', $kelas), $data)->assertSessionHasErrors('kategori');
+    expect($kelas->fresh()->kategori)->toBe('Matematika');
+    $this->assertDatabaseMissing('kelas', ['nama_kelas' => 'Kelas Lain']);
+
+    $this->actingAs(katmapOperator())
+        ->post(route('operator.kelas.store'), $data)
+        ->assertSessionHasErrors(['kategori' => __('operator.kelas_operator_tanpa_kategori')]);
 });
 
 test('nilai status dan aturan kelayakan yang tidak sah ditolak', function () {
@@ -183,17 +286,24 @@ test('form ubah kelas memuat nilai kelas saat ini beserta pilihan aturan', funct
     $mapel = MataPelajaran::where('kode', 'informatika')->firstOrFail();
     $kelas = Kelas::factory()->create([
         'mata_pelajaran_id' => $mapel->id,
+        'kategori' => $mapel->kategori,
         'aturan_kelayakan' => 'khusus',
         'status' => 'dibuka',
     ]);
 
-    $this->actingAs(katmapOperator())
+    $response = $this->actingAs(User::factory()->operator()->create(['kategori_mapel' => $mapel->kategori]))
         ->get(route('operator.kelas.edit', $kelas))
         ->assertOk()
         ->assertSee('Informatika')
         ->assertSee('value="'.$mapel->id.'"', false)
         ->assertSee(__('common.aturan_khusus'))
+        ->assertSee('name="jenjang_id"', false)
+        ->assertSee('name="tingkat_id"', false)
         ->assertSee($kelas->nama_kelas);
+
+    expect($response->getContent())
+        ->toMatch('/<select\s+name="jenjang_id"[^>]*\brequired\b/s')
+        ->toMatch('/<select\s+name="tingkat_id"[^>]*\brequired\b/s');
 });
 
 test('pengajar dapat mengubah aturan kelayakan kelasnya', function () {
@@ -410,4 +520,102 @@ test('backfill membuat katalog dari referensi kategori lama', function () {
         ->toContain('Kategori Kelas Lama')
         ->toContain('Kategori Operator Lama')
         ->toContain('Kategori Aplikasi Lama');
+});
+
+test('halaman kategori mengikuti locale dan memberi ukuran minimum pada kontrol', function () {
+    $kategori = katmapKategori('Matematika');
+    $pengelola = katmapPengelolaOperator();
+    $url = route('pengelola-operator.kategori-mata-pelajaran.index');
+
+    $this->actingAs($pengelola)
+        ->get($url)
+        ->assertOk()
+        ->assertSee('Kategori Mata Pelajaran')
+        ->assertSee('Jumlah Mapel')
+        ->assertSee("confirm('Hapus kategori ini?')", false);
+
+    $this->from($url)
+        ->post(route('locale.update'), ['locale' => 'en'])
+        ->assertRedirect($url);
+
+    $response = $this->get($url)
+        ->assertOk()
+        ->assertSee('Subject Categories')
+        ->assertSee('Subject Count')
+        ->assertSee("confirm('Delete this category?')", false)
+        ->assertSee(__('pengelola_operator.kategori_mata_pelajaran.edit'))
+        ->assertSee(__('pengelola_operator.kategori_mata_pelajaran.delete'));
+
+    expect(substr_count($response->getContent(), 'min-h-11'))->toBeGreaterThanOrEqual(3)
+        ->and(substr_count($response->getContent(), 'min-w-11'))->toBeGreaterThanOrEqual(3);
+
+    $this->get(route('pengelola-operator.kategori-mata-pelajaran.create'))
+        ->assertOk()
+        ->assertSee('Add Subject Category')
+        ->assertSee('Category Name')
+        ->assertSee('Example: Mathematics')
+        ->assertSee('Back')
+        ->assertSee('Save')
+        ->assertSee('min-h-11', false)
+        ->assertSee('min-w-11', false);
+
+    $this->get(route('pengelola-operator.kategori-mata-pelajaran.edit', $kategori->nama))
+        ->assertOk()
+        ->assertSee('Edit Subject Category')
+        ->assertSee('value="Matematika"', false)
+        ->assertSee('min-h-11', false)
+        ->assertSee('min-w-11', false);
+
+    $this->delete(route('pengelola-operator.kategori-mata-pelajaran.destroy', $kategori->nama))
+        ->assertRedirect($url);
+
+    $emptyResponse = $this->get($url)
+        ->assertOk()
+        ->assertSee('There are no subject categories yet.')
+        ->assertSee('Add the First Category');
+
+    expect(substr_count($emptyResponse->getContent(), 'min-h-11'))->toBeGreaterThanOrEqual(2)
+        ->and(substr_count($emptyResponse->getContent(), 'min-w-11'))->toBeGreaterThanOrEqual(2);
+});
+
+test('pesan kategori dan validasi nama duplikat mengikuti locale Inggris', function () {
+    $kategoriDipakai = katmapKategori('Kategori Terpakai');
+    $kategoriBebas = katmapKategori('Kategori Bebas');
+    Kelas::factory()->create(['kategori' => $kategoriDipakai->nama]);
+
+    $this->actingAs(katmapPengelolaOperator())
+        ->from(route('pengelola-operator.kategori-mata-pelajaran.index'))
+        ->post(route('locale.update'), ['locale' => 'en'])
+        ->assertRedirect(route('pengelola-operator.kategori-mata-pelajaran.index'));
+
+    $this->post(route('pengelola-operator.kategori-mata-pelajaran.store'), [
+        'kategori' => 'Kategori Baru',
+    ])
+        ->assertRedirect(route('pengelola-operator.kategori-mata-pelajaran.index'))
+        ->assertSessionHas('success', __('pengelola_operator.kategori_mata_pelajaran.created'));
+
+    $this->from(route('pengelola-operator.kategori-mata-pelajaran.create'))
+        ->post(route('pengelola-operator.kategori-mata-pelajaran.store'), [
+            'kategori' => $kategoriDipakai->nama,
+        ])
+        ->assertSessionHasErrors(['kategori'], __('pengelola_operator.kategori_mata_pelajaran.duplicate'));
+
+    $this->put(route('pengelola-operator.kategori-mata-pelajaran.update', $kategoriBebas->nama), [
+        'kategori' => 'Kategori Diperbarui',
+    ])
+        ->assertRedirect(route('pengelola-operator.kategori-mata-pelajaran.index'))
+        ->assertSessionHas('success', __('pengelola_operator.kategori_mata_pelajaran.updated'));
+
+    $this->from(route('pengelola-operator.kategori-mata-pelajaran.edit', 'Kategori Diperbarui'))
+        ->put(route('pengelola-operator.kategori-mata-pelajaran.update', 'Kategori Diperbarui'), [
+            'kategori' => $kategoriDipakai->nama,
+        ])
+        ->assertSessionHasErrors(['kategori'], __('pengelola_operator.kategori_mata_pelajaran.duplicate'));
+
+    $this->from(route('pengelola-operator.kategori-mata-pelajaran.index'))
+        ->delete(route('pengelola-operator.kategori-mata-pelajaran.destroy', $kategoriDipakai->nama))
+        ->assertSessionHas('error', __('pengelola_operator.kategori_mata_pelajaran.in_use'));
+
+    $this->delete(route('pengelola-operator.kategori-mata-pelajaran.destroy', 'Kategori Diperbarui'))
+        ->assertSessionHas('success', __('pengelola_operator.kategori_mata_pelajaran.deleted'));
 });

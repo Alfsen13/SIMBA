@@ -195,3 +195,14 @@ test('siswa menggunakan route pengaturan AI miliknya sendiri', function () {
         ->assertOk()
         ->assertSee(route('pelajar.ai-settings.update'), false);
 });
+
+test('halaman pengaturan AI menutup output buffer untuk setiap peran', function (string $role) {
+    $user = User::factory()->verified()->create(['role' => $role]);
+    $bufferSebelum = ob_get_level();
+
+    $this->actingAs($user)
+        ->get(route($role.'.ai-settings.edit'))
+        ->assertOk();
+
+    expect(ob_get_level())->toBe($bufferSebelum);
+})->with(['pelajar', 'pengajar']);

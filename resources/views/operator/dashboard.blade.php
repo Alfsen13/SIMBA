@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Operator - SIMBA')
+@section('title', __('operator.title_dashboard_operator') . ' - SIMBA')
 
 @section('content')
     <x-page-header
-        title="Dashboard Operator"
-        subtitle="Selamat datang, {{ auth()->user()->name }}. Kelola pengguna, kelas, dan mata pelajaran."
+        :title="__('operator.title_dashboard_operator')"
+        :subtitle="__('operator.dashboard_operator_intro', ['name' => auth()->user()->name])"
     />
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -24,27 +24,24 @@
     <x-card>
         <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <div>
-                <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Tindakan Cepat</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih tugas yang ingin Anda lakukan.</p>
+                <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('operator.quick_access') }}</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('operator.dashboard_quick_hint') }}</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <x-btn-primary :href="route('operator.users.index')">
-                    Kelola Pengguna
+                <x-btn-primary :href="route('operator.users.index')" class="min-h-11">
+                    {{ __('operator.quick_users') }}
                 </x-btn-primary>
-                <x-btn-primary :href="route('operator.kelas.index')" class="bg-slate-700 hover:bg-slate-800">
-                    Kelola Kelas
+                <x-btn-primary :href="route('operator.kelas.index')" class="min-h-11 bg-slate-700 hover:bg-slate-800">
+                    {{ __('operator.card_classes_cta') }}
                 </x-btn-primary>
-                <x-btn-primary :href="route('operator.mata-pelajaran.index')" class="bg-slate-700 hover:bg-slate-800">
-                    Mata Pelajaran
+                <x-btn-primary :href="route('operator.mata-pelajaran.index')" class="min-h-11 bg-slate-700 hover:bg-slate-800">
+                    {{ __('operator.quick_subject_materials') }}
                 </x-btn-primary>
-                <x-btn-primary :href="route('operator.mata-pelajaran.index')" class="bg-slate-700 hover:bg-slate-800">
-                    Materi Pengajar
+                <x-btn-primary :href="route('operator.berita.index')" class="min-h-11 bg-slate-700 hover:bg-slate-800">
+                    {{ __('operator.dashboard_quick_news') }}
                 </x-btn-primary>
-                <x-btn-primary :href="route('operator.berita.index')" class="bg-slate-700 hover:bg-slate-800">
-                    Berita
-                </x-btn-primary>
-                <x-btn-primary :href="route('operator.import')" class="bg-slate-700 hover:bg-slate-800">
-                    Impor Data
+                <x-btn-primary :href="route('operator.import')" class="min-h-11 bg-slate-700 hover:bg-slate-800">
+                    {{ __('operator.import_page_title') }}
                 </x-btn-primary>
             </div>
         </div>

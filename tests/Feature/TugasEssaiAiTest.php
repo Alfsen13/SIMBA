@@ -94,6 +94,81 @@ test('siswa dapat mengumpulkan jawaban esai dan memicu penilaian AI', function (
     });
 });
 
+test('form tugas memberi target sentuh yang memadai dan label terhubung ke input', function () {
+    $siswa = User::factory()->verified()->create();
+    $siswa->kelasDiikuti()->attach($this->kelas->id);
+    $upload = Tugas::factory()->create([
+        'judul' => 'Tugas Upload',
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'tipe' => 'upload',
+    ]);
+
+    $this->actingAs($siswa)
+        ->get(route('pelajar.tugas.show', $upload))
+        ->assertOk()
+        ->assertSee('min-h-11 min-w-11', false)
+        ->assertSee('<label for="file"', false)
+        ->assertSee('id="file"', false)
+        ->assertSee(__('siswa.tugas.berkas_jawaban'))
+        ->assertSee('min-h-11', false);
+
+    $esai = Tugas::create([
+        'judul' => 'Tugas Esai Label',
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'pertemuan_id' => $this->pertemuan->id,
+        'tipe' => 'essai',
+        'soal' => [
+            ['pertanyaan' => 'Jelaskan proses fotosintesis!'],
+        ],
+    ]);
+
+    $this->get(route('pelajar.tugas.show', $esai))
+        ->assertOk()
+        ->assertSee('<label for="jawaban-0"', false)
+        ->assertSee('id="jawaban-0"', false)
+        ->assertSee('min-h-11', false);
+
+    $pilihanGanda = Tugas::create([
+        'judul' => 'Tugas Pilihan Sentuh',
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'pertemuan_id' => $this->pertemuan->id,
+        'tipe' => 'pilihan_ganda',
+        'soal' => [
+            ['pertanyaan' => 'Berapakah 1 + 1?', 'opsi' => ['2', '3'], 'jawaban' => 0],
+        ],
+    ]);
+
+    $this->get(route('pelajar.tugas.show', $pilihanGanda))
+        ->assertOk()
+        ->assertSee('flex min-h-11 items-center gap-2 ml-4', false)
+        ->assertSee('min-h-11', false);
+});
+
+test('status pengumpulan terlambat memiliki latar gelap yang sesuai', function () {
+    $siswa = User::factory()->verified()->create();
+    $siswa->kelasDiikuti()->attach($this->kelas->id);
+    $tugas = Tugas::factory()->create([
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+    ]);
+
+    PengumpulanTugas::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'file' => 'jawaban.pdf',
+        'terlambat' => true,
+    ]);
+
+    $this->actingAs($siswa)
+        ->get(route('pelajar.tugas.show', $tugas))
+        ->assertOk()
+        ->assertSee('bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800', false)
+        ->assertSee(__('siswa.tugas.dikumpulkan_terlambat'));
+});
+
 test('tugas timer yang baru dimulai tetap dapat dikumpulkan dan belum berstatus selesai', function () {
     $siswa = User::factory()->verified()->create();
     $siswa->kelasDiikuti()->attach($this->kelas->id);

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
-use App\Models\KategoriMataPelajaran;
 use App\Models\JalurPendidikan;
 use App\Models\JenjangPendidikan;
+use App\Models\KategoriMataPelajaran;
 use App\Models\MataPelajaran;
 use App\Models\TingkatPendidikan;
 use Illuminate\Foundation\Http\FormRequest;
@@ -17,13 +17,11 @@ use Illuminate\Validation\Validator;
 
 class RegisterRequest extends FormRequest
 {
-     
     public function authorize(): bool
     {
         return true;
     }
 
-     
     public function rules(): array
     {
         $rules = [
@@ -53,7 +51,6 @@ class RegisterRequest extends FormRequest
             $rules['nip'] = ['nullable', 'string', 'unique:users'];
             $rules['kategori_mapel'] = ['required', 'string', 'max:100', Rule::in(self::kategoriMapelTersedia())];
         } elseif ($this->input('role') === 'pelajar') {
-            $rules['nisn'] = ['required', 'string', 'unique:users'];
             $rules['jalur_id'] = ['required', 'integer', Rule::exists('jalur_pendidikan', 'id')->where('aktif', true)];
         }
 
@@ -64,7 +61,6 @@ class RegisterRequest extends FormRequest
     {
         return [
             'nip.required' => 'NIP wajib diisi untuk pendaftar pengajar.',
-            'nisn.required' => 'NISN wajib diisi untuk pendaftar pelajar.',
             'kategori_mapel.required' => 'Kategori mata pelajaran wajib dipilih untuk pendaftar pengajar.',
         ];
     }
@@ -84,6 +80,10 @@ class RegisterRequest extends FormRequest
 
                 if (! $jalur) {
                     return;
+                }
+
+                if ($jalur->kode === 'formal' && blank($this->input('nisn'))) {
+                    $validator->errors()->add('nisn', 'NISN wajib diisi untuk jalur pendidikan formal.');
                 }
 
                 $butuhJenjangDanTingkat = in_array($jalur->kode, ['formal', 'nonformal'], true);

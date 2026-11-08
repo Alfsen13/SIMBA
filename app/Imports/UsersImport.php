@@ -95,7 +95,7 @@ class UsersImport
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', 'in:pengajar,pelajar'],
             'nip' => ['nullable', 'string', 'max:50', 'unique:users,nip'],
-            'nisn' => ['required_if:role,pelajar', 'nullable', 'string', 'max:50', 'unique:users,nisn'],
+            'nisn' => ['nullable', 'string', 'max:50', 'unique:users,nisn'],
             'password' => ['required', 'string', 'min:8'],
         ]);
 

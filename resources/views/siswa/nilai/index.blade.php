@@ -17,6 +17,7 @@
             @empty
                 <p class="text-slate-500 dark:text-slate-400">{{ __('siswa.nilai.belum_ada_harian') }}</p>
             @endforelse
+            <div class="mt-3">{{ $nilaiHarian->links() }}</div>
         </x-card>
 
         <x-card padding="true">
@@ -29,6 +30,7 @@
             @empty
                 <p class="text-slate-500 dark:text-slate-400">{{ __('siswa.nilai.belum_ada_tugas') }}</p>
             @endforelse
+            <div class="mt-3">{{ $nilaiTugas->links() }}</div>
         </x-card>
 
         <x-card padding="true">
@@ -41,6 +43,7 @@
             @empty
                 <p class="text-slate-500 dark:text-slate-400">{{ __('siswa.nilai.belum_ada_kuis') }}</p>
             @endforelse
+            <div class="mt-3">{{ $nilaiKuis->links() }}</div>
         </x-card>
     </div>
 </div>

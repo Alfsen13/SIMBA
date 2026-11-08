@@ -93,9 +93,9 @@ services:
       MAIL_MAILER: log
       # AI / ML Services
       OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5-coder:1.5b-base}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
       GEMINI_SHORT_TIMEOUT: "8"
@@ -186,9 +186,9 @@ services:
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
       OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5-coder:1.5b-base}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
       GEMINI_SHORT_TIMEOUT: "8"
@@ -249,9 +249,9 @@ services:
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
       OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5-coder:1.5b-base}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
       GEMINI_SHORT_TIMEOUT: "8"
@@ -312,9 +312,9 @@ services:
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
       OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5-coder:1.5b-base}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
       GEMINI_SHORT_TIMEOUT: "8"
@@ -378,9 +378,9 @@ services:
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
       OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5-coder:1.5b-base}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
       GEMINI_SHORT_TIMEOUT: "8"
@@ -461,9 +461,9 @@ services:
       SESSION_DRIVER: file
       CACHE_STORE: file
       OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:1.5b}"
-      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5:1.5b}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5-coder:1.5b-base}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
       GEMINI_SHORT_TIMEOUT: "8"

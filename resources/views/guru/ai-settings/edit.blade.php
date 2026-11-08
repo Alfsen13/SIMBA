@@ -150,6 +150,8 @@
         </form>
     </div>
 
+@endsection
+
 @push('scripts')
 <script>
 document.getElementById('test-ai').addEventListener('click', async () => {

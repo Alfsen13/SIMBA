@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Ajukan Perubahan Pendidikan - SIMBA')
+@section('title', __('siswa.pengajuan.create_title').' - SIMBA')
 
 @section('content')
-    <x-back-link href="{{ route('pelajar.pengajuan-pendidikan.index') }}" label="Kembali" />
-    <x-page-header title="Ajukan Perubahan Pendidikan" />
+    <x-back-link href="{{ route('pelajar.pengajuan-pendidikan.index') }}" :label="__('common.back')" class="min-h-11 min-w-11" />
+    <x-page-header :title="__('siswa.pengajuan.create_title')" />
 
     <x-card class="max-w-xl">
         <form action="{{ route('pelajar.pengajuan-pendidikan.store') }}" method="POST" class="space-y-4">
@@ -55,7 +55,7 @@
             >
                 <option value="">{{ __('komponen.pilih_opsi') }}</option>
                 @foreach($tingkatList as $t)
-                    <option value="{{ $t->id }}" {{ old('tingkat_id') == $t->id ? 'selected' : '' }}>{{ $t->nama }}@if($jalur->kode === 'nonformal') @php $n=strtolower($t->nama); if(str_contains($n,'paket a')) echo ' (Setara SD/MI)'; elseif(str_contains($n,'paket b')) echo ' (Setara SMP/MTs)'; elseif(str_contains($n,'paket c')) echo ' (Setara SMA/SMK/MA)'; @endphp @endif</option>
+                    <option value="{{ $t->id }}" {{ old('tingkat_id') == $t->id ? 'selected' : '' }}>{{ $t->nama }}@if($jalur->kode === 'nonformal') @php $n=strtolower($t->nama); if(str_contains($n,'paket a')) echo ' ('.__('siswa.pengajuan.setara', ['jenjang' => 'SD/MI']).')'; elseif(str_contains($n,'paket b')) echo ' ('.__('siswa.pengajuan.setara', ['jenjang' => 'SMP/MTs']).')'; elseif(str_contains($n,'paket c')) echo ' ('.__('siswa.pengajuan.setara', ['jenjang' => 'SMA/SMK/MA']).')'; @endphp @endif</option>
                 @endforeach
             </x-form-select>
             @error('tingkat_id')

@@ -291,6 +291,22 @@ test('generateTugas toleran saat AI membungkus objek di dalam array dan menambah
         ->and($this->remedial->tugas_remedial)->toHaveCount(3);
 });
 
+test('generateTugas menggabungkan tujuan dan soal dari objek terpisah dalam array', function () {
+    $json = json_decode(remedialGenerateJson(), true);
+    $terpisah = json_encode([
+        ['tujuan' => $json['tujuan']],
+        ['soal' => $json['soal']],
+    ]);
+
+    $this->mock(AIProviderService::class, function ($mock) use ($terpisah) {
+        $mock->shouldReceive('sendLocalPreferred')->once()->andReturn($terpisah);
+    });
+
+    expect(app(RemedialTugasService::class)->generateTugas($this->remedial->refresh()))->toBeTrue()
+        ->and($this->remedial->refresh()->bloom_tujuan)->toHaveCount(2)
+        ->and($this->remedial->tugas_remedial)->toHaveCount(3);
+});
+
 test('generateTugas toleran saat tujuan dikirim sebagai objek tunggal', function () {
     $json = json_decode(remedialGenerateJson(), true);
     $json['tujuan'] = $json['tujuan'][0];
@@ -327,6 +343,27 @@ test('nilai toleran saat AI membungkus objek di dalam array', function () {
 
     expect($ok)->toBeTrue()
         ->and($this->remedial->hasil_remedial)->toHaveCount(3);
+});
+
+test('nilai menggabungkan hasil soal dan mastery dari objek terpisah dalam array', function () {
+    $this->remedial->update([
+        'tugas_remedial' => json_decode(remedialGenerateJson(), true)['soal'],
+        'jawaban_remedial' => ['Jawaban 1.', 'Jawaban 2.', 'Jawaban 3.'],
+        'status' => 'dibaca',
+    ]);
+    $nilai = json_decode(remedialNilaiJson(), true);
+    $terpisah = json_encode([
+        ['per_soal' => $nilai['per_soal']],
+        ['mastery' => $nilai['mastery']],
+    ]);
+
+    $this->mock(AIProviderService::class, function ($mock) use ($terpisah) {
+        $mock->shouldReceive('sendLocalPreferred')->once()->andReturn($terpisah);
+    });
+
+    expect(app(RemedialTugasService::class)->nilai($this->remedial->refresh()))->toBeTrue()
+        ->and($this->remedial->refresh()->hasil_remedial)->toHaveCount(3)
+        ->and($this->remedial->bloom_tercapai)->toBeTrue();
 });
 
 test('GenerateRemedialAI setelah membuat materi juga membuatkan tugas remedial', function () {

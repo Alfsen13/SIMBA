@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pendaftaran Kelas - Operator')
+@section('title', __('operator.registration_page_title'))
 
 @section('content')
     <div class="py-6">
@@ -41,11 +41,11 @@
                                         <div class="flex items-center justify-end gap-2">
                                             <form method="POST" action="{{ route('operator.pendaftaran-kelas.setujui', ['kelas' => $p->kelas_id, 'siswa' => $p->siswa_id]) }}">
                                                 @csrf
-                                                <x-btn-primary type="submit" size="sm">{{ __('operator.approve') }}</x-btn-primary>
+                                                <x-btn-primary type="submit" size="sm" class="min-h-11">{{ __('operator.approve') }}</x-btn-primary>
                                             </form>
                                             <form method="POST" action="{{ route('operator.pendaftaran-kelas.tolak', ['kelas' => $p->kelas_id, 'siswa' => $p->siswa_id]) }}">
                                                 @csrf
-                                                <x-btn-secondary type="submit" size="sm" color="red">{{ __('operator.title_reject') }}</x-btn-secondary>
+                                                <x-btn-secondary type="submit" size="sm" color="red" class="min-h-11">{{ __('operator.title_reject') }}</x-btn-secondary>
                                             </form>
                                         </div>
                                     </x-td>

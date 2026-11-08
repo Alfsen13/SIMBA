@@ -6,7 +6,7 @@
 <div class="py-6">
     <x-page-header :title="__('navigation.ai_tutor')" :subtitle="__('publik.ai_tutor.subtitle_pilih_materi', ['kelas' => $kelas->nama_kelas])">
         <x-slot:actions>
-            <a href="{{ route('pelajar.ai-tutor') }}" class="text-sm text-emerald-700 dark:text-emerald-400 hover:underline">&larr; {{ __('publik.ai_tutor.kembali_daftar_kelas') }}</a>
+            <a href="{{ route('pelajar.ai-tutor') }}" class="inline-flex items-center min-h-11 min-w-11 text-sm text-emerald-700 dark:text-emerald-400 hover:underline">&larr; {{ __('publik.ai_tutor.kembali_daftar_kelas') }}</a>
         </x-slot:actions>
     </x-page-header>
 
@@ -25,7 +25,7 @@
                     <div class="flex items-center gap-2 mt-3">
                         <a
                             href="{{ route('pelajar.ai-tutor.chat', [$kelas, $materi]) }}"
-                            class="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 text-sm font-medium"
+                            class="inline-flex items-center min-h-11 min-w-11 gap-1 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 text-sm font-medium"
                         >
                             {{ __('publik.ai_tutor.mulai_belajar') }} &rarr;
                         </a>

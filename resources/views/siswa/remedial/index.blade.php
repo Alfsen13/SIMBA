@@ -46,7 +46,7 @@
                         </span>
                         <a
                             href="{{ route('pelajar.remedial.show', $r) }}"
-                            class="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300"
+                            class="inline-flex items-center justify-center min-h-11 min-w-11 gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300"
                         >
                             {{ __('siswa.remedial.baca') }}
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

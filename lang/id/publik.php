@@ -48,6 +48,8 @@ return [
         'baru' => 'Baru',
         'lihat' => 'Lihat',
         'tandai_dibaca' => 'Tandai dibaca',
+        'read_success' => 'Notifikasi ditandai telah dibaca.',
+        'read_all_success' => 'Semua notifikasi telah dibaca.',
     ],
 
     'ai_tutor' => [
@@ -72,6 +74,9 @@ return [
         'semua_materi_referensi' => 'Semua materi digunakan otomatis sebagai referensi AI.',
         'ringkasan_bab' => 'Ringkasan Bab',
         'placeholder_tanya' => 'Tanyakan tentang materi ini...',
+        'pesan' => 'Pertanyaan',
+        'kirim_pesan' => 'Kirim pertanyaan',
+        'sedang_memproses' => 'AI Tutor sedang memproses pertanyaan.',
         'lihat_materi' => 'Lihat materi',
         'sembunyikan_materi' => 'Sembunyikan materi',
         'karakter' => 'karakter',

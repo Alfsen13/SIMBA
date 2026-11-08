@@ -8,19 +8,16 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class KuisJawabanRequest extends FormRequest
 {
-     
     public function authorize(): bool
     {
         return true;
     }
 
-     
     public function rules(): array
     {
         return [
             'jawaban' => 'required|array',
-            'jawaban.*' => 'required|string',
+            'jawaban.*' => 'nullable|string',
         ];
     }
 }
-

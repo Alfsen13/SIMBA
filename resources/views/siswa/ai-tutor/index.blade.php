@@ -30,7 +30,7 @@
                                 </div>
                             </div>
                             <div class="min-w-0 flex-1">
-                                <h3 class="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 transition-colors truncate">{{ $kelas->nama_kelas }}</h3>
+                                <h3 class="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors truncate">{{ $kelas->nama_kelas }}</h3>
                                 @if($kelas->kategori)
                                     <span class="inline-block mt-1 px-2 py-0.5 text-xs rounded-full bg-emerald-100 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300">{{ $kelas->kategori }}</span>
                                 @endif

@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="py-6">
-    <x-back-link href="{{ route('pelajar.kuis.index') }}" :label="__('siswa.kuis.kembali_ke_daftar')" />
+    <x-back-link href="{{ route('pelajar.kuis.index') }}" :label="__('siswa.kuis.kembali_ke_daftar')" class="min-h-11 min-w-11" />
 
     <h1 class="text-xl font-bold mt-2">{{ $kuis->judul }} {{ __('siswa.kuis.hasil_label') }}</h1>
 

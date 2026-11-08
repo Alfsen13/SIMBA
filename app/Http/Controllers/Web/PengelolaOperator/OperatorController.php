@@ -49,7 +49,7 @@ class OperatorController extends Controller
             'verified_by' => auth()->id(),
         ]);
 
-        return redirect()->route('pengelola-operator.operator.index')->with('success', 'Akun operator berhasil dibuat.');
+        return redirect()->route('pengelola-operator.operator.index')->with('success', __('pengelola_operator.operator.created'));
     }
 
     public function edit(User $operator): View
@@ -86,7 +86,7 @@ class OperatorController extends Controller
 
         $operator->update($data);
 
-        return redirect()->route('pengelola-operator.operator.index')->with('success', 'Akun operator berhasil diperbarui.');
+        return redirect()->route('pengelola-operator.operator.index')->with('success', __('pengelola_operator.operator.updated'));
     }
 
     public function destroy(User $operator): RedirectResponse
@@ -99,7 +99,7 @@ class OperatorController extends Controller
 
         $operator->delete();
 
-        return redirect()->route('pengelola-operator.operator.index')->with('success', 'Akun operator berhasil dihapus.');
+        return redirect()->route('pengelola-operator.operator.index')->with('success', __('pengelola_operator.operator.deleted'));
     }
 
     private function authorizeOperatorTarget(User $operator): void

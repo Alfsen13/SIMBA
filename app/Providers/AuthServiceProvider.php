@@ -10,12 +10,14 @@ use App\Models\Materi;
 use App\Models\Notifikasi;
 use App\Models\Pertemuan;
 use App\Models\Tugas;
+use App\Models\User;
 use App\Policies\KelasPolicy;
 use App\Policies\KuisPolicy;
 use App\Policies\MateriPolicy;
 use App\Policies\NotifikasiPolicy;
 use App\Policies\PertemuanPolicy;
 use App\Policies\TugasPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -27,12 +29,11 @@ class AuthServiceProvider extends ServiceProvider
         Tugas::class => TugasPolicy::class,
         Kuis::class => KuisPolicy::class,
         Notifikasi::class => NotifikasiPolicy::class,
+        User::class => UserPolicy::class,
     ];
 
-     
     public function boot(): void
     {
         $this->registerPolicies();
     }
 }
-

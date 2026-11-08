@@ -101,6 +101,28 @@ it('judul materi dengan tanda baca dan spasi ganda dinormalisasi sama', function
         ->toHaveKey('hukum hidrostatistika dan pengapian');
 });
 
+it('menyediakan label chat, pengumuman respons dan panel tersembunyi yang tidak dapat difokuskan', function () {
+    $kelas = aiTutorKelas(aiTutorGuru());
+    $pertemuan = aiTutorPertemuan($kelas);
+    $siswa = aiTutorSiswa($kelas);
+    Materi::factory()->create([
+        'kelas_id' => $kelas->id,
+        'guru_id' => $kelas->guru_id,
+        'pertemuan_id' => $pertemuan->id,
+    ]);
+
+    $this->actingAs($siswa)->get(route('pelajar.ai-tutor.chat', [$kelas, $pertemuan]))
+        ->assertOk()
+        ->assertSee('for="ai-tutor-pesan"', false)
+        ->assertSee('id="ai-tutor-pesan"', false)
+        ->assertSee('aria-label="'.__('publik.ai_tutor.kirim_pesan').'"', false)
+        ->assertSee('role="log" aria-live="polite"', false)
+        ->assertSee('role="status" aria-live="polite"', false)
+        ->assertSee('invisible opacity-0', false)
+        ->assertSee('lg:visible', false)
+        ->assertSee('aria-controls="ai-tutor-sumber"', false);
+});
+
 it('mengirim riwayat chat ke AI personal pelajar dan mengembalikan referensi', function () {
     $guru = aiTutorGuru();
     $kelas = aiTutorKelas($guru);

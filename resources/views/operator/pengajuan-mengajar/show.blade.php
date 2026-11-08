@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tinjau Pengajuan Mengajar - Operator')
+@section('title', __('operator.pengajuan_mengajar.page_title'))
 
 @section('content')
     <div class="py-6">
@@ -9,7 +9,7 @@
             :subtitle="__('operator.pengajuan_mengajar.subtitle', ['kelas' => $kelas->nama_kelas])"
         >
             <x-slot name="actions">
-                <x-btn-secondary href="{{ route('operator.kelas.index') }}" size="sm">
+                <x-btn-secondary href="{{ route('operator.kelas.index') }}" size="sm" class="min-h-11">
                     {{ __('common.back') }}
                 </x-btn-secondary>
             </x-slot>
@@ -69,27 +69,31 @@
                                 </div>
 
                                 @if($pengajuan->status === \App\Models\PengajuanPengajarKelas::STATUS_PENDING && $kelas->guru_id === null)
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
                                         <form method="POST" action="{{ route('operator.pengajuan-mengajar.setujui', $pengajuan) }}">
                                             @csrf
-                                            <x-btn-primary type="submit" size="sm">{{ __('operator.approve') }}</x-btn-primary>
+                                            <x-btn-primary type="submit" size="sm" class="min-h-11 w-full sm:w-auto">{{ __('operator.approve') }}</x-btn-primary>
                                         </form>
                                         <form
                                             method="POST"
                                             action="{{ route('operator.pengajuan-mengajar.tolak', $pengajuan) }}"
-                                            class="flex items-center gap-2"
+                                            class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"
                                             x-data
                                             x-on:submit.prevent="confirm('{{ __('operator.pengajuan_mengajar.konfirmasi_tolak') }}') && $el.submit()"
                                         >
                                             @csrf
+                                            <label for="catatan-penolakan-{{ $pengajuan->id }}" class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                                                {{ __('operator.pengajuan_mengajar.catatan_label') }}
+                                            </label>
                                             <input
                                                 type="text"
                                                 name="catatan"
+                                                id="catatan-penolakan-{{ $pengajuan->id }}"
                                                 maxlength="1000"
                                                 placeholder="{{ __('operator.pengajuan_mengajar.catatan_placeholder') }}"
-                                                class="w-52 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none"
+                                                class="w-full min-w-0 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none sm:w-52"
                                             >
-                                            <x-btn-secondary type="submit" size="sm" color="red">{{ __('operator.title_reject') }}</x-btn-secondary>
+                                            <x-btn-secondary type="submit" size="sm" color="red" class="min-h-11 w-full sm:w-auto">{{ __('operator.title_reject') }}</x-btn-secondary>
                                         </form>
                                     </div>
                                 @endif
@@ -104,7 +108,7 @@
                                 @if($pengajuan->berkas_path)
                                     <a
                                         href="{{ route('operator.pengajuan-mengajar.berkas', $pengajuan) }}"
-                                        class="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium hover:underline"
+                                        class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium hover:underline"
                                     >
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                         {{ __('operator.pengajuan_mengajar.unduh_berkas') }}
@@ -160,13 +164,13 @@
 
                                     <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                                         @if($aplikasi->cv_path)
-                                            <a href="{{ route('operator.pengajuan-mengajar.profil-berkas', ['pengajuan' => $pengajuan, 'jenis' => 'cv']) }}" class="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium hover:underline">
+                                            <a href="{{ route('operator.pengajuan-mengajar.profil-berkas', ['pengajuan' => $pengajuan, 'jenis' => 'cv']) }}" class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium hover:underline">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                 {{ __('operator.pengajuan_mengajar.unduh_cv') }}
                                             </a>
                                         @endif
                                         @if($aplikasi->ijazah_path)
-                                            <a href="{{ route('operator.pengajuan-mengajar.profil-berkas', ['pengajuan' => $pengajuan, 'jenis' => 'ijazah']) }}" class="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium hover:underline">
+                                            <a href="{{ route('operator.pengajuan-mengajar.profil-berkas', ['pengajuan' => $pengajuan, 'jenis' => 'ijazah']) }}" class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium hover:underline">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                 {{ __('operator.pengajuan_mengajar.unduh_ijazah') }}
                                             </a>

@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="py-6">
-    <x-back-link href="{{ route('pelajar.tugas.index') }}" />
+    <x-back-link href="{{ route('pelajar.tugas.index') }}" class="min-h-11 min-w-11" />
 
     <div class="flex items-center gap-3 mt-2">
         <h1 class="text-xl font-bold">{{ $tugas->judul }}</h1>
@@ -41,7 +41,7 @@
     </x-card>
 
     @if($pengumpulan?->sudahDikumpulkan())
-        <div class="mt-4 {{ $pengumpulan->terlambat ? 'bg-red-50 border-red-200 dark:border-red-800' : 'bg-green-50 dark:bg-green-500/10 border-green-200' }} rounded-lg shadow-sm border p-4">
+        <div class="mt-4 {{ $pengumpulan->terlambat ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800' : 'bg-green-50 dark:bg-green-500/10 border-green-200' }} rounded-lg shadow-sm border p-4">
             <div class="flex items-center gap-2">
                 <h2 class="font-semibold {{ $pengumpulan->terlambat ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400' }}">
                     {{ $pengumpulan->terlambat ? __('siswa.tugas.dikumpulkan_terlambat') : __('siswa.tugas.sudah_dikumpulkan') }}
@@ -107,7 +107,7 @@
                 </p>
                 <form method="POST" action="{{ route('pelajar.tugas.mulai', $tugas) }}">
                     @csrf
-                    <x-btn-primary type="submit" size="sm">
+                    <x-btn-primary type="submit" size="sm" class="min-h-11">
                         Mulai Kerjakan
                     </x-btn-primary>
                 </form>
@@ -130,10 +130,12 @@
                 >
                     @csrf
                     @if($tugas->tipe === 'upload')
+                        <label for="file" class="block text-sm font-medium mb-1">{{ __('siswa.tugas.berkas_jawaban') }}</label>
                         <input
                             type="file"
+                            id="file"
                             name="file"
-                            class="w-full border rounded px-3 py-2"
+                            class="w-full min-h-11 border rounded px-3 py-2"
                             accept=".pdf,.doc,.docx,.zip,.rar,.jpg,.png"
                             required
                         >
@@ -150,7 +152,7 @@
                                     @endif
                                 </div>
                                 @foreach($s['opsi'] as $key => $val)
-                                    <label class="block ml-4">
+                                    <label class="flex min-h-11 items-center gap-2 ml-4">
                                         <input
                                             type="radio"
                                             name="jawaban[{{ $i }}]"
@@ -166,12 +168,13 @@
                         @foreach($soalTampil as $i => $s)
                             <div class="mb-4">
                                 <div class="flex items-start gap-2 mb-1">
-                                    <label class="block font-medium text-slate-900 dark:text-slate-100 flex-1">{{ $s['nomor'] }}. <x-math :value="$s['pertanyaan']" /></label>
+                                    <label for="jawaban-{{ $i }}" class="block font-medium text-slate-900 dark:text-slate-100 flex-1">{{ $s['nomor'] }}. <x-math :value="$s['pertanyaan']" /></label>
                                     @if($s['bloom'])
                                         <span class="shrink-0 text-xs font-medium px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-600/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">{{ $s['bloom'] }}</span>
                                     @endif
                                 </div>
                                 <textarea
+                                    id="jawaban-{{ $i }}"
                                     name="jawaban[{{ $i }}]"
                                     rows="4"
                                     required
@@ -184,7 +187,7 @@
                     @error('jawaban')
                         <p class="text-red-600 dark:text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
-                    <x-btn-primary type="submit" size="sm" class="mt-2">
+                    <x-btn-primary type="submit" size="sm" class="mt-2 min-h-11">
                         {{ __('siswa.tugas.kumpulkan') }}
                     </x-btn-primary>
                 </form>

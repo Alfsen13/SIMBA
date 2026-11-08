@@ -5,13 +5,13 @@
 @section('content')
 <div class="py-4">
     {{-- Welcome Banner --}}
-    <div class="relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 px-5 py-4 mb-4">
+    <div class="relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-700 via-emerald-800 to-teal-900 px-5 py-4 mb-4">
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
         <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
         <div class="relative">
-            <p class="text-emerald-200 text-sm font-medium">{{ __('siswa.dashboard.selamat_datang') }}</p>
+            <p class="text-white text-sm font-medium">{{ __('siswa.dashboard.selamat_datang') }}</p>
             <h1 class="text-xl font-bold text-white mt-1">{{ auth()->user()->name }}</h1>
-            <p class="text-emerald-200 text-sm mt-2 max-w-xl">
+            <p class="text-white text-sm mt-2 max-w-xl">
                 {{ __('siswa.dashboard.deskripsi') }}
             </p>
         </div>
@@ -49,7 +49,7 @@
     <section class="mb-4">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('siswa.dashboard.kelas_ikuti') }}</h2>
-            <a href="{{ route('pelajar.kelas.index') }}" class="text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
+            <a href="{{ route('pelajar.kelas.index') }}" class="inline-flex min-h-11 items-center text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
         </div>
         @if($kelasDiikuti->count())
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -64,8 +64,8 @@
                         <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">{{ $kelas->nama_kelas }}</h3>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{{ __('siswa.shared.jumlah_pertemuan', ['n' => $kelas->pertemuan_count]) }} &bull; {{ __('siswa.shared.jumlah_materi', ['n' => $kelas->materi_count]) }}</p>
                         <div class="flex items-center gap-2">
-                            <a href="{{ route('pelajar.kelas.show', $kelas) }}" class="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-50 dark:bg-emerald-600/10 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors">{{ __('common.detail') }}</a>
-                            <a href="{{ route('pelajar.ai-tutor.pertemuan', $kelas) }}" class="text-xs font-medium text-purple-600 dark:text-purple-400 hover:text-purple-800 bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors">{{ __('siswa.shared.ai_tutor') }}</a>
+                            <a href="{{ route('pelajar.kelas.show', $kelas) }}" class="inline-flex min-h-11 items-center text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-50 dark:bg-emerald-600/10 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors">{{ __('common.detail') }}</a>
+                            <a href="{{ route('pelajar.ai-tutor.pertemuan', $kelas) }}" class="inline-flex min-h-11 items-center text-xs font-medium text-purple-600 dark:text-purple-400 hover:text-purple-800 bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors">{{ __('siswa.shared.ai_tutor') }}</a>
                         </div>
                     </div>
                 @endforeach
@@ -74,7 +74,7 @@
             <div class="text-center py-8 bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
                 <svg class="w-10 h-10 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                 <p class="text-slate-500 dark:text-slate-400 text-sm">{{ __('siswa.dashboard.belum_ikut_kelas') }}</p>
-                <a href="{{ route('pelajar.kelas.available') }}" class="mt-3 inline-flex items-center gap-1 text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">
+                <a href="{{ route('pelajar.kelas.available') }}" class="mt-3 inline-flex min-h-11 items-center gap-1 px-2 text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">
                     {{ __('siswa.kelas.cari_kelas') }}
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </a>
@@ -88,7 +88,7 @@
         <x-card padding="true">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('siswa.dashboard.materi_pertemuan_terbaru') }}</h2>
-                <a href="{{ route('pelajar.kelas.index') }}" class="text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
+                <a href="{{ route('pelajar.kelas.index') }}" class="inline-flex min-h-11 items-center text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
             </div>
             @if($materiTerbaru->count())
                 <div class="space-y-2">
@@ -122,7 +122,7 @@
         <x-card padding="true">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('navigation.assignments') }} <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">{{ __('siswa.dashboard.dengan_tenggat') }}</span></h2>
-                <a href="{{ route('pelajar.tugas.index') }}" class="text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
+                <a href="{{ route('pelajar.tugas.index') }}" class="inline-flex min-h-11 items-center text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
             </div>
             @if($tugasTerbaru->count())
                 <div class="space-y-2">
@@ -169,7 +169,7 @@
         <x-card padding="true">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('siswa.dashboard.kuis_tersedia') }}</h2>
-                <a href="{{ route('pelajar.kuis.index') }}" class="text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
+                <a href="{{ route('pelajar.kuis.index') }}" class="inline-flex min-h-11 items-center text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
             </div>
             @if($kuisTersedia->count())
                 <div class="space-y-2">
@@ -192,7 +192,7 @@
                                     <div class="text-[10px] text-emerald-700 dark:text-emerald-400">{{ __('siswa.shared.status_selesai') }}</div>
                                 </div>
                             @else
-                                <a href="{{ route('pelajar.kuis.show', $kuis) }}" class="shrink-0 text-xs font-medium text-amber-950 bg-amber-500 hover:bg-amber-400 px-3 py-1.5 rounded-lg transition-colors">
+                                <a href="{{ route('pelajar.kuis.show', $kuis) }}" class="inline-flex min-h-11 shrink-0 items-center text-xs font-medium text-amber-950 bg-amber-500 hover:bg-amber-400 px-3 py-1.5 rounded-lg transition-colors">
                                     {{ __('siswa.kuis.kerjakan') }}
                                 </a>
                             @endif
@@ -211,7 +211,7 @@
         <x-card padding="true">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('navigation.remedial') }}</h2>
-                <a href="{{ route('pelajar.remedial.index') }}" class="text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
+                <a href="{{ route('pelajar.remedial.index') }}" class="inline-flex min-h-11 items-center text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium">{{ __('siswa.dashboard.lihat_semua') }} &rarr;</a>
             </div>
             @if($remedialList->count())
                 <div class="space-y-2">
@@ -226,7 +226,7 @@
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ $rem->created_at->diffForHumans() }}</p>
                             </div>
                             @if($rem->status === 'belum_dibaca')
-                                <span class="w-2 h-2 bg-red-500 rounded-full mt-2 shrink-0"></span>
+                                <span class="shrink-0 rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">{{ __('siswa.shared.status_belum_dibaca') }}</span>
                             @endif
                         </div>
                     @endforeach

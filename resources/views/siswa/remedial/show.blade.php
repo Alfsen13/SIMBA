@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="py-6 max-w-4xl mx-auto">
-    <x-back-link href="{{ route('pelajar.remedial.index') }}" />
+    <x-back-link href="{{ route('pelajar.remedial.index') }}" class="min-h-11 min-w-11" />
 
     <x-card padding="false">
         <div class="p-4 sm:p-6">
@@ -117,7 +117,7 @@
                     </p>
                     <form method="POST" action="{{ route('pelajar.remedial.reset', $remedial) }}" class="mt-3">
                         @csrf
-                        <x-btn-secondary type="submit" size="sm">{{ __('siswa.remedial.kerjakan_ulang') }}</x-btn-secondary>
+                        <x-btn-secondary type="submit" size="sm" class="min-h-11 min-w-11">{{ __('siswa.remedial.kerjakan_ulang') }}</x-btn-secondary>
                     </form>
                 </div>
 
@@ -137,7 +137,7 @@
                                     'C2' => 'bg-blue-50 text-blue-600',
                                     'C3' => 'bg-emerald-50 text-emerald-700',
                                     'C4' => 'bg-purple-50 text-purple-600',
-                                    'C5' => 'bg-amber-50 text-amber-600',
+                                    'C5' => 'bg-amber-50 text-amber-700',
                                     'C6' => 'bg-green-50 text-green-700',
                                     default => 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
                                 } }}">
@@ -179,7 +179,7 @@
                     @foreach($remedial->jawaban_remedial as $i => $jawaban)
                         <input type="hidden" name="jawaban[{{ $i }}]" value="{{ $jawaban }}">
                     @endforeach
-                    <x-btn-secondary type="submit" size="sm">{{ __('siswa.remedial.kirim_ulang_penilaian') }}</x-btn-secondary>
+                    <x-btn-secondary type="submit" size="sm" class="min-h-11 min-w-11">{{ __('siswa.remedial.kirim_ulang_penilaian') }}</x-btn-secondary>
                 </form>
                 @foreach($remedial->tugas_remedial as $i => $s)
                     <div class="border border-slate-100 dark:border-slate-800 rounded-lg p-3 mb-2 mt-3">
@@ -197,7 +197,7 @@
                             $kode = strtoupper((string) ($s['bloom'] ?? ''));
                         @endphp
                         <div class="mb-3">
-                            <label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                            <label for="jawaban-remedial-{{ $i }}" class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
                                 {{ $i + 1 }}. <x-math :value="$s['pertanyaan'] ?? __('siswa.shared.soal_fallback')" />
                             </label>
                             <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded mb-2
@@ -206,13 +206,14 @@
                                     'C2' => 'bg-blue-50 text-blue-600',
                                     'C3' => 'bg-emerald-50 text-emerald-700',
                                     'C4' => 'bg-purple-50 text-purple-600',
-                                    'C5' => 'bg-amber-50 text-amber-600',
+                                    'C5' => 'bg-amber-50 text-amber-700',
                                     'C6' => 'bg-green-50 text-green-700',
                                     default => 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
                                 } }}">
                                 {{ __('siswa.shared.level', ['kode' => $kode]) }}
                             </span>
                             <textarea
+                                id="jawaban-remedial-{{ $i }}"
                                 name="jawaban[{{ $i }}]"
                                 rows="4"
                                 required
@@ -224,7 +225,7 @@
                     @error('jawaban')
                         <p class="text-red-600 dark:text-red-400 text-sm mb-2">{{ $message }}</p>
                     @enderror
-                    <x-btn-primary type="submit" size="sm">{{ __('siswa.shared.kumpulkan_jawaban') }}</x-btn-primary>
+                    <x-btn-primary type="submit" size="sm" class="min-h-11 min-w-11">{{ __('siswa.shared.kumpulkan_jawaban') }}</x-btn-primary>
                 </form>
             @endif
         </x-card>

@@ -28,6 +28,8 @@ class KelasImport
 
     public array $errors = [];
 
+    public function __construct(private readonly string $kategoriOperator) {}
+
     public function import(string $filePath, string $extension): void
     {
         $ext = strtolower($extension);
@@ -36,7 +38,9 @@ class KelasImport
             $reader->open($filePath);
             $firstSheet = true;
             foreach ($reader->getSheetIterator() as $sheet) {
-                if (! $firstSheet) { break; }
+                if (! $firstSheet) {
+                    break;
+                }
                 $firstSheet = false;
                 $this->processSheet($sheet);
             }
@@ -49,7 +53,9 @@ class KelasImport
         $reader->open($filePath);
         $firstSheet = true;
         foreach ($reader->getSheetIterator() as $sheet) {
-            if (! $firstSheet) { break; }
+            if (! $firstSheet) {
+                break;
+            }
             $firstSheet = false;
             $this->processSheet($sheet);
         }
@@ -76,6 +82,7 @@ class KelasImport
                     $h = strtolower(trim(str_replace("\u{FEFF}", '', (string) $h)));
                     $h = str_replace(["\u{00A0}", ' '], [' ', ' '], $h);
                     $h = preg_replace('/\s+/', '_', $h);
+
                     return match ($h) {
                         'mata_pelajaran_id', 'kode_mata_pelajaran', 'mapel', 'mata_pelajaran_kode' => 'mata_pelajaran',
                         'jalur_id', 'jalur_kode' => 'jalur',
@@ -103,6 +110,7 @@ class KelasImport
                     return;
                 }
                 $isHeader = false;
+
                 continue;
             }
 
@@ -168,6 +176,10 @@ class KelasImport
                 throw new \Exception("kategori '{$kategori}' tidak sesuai dengan mata_pelajaran '{$mapel->nama}'.");
             }
 
+            if ($kategori !== $this->kategoriOperator) {
+                throw new \Exception(__('operator.kelas_kategori_di_luar_tugas'));
+            }
+
             Kelas::create([
                 'nama_kelas' => $namaKelas,
                 'deskripsi' => $deskripsi,
@@ -179,8 +191,8 @@ class KelasImport
                 'jenjang_id' => $jenjangId,
                 'tingkat_id' => $tingkatId,
                 'kapasitas' => (is_numeric($kapasitas) && $kapasitas !== '') ? (int) $kapasitas : null,
-                'status' => in_array($status, ['draft','dibuka','ditutup','arsip'], true) ? $status : 'dibuka',
-                'aturan_kelayakan' => in_array($aturan, ['sesuai_profil','sesuai_jenjang','terbuka','khusus'], true) ? $aturan : 'sesuai_profil',
+                'status' => in_array($status, ['draft', 'dibuka', 'ditutup', 'arsip'], true) ? $status : 'dibuka',
+                'aturan_kelayakan' => in_array($aturan, ['sesuai_profil', 'sesuai_jenjang', 'terbuka', 'khusus'], true) ? $aturan : 'sesuai_profil',
                 'periode' => $periode,
             ]);
 
@@ -198,7 +210,9 @@ class KelasImport
         }
         if (is_numeric($nilai)) {
             $cek = DB::table($tabel)->where('id', (int) $nilai)->exists();
-            if ($cek) { return (int) $nilai; }
+            if ($cek) {
+                return (int) $nilai;
+            }
         }
 
         if ($tabel === 'jalur_pendidikan') {
@@ -225,7 +239,10 @@ class KelasImport
         }
         if (is_int($v) || is_float($v)) {
             $s = (string) $v;
-            if ($s === '') { return null; }
+            if ($s === '') {
+                return null;
+            }
+
             return $s;
         }
         $s = trim((string) $v);

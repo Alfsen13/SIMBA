@@ -215,6 +215,38 @@ test('pelajar bisa membuka pertemuan yang sudah dibuka', function () {
     $this->actingAs($siswa)->get(route('pelajar.pertemuan.show', $pertemuan))->assertOk();
 });
 
+test('tautan detail pertemuan memiliki target sentuh dan hover tema gelap yang terbaca', function () {
+    $guru = pdGuru();
+    $kelas = pdKelas($guru);
+    $pertemuan = pdPertemuan($kelas, 1, true);
+    Materi::factory()->create([
+        'kelas_id' => $kelas->id,
+        'guru_id' => $guru->id,
+        'pertemuan_id' => $pertemuan->id,
+    ]);
+    Tugas::factory()->create([
+        'kelas_id' => $kelas->id,
+        'guru_id' => $guru->id,
+        'pertemuan_id' => $pertemuan->id,
+    ]);
+    Kuis::create([
+        'judul' => 'Kuis Pertemuan',
+        'kelas_id' => $kelas->id,
+        'pertemuan_id' => $pertemuan->id,
+        'soal' => [],
+        'durasi_menit' => 30,
+        'is_aktif' => true,
+    ]);
+    $siswa = pdSiswa($kelas);
+
+    $response = $this->actingAs($siswa)->get(route('pelajar.pertemuan.show', $pertemuan));
+    $response->assertOk()
+        ->assertSee('min-h-11 min-w-11', false)
+        ->assertSee('flex min-h-11 flex-col justify-center py-2 px-3 -mx-3 rounded-lg hover:bg-purple-50 dark:hover:bg-slate-800', false)
+        ->assertSee('flex min-h-11 flex-col justify-center py-2 px-3 -mx-3 rounded-lg hover:bg-emerald-50 dark:hover:bg-slate-800', false)
+        ->assertSee('flex min-h-11 flex-col justify-center py-2 px-3 -mx-3 rounded-lg hover:bg-amber-50 dark:hover:bg-slate-800', false);
+});
+
 test('materi dari pertemuan terkunci diblokir', function () {
     $guru = pdGuru();
     $kelas = pdKelas($guru);

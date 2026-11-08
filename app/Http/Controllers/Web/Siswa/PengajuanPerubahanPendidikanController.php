@@ -133,7 +133,7 @@ class PengajuanPerubahanPendidikanController extends Controller
                 'tingkat_id' => $validated['tingkat_id'],
                 'jenis' => $validated['jenis'],
                 'status' => 'pending',
-                'catatan_operator' => $validated['alasan'],
+                'alasan' => $validated['alasan'],
             ]);
 
             return true;

@@ -83,7 +83,9 @@ class ImportController extends Controller
         $importer->import($file->getRealPath(), $extension);
 
         $redirectResponse = redirect()->route('operator.import')
-            ->with('success', $importer->imported.' pengguna berhasil diimport.');
+            ->with('success', trans_choice('operator.import_users_success', $importer->imported, [
+                'count' => $importer->imported,
+            ]));
 
         if ($importer->errors) {
             $redirectResponse->with('import_errors', $importer->errors);
@@ -94,16 +96,21 @@ class ImportController extends Controller
 
     public function importKelas(ImportRequest $request): RedirectResponse
     {
+        $kategori = $request->user()->kategori_mapel;
+        abort_unless(is_string($kategori) && trim($kategori) !== '', 403, __('operator.kelas_operator_tanpa_kategori'));
+
         $validated = $request->validated();
 
         $file = $validated['file'];
         $extension = $file->getClientOriginalExtension();
 
-        $importer = new KelasImport;
+        $importer = new KelasImport($kategori);
         $importer->import($file->getRealPath(), $extension);
 
         $redirectResponse = redirect()->route('operator.kelas.index')
-            ->with('success', $importer->imported.' kelas berhasil diimport.');
+            ->with('success', trans_choice('operator.import_classes_success', $importer->imported, [
+                'count' => $importer->imported,
+            ]));
 
         if ($importer->errors) {
             $redirectResponse->with('import_errors', $importer->errors);

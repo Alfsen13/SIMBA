@@ -13,50 +13,57 @@
         />
     @else
         <x-card padding="false">
-            <table class="w-full text-sm">
-                <thead class="bg-slate-50 dark:bg-slate-800/50 text-left">
-                    <tr>
-                        <x-th align="left">{{ __('siswa.shared.judul') }}</x-th>
-                        <x-th align="left">{{ __('navigation.classes') }}</x-th>
-                        <x-th align="left">{{ __('siswa.shared.durasi') }}</x-th>
-                        <x-th align="left">{{ __('common.status') }}</x-th>
-                        <x-th align="left"></x-th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y">
-                    @foreach($kuisList as $k)
-                        <x-tr>
-                            <x-td class="font-medium text-slate-900 dark:text-slate-100">{{ $k->judul }}</x-td>
-                            <x-td muted>{{ $k->kelas?->nama_kelas }}</x-td>
-                            <x-td>{{ $k->durasi_menit }} {{ __('siswa.shared.menit') }}</x-td>
-                            <x-td>
-                                @if($k->sudah_dikerjakan)
-                                    <x-badge variant="selesai">{{ __('siswa.shared.status_selesai') }}</x-badge>
-                                @else
-                                    <x-badge variant="warning">{{ __('siswa.shared.status_belum') }}</x-badge>
-                                @endif
-                            </x-td>
-                            <x-td>
-                                @if($k->sudah_dikerjakan)
-                                    <a
-                                        href="{{ route('pelajar.kuis.hasil', $k) }}"
-                                        class="text-emerald-700 dark:text-emerald-400 hover:underline"
-                                    >
-                                        {{ __('siswa.kuis.lihat_hasil') }}
-                                    </a>
-                                @else
-                                    <a
-                                        href="{{ route('pelajar.kuis.show', $k) }}"
-                                        class="text-emerald-700 dark:text-emerald-400 hover:underline"
-                                    >
-                                        {{ __('siswa.kuis.kerjakan') }}
-                                    </a>
-                                @endif
-                            </x-td>
-                        </x-tr>
-                    @endforeach
-                </tbody>
-            </table>
+            <div
+                class="overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 dark:focus-visible:outline-emerald-400"
+                role="region"
+                aria-label="{{ __('siswa.kuis.title') }}"
+                tabindex="0"
+            >
+                <table class="w-full min-w-[40rem] text-sm">
+                    <thead class="bg-slate-50 dark:bg-slate-800/50 text-left">
+                        <tr>
+                            <x-th align="left">{{ __('siswa.shared.judul') }}</x-th>
+                            <x-th align="left">{{ __('navigation.classes') }}</x-th>
+                            <x-th align="left">{{ __('siswa.shared.durasi') }}</x-th>
+                            <x-th align="left">{{ __('common.status') }}</x-th>
+                            <x-th align="left"></x-th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        @foreach($kuisList as $k)
+                            <x-tr>
+                                <x-td class="font-medium text-slate-900 dark:text-slate-100">{{ $k->judul }}</x-td>
+                                <x-td muted>{{ $k->kelas?->nama_kelas }}</x-td>
+                                <x-td>{{ $k->durasi_menit }} {{ __('siswa.shared.menit') }}</x-td>
+                                <x-td>
+                                    @if($k->sudah_dikerjakan)
+                                        <x-badge variant="selesai">{{ __('siswa.shared.status_selesai') }}</x-badge>
+                                    @else
+                                        <x-badge variant="warning">{{ __('siswa.shared.status_belum') }}</x-badge>
+                                    @endif
+                                </x-td>
+                                <x-td>
+                                    @if($k->sudah_dikerjakan)
+                                        <a
+                                            href="{{ route('pelajar.kuis.hasil', $k) }}"
+                                            class="inline-flex min-h-11 min-w-11 items-center justify-center px-2.5 text-emerald-700 dark:text-emerald-400 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 dark:focus-visible:outline-emerald-400"
+                                        >
+                                            {{ __('siswa.kuis.lihat_hasil') }}
+                                        </a>
+                                    @else
+                                        <a
+                                            href="{{ route('pelajar.kuis.show', $k) }}"
+                                            class="inline-flex min-h-11 min-w-11 items-center justify-center px-2.5 text-emerald-700 dark:text-emerald-400 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 dark:focus-visible:outline-emerald-400"
+                                        >
+                                            {{ __('siswa.kuis.kerjakan') }}
+                                        </a>
+                                    @endif
+                                </x-td>
+                            </x-tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </x-card>
         <div class="mt-4">{{ $kuisList->links() }}</div>
     @endif

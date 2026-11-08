@@ -1,8 +1,14 @@
 <?php
 
 use App\Models\Kelas;
+use App\Models\Kuis;
+use App\Models\KuisHasil;
 use App\Models\Materi;
+use App\Models\MateriRemedial;
+use App\Models\NilaiHarian;
+use App\Models\PengumpulanTugas;
 use App\Models\Pertemuan;
+use App\Models\Tugas;
 use App\Models\User;
 
 beforeEach(function () {
@@ -13,6 +19,19 @@ test('siswa dashboard returns 200', function () {
     $this->actingAs($this->siswa)
         ->get(route('pelajar.dashboard'))
         ->assertOk();
+});
+
+test('siswa dashboard labels unread remedial status', function () {
+    MateriRemedial::create([
+        'siswa_id' => $this->siswa->id,
+        'topik_lemah' => 'Materi uji',
+        'status' => 'belum_dibaca',
+    ]);
+
+    $this->actingAs($this->siswa)
+        ->get(route('pelajar.dashboard'))
+        ->assertOk()
+        ->assertSee(__('siswa.shared.status_belum_dibaca'));
 });
 
 test('siswa kelas index returns 200', function () {
@@ -37,6 +56,30 @@ test('siswa nilai page returns 200', function () {
     $this->actingAs($this->siswa)
         ->get(route('pelajar.nilai'))
         ->assertOk();
+});
+
+test('pagination tiap kelompok nilai dapat digunakan tanpa mengubah halaman kelompok lain', function () {
+    $guru = User::factory()->pengajar()->verified()->create();
+    $kelas = Kelas::factory()->create(['guru_id' => $guru->id]);
+    for ($i = 1; $i <= 21; $i++) {
+        NilaiHarian::create(['siswa_id' => $this->siswa->id, 'kelas_id' => $kelas->id, 'nilai' => $i]);
+        $kuis = Kuis::create(['kelas_id' => $kelas->id, 'judul' => "Kuis nilai $i", 'soal' => []]);
+        KuisHasil::create(['kuis_id' => $kuis->id, 'siswa_id' => $this->siswa->id, 'skor' => $i]);
+        $tugas = Tugas::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'judul' => "Tugas nilai $i"]);
+        PengumpulanTugas::create(['tugas_id' => $tugas->id, 'siswa_id' => $this->siswa->id, 'nilai' => $i]);
+    }
+
+    $this->actingAs($this->siswa)
+        ->get(route('pelajar.nilai', ['harian_page' => 2, 'kuis_page' => 1, 'tugas_page' => 2]))
+        ->assertOk()
+        ->assertViewHas('nilaiHarian', fn ($p) => $p->currentPage() === 2 && $p->first()->nilai === 1)
+        ->assertViewHas('nilaiTugas', fn ($p) => $p->currentPage() === 2 && $p->first()->nilai === 1)
+        ->assertViewHas('nilaiKuis', fn ($p) => $p->currentPage() === 1 && $p->count() === 20)
+        ->assertSee('Kuis nilai 21')
+        ->assertDontSee('Kuis nilai 1<', false)
+        ->assertSee('kuis_page=2', false)
+        ->assertSee('harian_page=2', false)
+        ->assertSee('tugas_page=2', false);
 });
 
 test('siswa ai-tutor index shows kelas with materis', function () {

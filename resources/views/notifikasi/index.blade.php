@@ -1,21 +1,23 @@
 @php
     $role = auth()->user()->role;
-    $title = 'Notifikasi';
 @endphp
 
 @extends('layouts.app')
+
+@section('title', __('navigation.notifications') . ' - SIMBA')
 
 @section('content')
     <div class="py-6 max-w-4xl mx-auto">
         <x-page-header :title="__('navigation.notifications')">
             <x-slot:actions>
-                @if($notifikasi->where('is_read', false)->count() > 0)
+                @if($hasUnread)
                     <form action="{{ route($role.'.notifikasi.read-all') }}" method="POST">
                         @csrf
                         <x-btn-secondary
                             type="submit"
                             size="sm"
                             color="indigo"
+                            class="min-h-11"
                         >
                             {{ __('publik.notifikasi.tandai_semua') }}
                         </x-btn-secondary>
@@ -30,10 +32,8 @@
             <div class="space-y-2">
                 @foreach($notifikasi as $n)
                     <x-card :padding="false">
-                        <div
-                            class="p-4 flex items-start justify-between {{ $n->is_read ? '' : 'border-l-4 border-emerald-500' }}"
-                        >
-                            <div class="flex-1">
+                        <div class="p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between {{ $n->is_read ? '' : 'border-l-4 border-emerald-500' }}">
+                            <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-2">
                                     <h3 class="font-semibold {{ $n->is_read ? 'text-slate-700 dark:text-slate-300' : 'text-emerald-800' }}">
                                         {{ $n->judul }}
@@ -47,25 +47,21 @@
                                     {{ $n->created_at->diffForHumans() }}
                                 </p>
                             </div>
-                            @if($n->link)
-                                <a href="{{ $n->link }}" class="ml-2 shrink-0">
-                                    <x-btn-secondary type="button" size="sm">
+                            <div class="flex flex-wrap gap-2 sm:shrink-0">
+                                @if($n->link)
+                                    <x-btn-secondary :href="$n->link" size="sm" class="min-h-11">
                                         {{ __('publik.notifikasi.lihat') }}
                                     </x-btn-secondary>
-                                </a>
-                            @endif
-                            @if(!$n->is_read)
-                                <form
-                                    action="{{ route($role.'.notifikasi.read', $n) }}"
-                                    method="POST"
-                                    class="ml-2"
-                                >
-                                    @csrf
-                                    <x-btn-secondary type="submit" size="sm">
-                                        {{ __('publik.notifikasi.tandai_dibaca') }}
-                                    </x-btn-secondary>
-                                </form>
-                            @endif
+                                @endif
+                                @if(!$n->is_read)
+                                    <form action="{{ route($role.'.notifikasi.read', $n) }}" method="POST">
+                                        @csrf
+                                        <x-btn-secondary type="submit" size="sm" class="min-h-11">
+                                            {{ __('publik.notifikasi.tandai_dibaca') }}
+                                        </x-btn-secondary>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     </x-card>
                 @endforeach

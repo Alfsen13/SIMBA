@@ -6,7 +6,7 @@
 <div class="py-6">
     <x-page-header :title="__('navigation.ai_tutor')" :subtitle="__('publik.ai_tutor.subtitle_pilih_pertemuan', ['kelas' => $kelas->nama_kelas])">
         <x-slot:actions>
-            <a href="{{ route('pelajar.ai-tutor') }}" class="text-sm text-emerald-700 dark:text-emerald-400 hover:underline">&larr; {{ __('publik.ai_tutor.kembali_daftar_kelas') }}</a>
+            <a href="{{ route('pelajar.ai-tutor') }}" class="inline-flex items-center min-h-11 min-w-11 text-sm text-emerald-700 dark:text-emerald-400 hover:underline">&larr; {{ __('publik.ai_tutor.kembali_daftar_kelas') }}</a>
         </x-slot:actions>
     </x-page-header>
 
@@ -32,7 +32,7 @@
                             <div class="px-5 py-4">
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="min-w-0">
-                                        <h3 class="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 transition-colors">
+                                        <h3 class="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
                                             {{ $pertemuan->nama_pertemuan }}
                                         </h3>
                                         @if($pertemuan->deskripsi)
@@ -62,8 +62,10 @@
                                 @if($pertemuan->materi->isNotEmpty())
                                     <div x-data="{ expanded: false }" class="mt-3">
                                         <button
+                                            type="button"
                                             @click="expanded = !expanded"
-                                            class="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-700 transition-colors"
+                                            :aria-expanded="expanded.toString()"
+                                            class="flex items-center min-h-11 min-w-11 gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors"
                                         >
                                             <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="expanded && 'rotate-90'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                             <span x-show="!expanded">{{ __('publik.ai_tutor.lihat_materi') }}</span>

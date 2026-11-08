@@ -1,17 +1,25 @@
 @extends('layouts.app')
 
-@section('title', $mataPelajaran->nama . ' - Operator')
+@section('title', __('operator.mata_pelajaran.detail_page_title', ['judul' => $mataPelajaran->nama]))
 
 @section('content')
-    <x-back-link href="{{ route('operator.mata-pelajaran.index') }}" label="Daftar Mata Pelajaran" />
+    <x-back-link
+        href="{{ route('operator.mata-pelajaran.index') }}"
+        :label="__('operator.mata_pelajaran.detail_back')"
+        class="min-h-11 min-w-11 px-2"
+    />
 
     <x-page-header
         :title="$mataPelajaran->nama"
-        subtitle="Daftar kelas pada mata pelajaran ini"
+        :subtitle="__('operator.mata_pelajaran.detail_subtitle')"
     />
 
     @php
-        $headers = ['Kelas', 'Pengajar', 'Materi'];
+        $headers = [
+            __('operator.mata_pelajaran.column_class'),
+            __('operator.mata_pelajaran.column_teacher'),
+            __('operator.mata_pelajaran.column_materials'),
+        ];
     @endphp
 
     <x-card :padding="false">
@@ -20,7 +28,7 @@
                 @forelse($kelasList as $kelas)
                     <x-tr>
                         <x-td>
-                            <a href="{{ route('operator.kelas.materi', $kelas) }}" class="font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+                            <a href="{{ route('operator.kelas.materi', $kelas) }}" class="inline-flex min-h-11 min-w-11 items-center font-medium text-emerald-700 hover:underline dark:text-emerald-400">
                                 {{ $kelas->nama_kelas }}
                             </a>
                         </x-td>
@@ -30,7 +38,7 @@
                 @empty
                     <x-tr>
                         <x-td align="center" muted colspan="3" class="py-6">
-                            Belum ada kelas pada mata pelajaran ini.
+                            {{ __('operator.mata_pelajaran.empty_classes') }}
                         </x-td>
                     </x-tr>
                 @endforelse

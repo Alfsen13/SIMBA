@@ -11,6 +11,15 @@ use Illuminate\Validation\Validator;
 
 class KelasRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $user = $this->user();
+
+        if ($user?->role === 'operator' && $user->kategori_mapel && ! $this->filled('kategori')) {
+            $this->merge(['kategori' => $user->kategori_mapel]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -20,17 +29,22 @@ class KelasRequest extends FormRequest
     {
         $user = auth()->user();
         $mapelRule = ['nullable', 'integer', Rule::exists('mata_pelajaran', 'id')];
+        $kategoriRule = ['nullable', 'string', 'max:100'];
 
-        if ($user && $user->role === 'operator' && $user->kategori_mapel) {
-            $mapelRule[] = Rule::exists('mata_pelajaran', 'id')->where(function ($q) use ($user) {
-                $q->where('kategori', $user->kategori_mapel);
-            });
+        if ($user && $user->role === 'operator') {
+            $kategoriRule = ['required', 'string', 'max:100', Rule::in(array_filter([$user->kategori_mapel]))];
+
+            if ($user->kategori_mapel) {
+                $mapelRule[] = Rule::exists('mata_pelajaran', 'id')->where(function ($q) use ($user) {
+                    $q->where('kategori', $user->kategori_mapel);
+                });
+            }
         }
 
         return [
             'nama_kelas' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
-            'kategori' => 'nullable|string|max:100',
+            'kategori' => $kategoriRule,
             'mata_pelajaran_id' => $mapelRule,
             'jalur_id' => ['nullable', 'integer', Rule::exists('jalur_pendidikan', 'id')],
             'jenjang_id' => ['required', 'integer', Rule::exists('jenjang_pendidikan', 'id')],
@@ -39,6 +53,20 @@ class KelasRequest extends FormRequest
             'status' => ['nullable', Rule::in(['draft', 'dibuka', 'ditutup', 'arsip'])],
             'aturan_kelayakan' => ['nullable', Rule::in(['sesuai_profil', 'sesuai_jenjang', 'terbuka', 'khusus'])],
             'periode' => 'nullable|string|max:100',
+        ];
+    }
+
+    public function messages(): array
+    {
+        if ($this->user()?->role === 'operator' && ! $this->user()->kategori_mapel) {
+            return [
+                'kategori.required' => __('operator.kelas_operator_tanpa_kategori'),
+                'kategori.in' => __('operator.kelas_operator_tanpa_kategori'),
+            ];
+        }
+
+        return [
+            'kategori.in' => __('operator.kelas_kategori_di_luar_tugas'),
         ];
     }
 

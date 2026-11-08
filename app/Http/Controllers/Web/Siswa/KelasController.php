@@ -56,7 +56,8 @@ class KelasController extends Controller
             })
             ->with('guru')
             ->latest()
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         return view('siswa.kelas.available', compact('availableKelas'))
             ->with('hanyaTerbuka', $this->hanyaTerbuka($user));
@@ -139,7 +140,7 @@ class KelasController extends Controller
         }
 
         return redirect()->route('pelajar.kelas.index')
-            ->with('success', 'Pendaftaran terkirim. Menunggu validasi operator.');
+            ->with('success', __('siswa.kelas.pendaftaran_terkirim'));
     }
 
     public function unenroll(Kelas $kelas): RedirectResponse
@@ -148,6 +149,6 @@ class KelasController extends Controller
 
         Auth::user()->semuaKelasDiikuti()->detach($kelas->id);
 
-        return redirect()->route('pelajar.kelas.index')->with('success', 'Berhasil keluar dari kelas.');
+        return redirect()->route('pelajar.kelas.index')->with('success', __('siswa.kelas.berhasil_keluar'));
     }
 }

@@ -23,7 +23,7 @@ class PengajuanPerubahanPendidikanController extends Controller
             ->when($status && in_array($status, ['pending', 'under_review', 'revision_required', 'approved', 'rejected'], true), function ($q) use ($status) {
                 $q->where('status', $status);
             })
-            ->orderByRaw("FIELD(status, 'pending', 'under_review', 'revision_required', 'approved', 'rejected')")
+            ->orderByRaw("CASE status WHEN 'pending' THEN 0 WHEN 'under_review' THEN 1 WHEN 'revision_required' THEN 2 WHEN 'approved' THEN 3 WHEN 'rejected' THEN 4 ELSE 5 END")
             ->latest()
             ->paginate(15);
 
@@ -88,7 +88,7 @@ class PengajuanPerubahanPendidikanController extends Controller
                 'status' => 'approved',
                 'reviewed_by' => Auth::id(),
                 'reviewed_at' => now(),
-                'catatan_operator' => $validated['catatan_operator'] ?: $pengajuanTerkunci->catatan_operator,
+                'catatan_operator' => ($validated['catatan_operator'] ?? null) ?: $pengajuanTerkunci->catatan_operator,
             ]);
 
             return 'disetujui';

@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="py-6">
-    <x-back-link href="{{ route('pelajar.kelas.index') }}" :label="__('common.back')" />
+    <x-back-link href="{{ route('pelajar.kelas.index') }}" :label="__('common.back')" class="min-h-11 min-w-11 px-2" />
 
     <div class="flex items-center justify-between">
         <div>
@@ -20,7 +20,7 @@
             x-on:submit.prevent="confirm('{{ __('siswa.kelas.konfirmasi_keluar') }}') && $el.submit()"
         >
             @csrf
-            <x-btn-secondary type="submit" color="red" size="sm">
+            <x-btn-secondary type="submit" color="red" size="sm" class="min-h-11 min-w-11 justify-center">
                 {{ __('siswa.kelas.keluar') }}
             </x-btn-secondary>
         </form>

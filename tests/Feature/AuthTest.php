@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\JalurPendidikan;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -16,6 +17,8 @@ test('guest can see register page', function () {
 });
 
 test('guest can register with valid data', function () {
+    $jalur = JalurPendidikan::create(['kode' => 'self_learning', 'nama' => 'Belajar Mandiri', 'urutan' => 1, 'aktif' => true]);
+
     $response = $this->post(route('register'), [
         'name' => 'Test User',
         'email' => 'test@example.com',
@@ -23,9 +26,10 @@ test('guest can register with valid data', function () {
         'password_confirmation' => $this->password,
         'role' => 'pelajar',
         'nisn' => '1234567890',
+        'jalur_id' => $jalur->id,
     ]);
 
-    $response->assertRedirect();
+    $response->assertRedirect(route('pending'))->assertSessionHasNoErrors();
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'role' => 'pelajar',

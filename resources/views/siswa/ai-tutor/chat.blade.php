@@ -8,9 +8,9 @@
     <div class="flex items-center justify-between mb-4">
         <div>
             <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-1">
-                <a href="{{ route('pelajar.ai-tutor') }}" class="hover:text-emerald-700 transition-colors">{{ __('navigation.ai_tutor') }}</a>
+                <a href="{{ route('pelajar.ai-tutor') }}" class="hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">{{ __('navigation.ai_tutor') }}</a>
                 <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                <a href="{{ route('pelajar.ai-tutor.pertemuan', $kelas) }}" class="hover:text-emerald-700 transition-colors">{{ $kelas->nama_kelas }}</a>
+                <a href="{{ route('pelajar.ai-tutor.pertemuan', $kelas) }}" class="hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">{{ $kelas->nama_kelas }}</a>
                 <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 <span class="text-slate-700 dark:text-slate-300 font-medium">{{ __('publik.ai_tutor.pertemuan_label') }} {{ $pertemuan->urutan }}</span>
             </div>
@@ -18,13 +18,17 @@
         </div>
         <div class="flex items-center gap-2">
             <button
+                type="button"
                 @click="sidebarOpen = !sidebarOpen"
-                class="lg:hidden p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                :aria-expanded="sidebarOpen.toString()"
+                aria-controls="ai-tutor-sumber"
+                aria-label="{{ __('publik.ai_tutor.toggle_sumber') }}"
+                class="lg:hidden min-h-11 min-w-11 p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 title="{{ __('publik.ai_tutor.toggle_sumber') }}"
             >
                 <svg class="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
-            <a href="{{ route('pelajar.ai-tutor.pertemuan', $kelas) }}" class="text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-700 transition-colors">
+            <a href="{{ route('pelajar.ai-tutor.pertemuan', $kelas) }}" class="inline-flex items-center min-h-11 min-w-11 text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">
                 &larr; {{ __('common.back') }}
             </a>
         </div>
@@ -35,8 +39,9 @@
 
         {{-- Sidebar: read-only materi info --}}
         <div
+            id="ai-tutor-sumber"
             class="w-72 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex flex-col transition-all duration-300"
-            :class="sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none lg:opacity-100 lg:translate-x-0 lg:pointer-events-auto'"
+            :class="sidebarOpen ? 'visible opacity-100 translate-x-0' : 'invisible opacity-0 -translate-x-4 pointer-events-none lg:visible lg:opacity-100 lg:translate-x-0 lg:pointer-events-auto'"
             style="position: absolute; left: 0; top: 0; bottom: 0; z-index: 10;"
         >
             <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-sm sticky top-0 z-10">
@@ -81,7 +86,7 @@
 
         {{-- Chat area --}}
         <div class="flex-1 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
-            <div x-ref="messages" class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            <div x-ref="messages" role="log" aria-live="polite" aria-relevant="additions" class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                 <template x-for="(msg, idx) in messages" :key="idx">
                     <div class="flex gap-3 msg-fade-in" :class="msg.role === 'user' ? 'flex-row-reverse' : ''">
                         <template x-if="msg.role === 'assistant'">
@@ -116,6 +121,7 @@
                                 <span class="typing-dot"></span>
                                 <span class="typing-dot"></span>
                             </div>
+                            <p role="status" aria-live="polite" class="sr-only" x-text="isLoading ? @js(__('publik.ai_tutor.sedang_memproses')) : ''"></p>
                         </div>
                     </div>
                 </template>
@@ -126,7 +132,8 @@
                     <template x-for="(q, i) in suggestedQuestions" :key="i">
                         <button
                             @click="input = q; sendMessage()"
-                            class="text-xs px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-600/10 transition-colors"
+                            type="button"
+                            class="min-h-11 min-w-11 text-xs px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-600/10 transition-colors"
                             x-text="q"
                         ></button>
                     </template>
@@ -136,7 +143,9 @@
             <div class="border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/30 px-4 py-3">
                 <form @submit.prevent="sendMessage()" class="flex items-end gap-3">
                     <div class="flex-1 relative">
+                        <label for="ai-tutor-pesan" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('publik.ai_tutor.pesan') }}</label>
                         <textarea
+                            id="ai-tutor-pesan"
                             x-ref="chatInput"
                             x-model="input"
                             @keydown="handleKeydown($event)"
@@ -151,8 +160,9 @@
                     </div>
                     <button
                         type="submit"
+                        aria-label="{{ __('publik.ai_tutor.kirim_pesan') }}"
                         :disabled="!input.trim() || isLoading"
-                        class="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all"
+                        class="shrink-0 w-11 h-11 rounded-lg flex items-center justify-center transition-all"
                         :class="input.trim() && !isLoading ? 'bg-emerald-700 text-white hover:bg-emerald-800 shadow-sm' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
                     >
                         <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>

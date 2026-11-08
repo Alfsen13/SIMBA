@@ -24,6 +24,7 @@ class PengajuanPerubahanPendidikan extends Model
         'status',
         'reviewed_by',
         'reviewed_at',
+        'alasan',
         'catatan_operator',
     ];
 

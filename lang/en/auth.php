@@ -45,6 +45,7 @@ return [
     'role_hint_pengajar' => 'Manage classes',
     'nip_placeholder' => 'Employee ID Number',
     'nisn_placeholder' => 'National Student ID Number',
+    'nisn_formal_hint' => 'NISN is required for the formal pathway and optional for other pathways.',
     'password_confirm_placeholder' => 'Repeat password',
     'name_placeholder' => 'Your full name',
     'logout' => 'Logout',

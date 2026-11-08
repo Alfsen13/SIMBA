@@ -3,6 +3,7 @@
     'label' => '',
     'options' => [],
     'value' => '',
+    'selectClass' => '',
     'placeholder' => __('komponen.pilih_opsi'),
     'required' => false,
 ])
@@ -19,7 +20,7 @@
         name="{{ $name }}"
         id="{{ $name }}"
         @if($required) required @endif
-        class="w-full px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 @error($name) border-red-400 @enderror disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 @error($name) border-red-400 @enderror disabled:opacity-50 disabled:cursor-not-allowed {{ $selectClass }}"
         {{ $attributes->except(['class', 'name', 'id', 'required']) }}>
 
         <option value="">{{ $placeholder }}</option>

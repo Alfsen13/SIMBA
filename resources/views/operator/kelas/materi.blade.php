@@ -1,21 +1,26 @@
 @extends('layouts.app')
 
-@section('title', 'Materi ' . $kelas->nama_kelas . ' - Operator')
+@section('title', __('operator.materi.class_page_title', ['kelas' => $kelas->nama_kelas]))
 
 @section('content')
     @if($kelas->mataPelajaran)
         <x-back-link href="{{ route('operator.mata-pelajaran.show', $kelas->mataPelajaran) }}" :label="$kelas->mataPelajaran->nama" />
     @else
-        <x-back-link href="{{ route('operator.kelas.index') }}" label="Daftar Kelas" />
+        <x-back-link href="{{ route('operator.kelas.index') }}" :label="__('operator.materi.class_list_back')" />
     @endif
 
     <x-page-header
-        :title="'Materi - ' . $kelas->nama_kelas"
-        subtitle="Materi yang diunggah pengajar untuk kelas ini"
+        :title="__('operator.materi.class_materials_title', ['kelas' => $kelas->nama_kelas])"
+        :subtitle="__('operator.materi.class_materials_subtitle')"
     />
 
     @php
-        $headers = ['Materi', 'Pertemuan', 'Pengajar', 'Berkas'];
+        $headers = [
+            __('operator.materi.column_material'),
+            __('operator.materi.column_meeting'),
+            __('operator.materi.column_teacher'),
+            __('operator.materi.column_file'),
+        ];
     @endphp
 
     <x-card :padding="false">
@@ -24,18 +29,18 @@
                 @forelse($materiList as $materi)
                     <x-tr>
                         <x-td>
-                            <a href="{{ route('operator.materi.show', $materi) }}" class="font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+                            <a href="{{ route('operator.materi.show', $materi) }}" class="inline-flex min-h-11 items-center font-medium text-emerald-700 hover:underline dark:text-emerald-400">
                                 {{ $materi->judul }}
                             </a>
                         </x-td>
                         <x-td>{{ $materi->pertemuan?->nama_pertemuan ?? '-' }}</x-td>
                         <x-td>{{ $materi->guru?->name ?? '-' }}</x-td>
-                        <x-td>{{ $materi->file_path ? strtoupper($materi->file_type ?? 'berkas') : 'Tidak ada berkas' }}</x-td>
+                        <x-td>{{ $materi->file_path ? strtoupper($materi->file_type ?: __('operator.materi.file_fallback')) : __('operator.materi.no_file') }}</x-td>
                     </x-tr>
                 @empty
                     <x-tr>
                         <x-td align="center" muted colspan="4" class="py-6">
-                            Belum ada materi yang diunggah pengajar.
+                            {{ __('operator.materi.empty_class_materials') }}
                         </x-td>
                     </x-tr>
                 @endforelse

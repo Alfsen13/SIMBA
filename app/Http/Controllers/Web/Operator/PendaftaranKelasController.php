@@ -83,7 +83,7 @@ class PendaftaranKelasController extends Controller
         }
 
         if ($hasil === 'sudah_diproses') {
-            return back()->with('error', 'Pendaftaran tidak ditemukan atau sudah diproses.');
+            return back()->with('error', __('operator.registration_already_processed'));
         }
 
         if ($hasil === 'penuh') {
@@ -92,7 +92,10 @@ class PendaftaranKelasController extends Controller
 
         $siswa->notify(new PendaftaranKelasDiverifikasi(true, $kelas->nama_kelas, $kelas->id, app()->getLocale()));
 
-        return back()->with('success', "Pendaftaran {$siswa->name} ke kelas {$kelas->nama_kelas} disetujui.");
+        return back()->with('success', __('operator.registration_approved_success', [
+            'siswa' => $siswa->name,
+            'kelas' => $kelas->nama_kelas,
+        ]));
     }
 
     public function tolak(Kelas $kelas, User $siswa): RedirectResponse
@@ -100,12 +103,15 @@ class PendaftaranKelasController extends Controller
         $this->authorize('view', $kelas);
 
         if ($this->ubahStatus($kelas, $siswa, 'rejected') === 0) {
-            return back()->with('error', 'Pendaftaran tidak ditemukan atau sudah diproses.');
+            return back()->with('error', __('operator.registration_already_processed'));
         }
 
         $siswa->notify(new PendaftaranKelasDiverifikasi(false, $kelas->nama_kelas, $kelas->id, app()->getLocale()));
 
-        return back()->with('success', "Pendaftaran {$siswa->name} ke kelas {$kelas->nama_kelas} ditolak.");
+        return back()->with('success', __('operator.registration_rejected_success', [
+            'siswa' => $siswa->name,
+            'kelas' => $kelas->nama_kelas,
+        ]));
     }
 
     private function ubahStatus(Kelas $kelas, User $siswa, string $status): int

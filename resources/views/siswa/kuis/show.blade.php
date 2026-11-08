@@ -4,14 +4,14 @@
 
 @section('content')
 <div class="py-6">
-    <x-back-link href="{{ route('pelajar.kuis.index') }}" />
+    <x-back-link href="{{ route('pelajar.kuis.index') }}" class="min-h-11 min-w-11" />
 
     <h1 class="text-xl font-bold mt-2">{{ $kuis->judul }}</h1>
     <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('siswa.shared.durasi') }}: {{ $kuis->durasi_menit }} {{ __('siswa.shared.menit') }}</p>
 
     <div
         x-data="{ timeLeft: {{ $kuis->durasi_menit * 60 }}, timer: null }"
-        x-init="timer = setInterval(() => { timeLeft--; if(timeLeft <= 0) { clearInterval(timer); $el.closest('form').submit(); } }, 1000)"
+        x-init="timer = setInterval(() => { timeLeft--; if(timeLeft <= 0) { clearInterval(timer); $refs.formKuis.submit(); } }, 1000)"
         class="mt-4"
     >
         <p class="text-sm font-medium">
@@ -20,7 +20,7 @@
         </p>
 
         <x-card padding="true" class="mt-4">
-            <form method="POST" action="{{ route('pelajar.kuis.submit', $kuis) }}">
+            <form x-ref="formKuis" method="POST" action="{{ route('pelajar.kuis.submit', $kuis) }}">
                 @csrf
                 @foreach($kuis->soal as $i => $s)
                     @php
@@ -32,6 +32,7 @@
                         $bloom = strtoupper(trim((string) ($s['bloom'] ?? '')));
                     @endphp
                     <div class="mb-4 p-3 border rounded">
+                        <input type="hidden" name="jawaban[{{ $i }}]" value="">
                         <div class="flex items-start gap-2 mb-2">
                             <p class="font-medium flex-1">{{ $i + 1 }}. <x-math :value="$s['pertanyaan'] ?? __('siswa.shared.soal_fallback')" /></p>
                             @if(in_array($bloom, ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'], true))
@@ -41,19 +42,19 @@
                             @endif
                         </div>
                         @foreach($opsi as $key => $val)
-                            <label class="block ml-4">
+                            <label class="flex items-center min-h-11 gap-2 ml-4">
                                 <input
                                     type="radio"
                                     name="jawaban[{{ $i }}]"
                                     value="{{ $key }}"
                                     required
                                 >
-                                <span class="ml-1"><x-math :value="$val" /></span>
+                                <span><x-math :value="$val" /></span>
                             </label>
                         @endforeach
                     </div>
                 @endforeach
-                <x-btn-primary type="submit" size="sm">
+                <x-btn-primary type="submit" size="sm" class="min-h-11 min-w-11">
                     {{ __('siswa.shared.kumpulkan_jawaban') }}
                 </x-btn-primary>
             </form>

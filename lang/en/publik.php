@@ -48,6 +48,8 @@ return [
         'baru' => 'New',
         'lihat' => 'View',
         'tandai_dibaca' => 'Mark as read',
+        'read_success' => 'Notification marked as read.',
+        'read_all_success' => 'All notifications marked as read.',
     ],
 
     'ai_tutor' => [
@@ -72,6 +74,9 @@ return [
         'semua_materi_referensi' => 'All material is used automatically as AI reference.',
         'ringkasan_bab' => 'Chapter Summary',
         'placeholder_tanya' => 'Ask about this material...',
+        'pesan' => 'Question',
+        'kirim_pesan' => 'Send question',
+        'sedang_memproses' => 'AI Tutor is processing your question.',
         'lihat_materi' => 'Show material',
         'sembunyikan_materi' => 'Hide material',
         'karakter' => 'characters',

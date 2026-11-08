@@ -3,7 +3,6 @@
 use App\Models\JalurPendidikan;
 use App\Models\JenjangPendidikan;
 use App\Models\TingkatPendidikan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -19,6 +18,7 @@ test('registrasi pelajar bisa menyimpan profil pendidikan', function () {
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'role' => 'pelajar',
+        'nisn' => '0091234567',
         'jalur_id' => $jalur->id,
         'jenjang_id' => $jenjang->id,
         'tingkat_id' => $tingkat->id,

@@ -7,11 +7,14 @@
  * Prefix helper: `regUi` (wajib unik — fungsi di file Pest bersifat global).
  */
 
+use App\Models\AplikasiPengajar;
 use App\Models\JalurPendidikan;
 use App\Models\JenjangPendidikan;
 use App\Models\KategoriMataPelajaran;
 use App\Models\MataPelajaran;
 use App\Models\TingkatPendidikan;
+use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -25,11 +28,13 @@ test('form registrasi menampilkan field konsep fitur', function () {
     expect($html)->toContain('enctype="multipart/form-data"')
         ->toContain('id="reg-master"')
         ->toContain('name="jalur_id"')
+        ->toContain('x-bind:required="role === \'pelajar\' && jalurKode === \'formal\'"')
         ->toContain('name="institusi"')
         ->toContain('name="minat"')
         ->toContain('name="pendidikan_tertinggi"')
         ->toContain('name="pengalaman_mengajar"')
         ->toContain('name="kategori_mapel"')
+        ->toContain(__('auth.kategori_mapel_preview_empty'))
         ->toContain('name="mata_pelajaran[]"')
         ->toContain('name="jenjang_dan_tingkat"')
         ->toContain('name="cv"')
@@ -46,7 +51,7 @@ test('form registrasi memuat opsi master pendidikan aktif', function () {
     $html = $this->get(route('register'))->assertOk()->getContent();
 
     // Opsi jalur dirender statis; payload JSON berisi jenjang & tingkat untuk cascading Alpine.
-    expect($html)->toContain('value="' . $jalur->id . '">Formal</option>')
+    expect($html)->toContain('value="'.$jalur->id.'">Formal</option>')
         ->not->toContain('Nonaktif')
         ->toContain('"nama":"SMP"')
         ->toContain('"nama":"Kelas 8"');
@@ -135,14 +140,14 @@ test('pendaftaran calon pengajar menyimpan aplikasi beserta berkasnya', function
 
     $response->assertRedirect(route('pending'));
 
-    $user = \App\Models\User::where('email', 'calon.guru@example.com')->first();
+    $user = User::where('email', 'calon.guru@example.com')->first();
     expect($user)->not->toBeNull()
         ->and($user->role)->toBe('pengajar')
         ->and($user->status)->toBe('pending')
         ->and($user->nip)->toBe('19870001')
         ->and($user->pendidikan_tertinggi)->toBeNull(); // field aplikasi tidak bocor ke users
 
-    $aplikasi = \App\Models\AplikasiPengajar::where('user_id', $user->id)->first();
+    $aplikasi = AplikasiPengajar::where('user_id', $user->id)->first();
     expect($aplikasi)->not->toBeNull()
         ->and($aplikasi->status_aplikasi)->toBe('pending')
         ->and($aplikasi->pendidikan_tertinggi)->toBe('S1 Pendidikan Matematika')
@@ -174,7 +179,7 @@ test('pendaftaran membatalkan data dan membersihkan berkas jika penyimpanan apli
             'kategori_mapel' => 'Matematika',
             'pendidikan_tertinggi' => 'S1',
             'cv' => UploadedFile::fake()->create('cv.pdf', 128, 'application/pdf'),
-        ]))->toThrow(\Illuminate\Database\QueryException::class);
+        ]))->toThrow(QueryException::class);
     } finally {
         DB::statement('DROP TRIGGER IF EXISTS fail_aplikasi_pengajar');
     }
@@ -184,7 +189,7 @@ test('pendaftaran membatalkan data dan membersihkan berkas jika penyimpanan apli
     expect(Storage::disk('public')->allFiles('aplikasi_pengajar'))->toBe([]);
 });
 
-test('pendaftaran pengajar tanpa data aplikasi tidak membuat baris aplikasi', function () {
+test('pendaftaran pengajar tanpa kategori ditolak', function () {
     $this->post(route('register'), [
         'name' => 'Guru Polos',
         'email' => 'guru.polos@example.com',
@@ -192,10 +197,10 @@ test('pendaftaran pengajar tanpa data aplikasi tidak membuat baris aplikasi', fu
         'password_confirmation' => 'password123',
         'role' => 'pengajar',
         'nip' => '19870002',
-    ])->assertRedirect(route('pending'));
+    ])->assertSessionHasErrors('kategori_mapel');
 
     $this->assertDatabaseCount('aplikasi_pengajar', 0);
-    $this->assertDatabaseHas('users', ['email' => 'guru.polos@example.com', 'role' => 'pengajar', 'status' => 'pending']);
+    $this->assertDatabaseMissing('users', ['email' => 'guru.polos@example.com']);
 });
 
 test('pendaftaran pelajar menyimpan nisn dan profil tanpa baris aplikasi', function () {
@@ -220,6 +225,52 @@ test('pendaftaran pelajar menyimpan nisn dan profil tanpa baris aplikasi', funct
     $this->assertDatabaseHas('users', ['nisn' => '0091234567', 'role' => 'pelajar']);
     $this->assertDatabaseHas('profil_pendidikan', ['institusi' => 'SMPN 1', 'minat' => 'Matematika']);
     $this->assertDatabaseCount('aplikasi_pengajar', 0);
+});
+
+test('nisn hanya wajib untuk pendaftaran jalur formal', function (string $kode, bool $wajib) {
+    $jalur = JalurPendidikan::create(['kode' => $kode, 'nama' => $kode, 'urutan' => 1, 'aktif' => true]);
+    $data = [
+        'name' => 'Pelajar Uji',
+        'email' => 'jalur@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'pelajar',
+        'jalur_id' => $jalur->id,
+    ];
+
+    if ($kode !== 'self_learning') {
+        $jenjang = JenjangPendidikan::create(['jalur_id' => $jalur->id, 'kode' => 'uji', 'nama' => 'Uji', 'urutan' => 1, 'aktif' => true]);
+        $tingkat = TingkatPendidikan::create(['jenjang_id' => $jenjang->id, 'kode' => 'uji', 'nama' => 'Uji', 'urutan' => 1, 'aktif' => true]);
+        $data['jenjang_id'] = $jenjang->id;
+        $data['tingkat_id'] = $tingkat->id;
+    }
+
+    if ($wajib) {
+        $this->postJson(route('register'), $data)->assertUnprocessable()->assertJsonValidationErrors('nisn');
+        $this->assertDatabaseMissing('users', ['email' => $data['email']]);
+    } else {
+        $this->post(route('register'), $data)->assertRedirect(route('pending'))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('users', ['email' => $data['email'], 'nisn' => null]);
+    }
+})->with([
+    'formal' => ['formal', true],
+    'nonformal' => ['nonformal', false],
+    'mandiri' => ['self_learning', false],
+]);
+
+test('nisn opsional tetap harus unik bila diisi', function () {
+    $jalur = JalurPendidikan::create(['kode' => 'self_learning', 'nama' => 'Mandiri', 'urutan' => 1, 'aktif' => true]);
+    User::factory()->create(['nisn' => '0091234567']);
+
+    $this->postJson(route('register'), [
+        'name' => 'Pelajar Uji',
+        'email' => 'duplikat@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'pelajar',
+        'jalur_id' => $jalur->id,
+        'nisn' => '0091234567',
+    ])->assertUnprocessable()->assertJsonValidationErrors('nisn');
 });
 
 test('registrasi pelajar menolak jenjang yang tidak termasuk jalur pilihan', function () {

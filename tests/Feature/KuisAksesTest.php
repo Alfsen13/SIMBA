@@ -66,6 +66,59 @@ it('hanya menampilkan kuis aktif yang berada dalam jadwal pengerjaan', function 
         ->assertDontSee('Kuis Berakhir');
 });
 
+it('membuat daftar kuis dapat digulir dengan keyboard dan tautan aksi memenuhi target sentuh', function () {
+    $kuisBelumDikerjakan = kuisAksesBuatKuis($this->kelas, ['judul' => 'Kuis Belum Dikerjakan']);
+    $kuisSelesai = kuisAksesBuatKuis($this->kelas, ['judul' => 'Kuis Selesai']);
+    KuisHasil::create([
+        'kuis_id' => $kuisSelesai->id,
+        'siswa_id' => $this->siswa->id,
+        'skor' => 80,
+        'jawaban_siswa' => ['0'],
+    ]);
+
+    $this->actingAs($this->siswa)
+        ->get(route('pelajar.kuis.index'))
+        ->assertOk()
+        ->assertSee('class="overflow-x-auto focus-visible:outline-2', false)
+        ->assertSee('role="region"', false)
+        ->assertSee('tabindex="0"', false)
+        ->assertSee('aria-label="'.__('siswa.kuis.title').'"', false)
+        ->assertSee('table class="w-full min-w-[40rem] text-sm"', false)
+        ->assertSee('class="inline-flex min-h-11 min-w-11 items-center justify-center px-2.5', false)
+        ->assertSee(route('pelajar.kuis.show', $kuisBelumDikerjakan), false)
+        ->assertSee(route('pelajar.kuis.hasil', $kuisSelesai), false);
+});
+
+it('menyediakan target sentuh pada pilihan dan pengiriman kuis', function () {
+    $kuis = kuisAksesBuatKuis($this->kelas);
+
+    $this->actingAs($this->siswa)
+        ->get(route('pelajar.kuis.show', $kuis))
+        ->assertOk()
+        ->assertSee('flex items-center min-h-11 gap-2 ml-4', false)
+        ->assertSee('min-h-11 min-w-11', false);
+});
+
+it('menyimpan jawaban yang terisi dan menilai jawaban kosong sebagai salah', function (array $jawaban, int $skor) {
+    $kuis = kuisAksesBuatKuis($this->kelas, [
+        'soal' => [
+            ['pertanyaan' => 'Pertanyaan pertama', 'pilihan' => ['A', 'B'], 'jawaban' => 0],
+            ['pertanyaan' => 'Pertanyaan kedua', 'pilihan' => ['A', 'B'], 'jawaban' => 0],
+        ],
+    ]);
+
+    $this->actingAs($this->siswa)
+        ->post(route('pelajar.kuis.submit', $kuis), ['jawaban' => $jawaban])
+        ->assertRedirect(route('pelajar.kuis.hasil', $kuis));
+
+    $hasil = KuisHasil::where('kuis_id', $kuis->id)->firstOrFail();
+    expect((int) $hasil->skor)->toBe($skor);
+})->with([
+    'sebagian terjawab' => [['0', ''], 50],
+    'semua kosong' => [['', ''], 0],
+    'jawaban hilang' => [['0'], 50],
+]);
+
 it('mencegah hasil kuis ganda untuk siswa yang sama di tingkat database', function () {
     $kuis = kuisAksesBuatKuis($this->kelas);
     $hasil = [

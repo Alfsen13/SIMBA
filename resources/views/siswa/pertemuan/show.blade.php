@@ -8,6 +8,7 @@
     <x-back-link
         href="{{ route('pelajar.kelas.show', $pertemuan->kelas_id) }}"
         :label="__('siswa.kelas.kembali_ke_kelas')"
+        class="min-h-11 min-w-11"
     />
 
     <div class="mt-2">
@@ -27,7 +28,7 @@
             @forelse($pertemuan->materi as $m)
                 <a
                     href="{{ route('pelajar.materi.show', $m) }}"
-                    class="block py-2 px-3 -mx-3 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-600/10 transition-colors"
+                    class="flex min-h-11 flex-col justify-center py-2 px-3 -mx-3 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-600/10 transition-colors"
                 >
                     <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300">{{ $m->judul }}</p>
                     @if($m->bab)
@@ -47,7 +48,7 @@
             @forelse($pertemuan->materi as $m)
                 <a
                     href="{{ route('pelajar.ai-tutor.chat', [$pertemuan->kelas, $pertemuan]) }}"
-                    class="block py-2 px-3 -mx-3 rounded-lg hover:bg-purple-50 transition-colors"
+                    class="flex min-h-11 flex-col justify-center py-2 px-3 -mx-3 rounded-lg hover:bg-purple-50 dark:hover:bg-slate-800 transition-colors"
                 >
                     <p class="text-sm font-medium text-purple-700 dark:text-purple-300">{{ $m->judul }}</p>
                     @if($m->bab)
@@ -67,7 +68,7 @@
             @forelse($pertemuan->tugas as $t)
                 <a
                     href="{{ route('pelajar.tugas.show', $t) }}"
-                    class="block py-2 px-3 -mx-3 rounded-lg hover:bg-emerald-50 transition-colors"
+                    class="flex min-h-11 flex-col justify-center py-2 px-3 -mx-3 rounded-lg hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
                 >
                     <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300">{{ $t->judul }}</p>
                     @if($t->deadline)
@@ -87,7 +88,7 @@
             @forelse($pertemuan->kuis as $k)
                 <a
                     href="{{ route('pelajar.kuis.show', $k) }}"
-                    class="block py-2 px-3 -mx-3 rounded-lg hover:bg-amber-50 transition-colors"
+                    class="flex min-h-11 flex-col justify-center py-2 px-3 -mx-3 rounded-lg hover:bg-amber-50 dark:hover:bg-slate-800 transition-colors"
                 >
                     <p class="text-sm font-medium text-amber-700 dark:text-amber-300">{{ $k->judul }}</p>
                     <p class="text-xs text-slate-500 dark:text-slate-400">{{ $k->durasi_menit }} {{ __('siswa.shared.menit') }}</p>

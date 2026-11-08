@@ -35,11 +35,13 @@ class KategoriMapelController extends Controller
     {
         $validated = $request->validate([
             'kategori' => ['required', 'string', 'max:100', Rule::unique('kategori_mata_pelajaran', 'nama')],
+        ], [
+            'kategori.unique' => __('pengelola_operator.kategori_mata_pelajaran.duplicate'),
         ]);
 
         KategoriMataPelajaran::create(['nama' => $validated['kategori']]);
 
-        return redirect()->route('pengelola-operator.kategori-mata-pelajaran.index')->with('success', 'Kategori mata pelajaran berhasil ditambahkan.');
+        return redirect()->route('pengelola-operator.kategori-mata-pelajaran.index')->with('success', __('pengelola_operator.kategori_mata_pelajaran.created'));
     }
 
     public function edit(string $kategori): View
@@ -60,7 +62,7 @@ class KategoriMapelController extends Controller
                 'max:100',
                 function (string $attribute, mixed $value, \Closure $fail) use ($kategori): void {
                     if ($value !== $kategori && KategoriMataPelajaran::where('nama', $value)->exists()) {
-                        $fail('Nama kategori sudah digunakan.');
+                        $fail(__('pengelola_operator.kategori_mata_pelajaran.duplicate'));
                     }
                 },
             ],
@@ -74,7 +76,7 @@ class KategoriMapelController extends Controller
             AplikasiPengajar::where('kategori_mapel', $kategori)->update(['kategori_mapel' => $validated['kategori']]);
         });
 
-        return redirect()->route('pengelola-operator.kategori-mata-pelajaran.index')->with('success', 'Kategori mata pelajaran berhasil diperbarui.');
+        return redirect()->route('pengelola-operator.kategori-mata-pelajaran.index')->with('success', __('pengelola_operator.kategori_mata_pelajaran.updated'));
     }
 
     public function destroy(string $kategori): RedirectResponse
@@ -86,7 +88,7 @@ class KategoriMapelController extends Controller
             || AplikasiPengajar::where('kategori_mapel', $kategori)->exists();
 
         if ($kategoriDipakai) {
-            return back()->with('error', 'Kategori tidak dapat dihapus karena masih digunakan.');
+            return back()->with('error', __('pengelola_operator.kategori_mata_pelajaran.in_use'));
         }
 
         DB::transaction(function () use ($kategori, $kategoriModel): void {
@@ -94,6 +96,6 @@ class KategoriMapelController extends Controller
             $kategoriModel->delete();
         });
 
-        return redirect()->route('pengelola-operator.kategori-mata-pelajaran.index')->with('success', 'Kategori mata pelajaran berhasil dihapus.');
+        return redirect()->route('pengelola-operator.kategori-mata-pelajaran.index')->with('success', __('pengelola_operator.kategori_mata_pelajaran.deleted'));
     }
 }

@@ -30,13 +30,6 @@
                 :value="$user->email"
                 required
             />
-            <x-form-select
-                name="role"
-                :label="__('operator.th_role')"
-                :options="['pengajar' => __('operator.role_pengajar'), 'pelajar' => __('operator.role_pelajar'), 'operator' => __('operator.role_operator')]"
-                :value="$user->role"
-                required
-            />
             <x-btn-primary type="submit" class="w-full">
                 {{ __('common.save_changes') }}
             </x-btn-primary>

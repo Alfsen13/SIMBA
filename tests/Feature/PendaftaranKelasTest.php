@@ -31,6 +31,63 @@ it('menampilkan pengajuan pendaftaran yang menunggu validasi', function () {
         ->assertSee($this->kelas->nama_kelas);
 });
 
+it('menampilkan judul halaman dan target tombol keputusan sesuai locale', function () {
+    pkAjukan($this->siswa, $this->kelas);
+
+    $this->actingAs($this->operator)
+        ->get(route('operator.pendaftaran-kelas.index'))
+        ->assertOk()
+        ->assertSee('<title>Pendaftaran Kelas - Operator</title>', false);
+
+    $this->from(route('operator.pendaftaran-kelas.index'))
+        ->post(route('locale.update'), ['locale' => 'en'])
+        ->assertRedirect(route('operator.pendaftaran-kelas.index'));
+
+    $response = $this->get(route('operator.pendaftaran-kelas.index'))
+        ->assertOk()
+        ->assertSee('<title>Class Registration - Operator</title>', false);
+
+    foreach (['setujui', 'tolak'] as $action) {
+        $url = preg_quote(e(route('operator.pendaftaran-kelas.'.$action, [
+            'kelas' => $this->kelas->id,
+            'siswa' => $this->siswa->id,
+        ])), '/');
+        expect(preg_match('/<form\b[^>]*action="'.$url.'"[^>]*>(?:(?!<\/form>).)*?<button\b[^>]*class="(?:[^"]*\s)?min-h-11(?:\s[^"]*)?"/s', $response->getContent()))->toBe(1);
+    }
+});
+
+it('menampilkan umpan balik keputusan dalam locale yang dipilih', function () {
+    $siswaYangDitolak = User::factory()->verified()->create(['role' => 'pelajar']);
+    pkAjukan($this->siswa, $this->kelas);
+    pkAjukan($siswaYangDitolak, $this->kelas);
+
+    $this->actingAs($this->operator)
+        ->from(route('operator.pendaftaran-kelas.index'))
+        ->post(route('locale.update'), ['locale' => 'en'])
+        ->assertRedirect(route('operator.pendaftaran-kelas.index'));
+
+    $this->from(route('operator.pendaftaran-kelas.index'))
+        ->post(route('operator.pendaftaran-kelas.setujui', [
+            'kelas' => $this->kelas->id,
+            'siswa' => $this->siswa->id,
+        ]))
+        ->assertSessionHas('success', "Registration for {$this->siswa->name} to join {$this->kelas->nama_kelas} was approved.");
+
+    $this->from(route('operator.pendaftaran-kelas.index'))
+        ->post(route('operator.pendaftaran-kelas.tolak', [
+            'kelas' => $this->kelas->id,
+            'siswa' => $siswaYangDitolak->id,
+        ]))
+        ->assertSessionHas('success', "Registration for {$siswaYangDitolak->name} to join {$this->kelas->nama_kelas} was rejected.");
+
+    $this->from(route('operator.pendaftaran-kelas.index'))
+        ->post(route('operator.pendaftaran-kelas.setujui', [
+            'kelas' => $this->kelas->id,
+            'siswa' => $this->siswa->id,
+        ]))
+        ->assertSessionHas('error', 'The registration could not be found or has already been processed.');
+});
+
 it('operator menyetujui pendaftaran sehingga siswa jadi anggota aktif', function () {
     pkAjukan($this->siswa, $this->kelas);
 
@@ -69,6 +126,25 @@ it('siswa yang ditolak boleh mengajukan ulang', function () {
 
     expect(DB::table('kelas_siswa')->where('kelas_id', $this->kelas->id)->where('siswa_id', $this->siswa->id)->value('status'))->toBe('pending')
         ->and(DB::table('kelas_siswa')->count())->toBe(1);
+});
+
+it('umpan balik pendaftaran siswa mengikuti locale yang dipilih', function () {
+    $this->actingAs($this->siswa)
+        ->from(route('pelajar.kelas.available'))
+        ->post(route('locale.update'), ['locale' => 'en'])
+        ->assertRedirect(route('pelajar.kelas.available'));
+
+    $this->from(route('pelajar.kelas.available'))
+        ->post(route('pelajar.kelas.enroll', $this->kelas))
+        ->assertRedirect(route('pelajar.kelas.index'))
+        ->assertSessionHas('success', 'Enrollment request sent. Waiting for operator validation.');
+
+    $kelasKeluar = Kelas::factory()->create(['guru_id' => $this->guru->id]);
+    $this->siswa->kelasDiikuti()->attach($kelasKeluar->id);
+
+    $this->post(route('pelajar.kelas.unenroll', $kelasKeluar))
+        ->assertRedirect(route('pelajar.kelas.index'))
+        ->assertSessionHas('success', 'You left the class.');
 });
 
 it('kelas penuh dihitung dari anggota aktif dan pengajuan pending lalu disembunyikan', function () {

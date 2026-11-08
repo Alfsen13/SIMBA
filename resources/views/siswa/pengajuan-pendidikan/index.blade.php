@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
-@section('title', 'Pengajuan Perubahan Pendidikan - SIMBA')
+@section('title', __('siswa.pengajuan.title').' - SIMBA')
 
 @section('content')
-    <x-page-header title="Pengajuan Perubahan Pendidikan">
+    <x-page-header :title="__('siswa.pengajuan.title')">
         <x-slot:actions>
             @if(! $pengajuanList->contains(fn($p) => in_array($p->status, ['pending', 'under_review'])))
                 <x-btn-primary href="{{ route('pelajar.pengajuan-pendidikan.create') }}" size="md">
@@ -67,7 +67,7 @@
                             <x-badge :variant="$m['variant']">{{ $m['label'] }}</x-badge>
                         </x-td>
                         <x-td align="right">
-                            <a href="{{ route('pelajar.pengajuan-pendidikan.show', $p) }}" class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 text-sm">{{ __('common.detail') }}</a>
+                            <a href="{{ route('pelajar.pengajuan-pendidikan.show', $p) }}" class="inline-flex items-center justify-center min-h-11 min-w-11 text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 text-sm">{{ __('common.detail') }}</a>
                         </x-td>
                     </x-tr>
                 @endforeach

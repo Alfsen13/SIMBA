@@ -6,7 +6,7 @@
 <div class="py-6">
     <x-page-header :title="__('siswa.kelas.title')">
         <x-slot:actions>
-            <x-btn-primary href="{{ route('pelajar.kelas.available') }}" size="sm">
+            <x-btn-primary href="{{ route('pelajar.kelas.available') }}" size="sm" class="min-h-11 min-w-11 justify-center">
                 {{ __('siswa.kelas.tambah_cari_kelas') }}
             </x-btn-primary>
         </x-slot:actions>
@@ -33,7 +33,7 @@
                                 x-on:submit.prevent="confirm('{{ __('siswa.kelas.konfirmasi_batalkan') }}') && $el.submit()"
                             >
                                 @csrf
-                                <x-btn-secondary type="submit" color="red" size="sm">
+                                <x-btn-secondary type="submit" color="red" size="sm" class="min-h-11 min-w-11 justify-center">
                                     {{ __('common.cancel') }}
                                 </x-btn-secondary>
                             </form>
@@ -60,7 +60,7 @@
                     <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('siswa.kelas.guru', ['guru' => $kelas->guru?->name]) }}</p>
                     <a
                         href="{{ route('pelajar.kelas.show', $kelas) }}"
-                        class="mt-2 inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 text-sm font-medium"
+                        class="mt-2 inline-flex min-h-11 min-w-11 items-center gap-1 px-2 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 text-sm font-medium"
                     >
                         {{ __('common.detail') }} &rarr;
                     </a>

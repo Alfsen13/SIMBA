@@ -7,23 +7,21 @@ use Illuminate\Support\Facades\DB;
 
 class KelasAwalSeeder extends Seeder
 {
-    /**
-     * Kelas awal yang masih kosong — tanpa pengajar, peserta, maupun pertemuan —
-     * siap diisi/diambil lewat panel operator. Idempoten: ditambatkan pada
-     * kode_kelas unik. Kategori kelas ikut disalin dari mata pelajarannya,
-     * sama seperti perilaku form buka kelas.
-     */
     public function run(): void
     {
         $cari = fn (string $tabel, string $kode) => DB::table($tabel)->where('kode', $kode)->value('id');
         $mapel = fn (string $kode) => DB::table('mata_pelajaran')->where('kode', $kode)->first(['id', 'kategori']);
 
         foreach ($this->kelas() as $baris) {
+            if (DB::table('kelas')->where('kode_kelas', $baris['kode'])->exists()) {
+                continue;
+            }
+
             $m = $mapel($baris['mapel']);
 
-            DB::table('kelas')->updateOrInsert(
-                ['kode_kelas' => $baris['kode']],
+            DB::table('kelas')->insert(
                 [
+                    'kode_kelas' => $baris['kode'],
                     'nama_kelas' => $baris['nama'],
                     'deskripsi' => $baris['deskripsi'] ?? null,
                     'kategori' => $m->kategori ?? null,

@@ -207,22 +207,17 @@ class AIProviderService
     {
         $exceptions = [];
 
-        try {
-            return $callable('gemini');
-        } catch (\Throwable $e) {
-            $exceptions[] = $e->getMessage();
-        }
+        foreach (['gemini', $this->fallbackModel1, $this->fallbackModel2] as $model) {
+            try {
+                $output = $callable($model);
+                if (trim($output) === '') {
+                    throw new RuntimeException("Provider {$model} mengembalikan respons kosong.");
+                }
 
-        try {
-            return $callable($this->fallbackModel1);
-        } catch (\Throwable $e) {
-            $exceptions[] = $e->getMessage();
-        }
-
-        try {
-            return $callable($this->fallbackModel2);
-        } catch (\Throwable $e) {
-            $exceptions[] = $e->getMessage();
+                return $output;
+            } catch (\Throwable $e) {
+                $exceptions[] = $e->getMessage();
+            }
         }
 
         $detail = implode(' | ', array_unique($exceptions));

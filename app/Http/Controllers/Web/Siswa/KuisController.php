@@ -78,8 +78,8 @@ class KuisController extends Controller
 
         foreach ($soal as $i => $s) {
             $jawabanBenar = (int) ($s['jawaban'] ?? 0);
-            $jawabanSiswa = $validated['jawaban'][$i] ?? '';
-            if ((int) $jawabanSiswa === $jawabanBenar) {
+            $jawabanSiswa = $validated['jawaban'][$i] ?? null;
+            if ($jawabanSiswa !== null && $jawabanSiswa !== '' && (int) $jawabanSiswa === $jawabanBenar) {
                 $skor++;
             }
         }

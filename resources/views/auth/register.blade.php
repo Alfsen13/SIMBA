@@ -49,7 +49,6 @@
                     this.tambahMapel(nama);
                 }
             }"
-            x-init="window.__simmaTambahMapel = (nama) => this.tambahDariPreview(nama)"
         >
             @csrf
 
@@ -218,17 +217,17 @@
                                 {{ __('auth.kategori_mapel_preview_label') }}
                             </p>
                             <div class="flex flex-wrap gap-1.5">
-                                <template x-for="mapel in mapelByKategori[kategori]">
+                                <template x-for="namaMapel in mapelByKategori[kategori]">
                                     <span
                                         class="px-2 py-0.5 text-[11px] rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-800 transition"
-                                        @click="tambahDariPreview(mapel)"
-                                        x-text="mapel"
+                                        @click="tambahDariPreview(namaMapel)"
+                                        x-text="namaMapel"
                                     ></span>
                                 </template>
                             </div>
                         </div>
                         <div class="mt-2" x-show="!kategori || !mapelByKategori[kategori]?.length" x-transition.opacity>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400" x-text="__('auth.kategori_mapel_preview_empty')"></p>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">{{ __('auth.kategori_mapel_preview_empty') }}</p>
                         </div>
                         @error('kategori_mapel')
                             <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -347,8 +346,11 @@
                     label="NISN"
                     value="{{ old('nisn') }}"
                     placeholder="{{ __('auth.nisn_placeholder') }}"
+                    x-bind:required="role === 'pelajar' && jalurKode === 'formal'"
+                    aria-describedby="nisn-hint"
                     icon='<svg class="w-4.5 h-4.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>'
                 />
+                <p id="nisn-hint" class="text-xs text-slate-600 dark:text-slate-400">{{ __('auth.nisn_formal_hint') }}</p>
             </div>
 
             {{-- Profil pendidikan pelajar: cascading jalur → jenjang → tingkat.
