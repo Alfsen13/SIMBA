@@ -91,8 +91,8 @@ class KlasifikasiRisikoService
      * evaluasi terlihat bagus padahal tidak).
      *
      * @param  array{0: array<int, array<int, float>>, 1: array<int, string>, 2: array<int, int>}|null  $dataset
-     *         Dataset siap pakai (mis. dari snapshot `ml:train --dataset`). `null` =
-     *         turunkan dari `prediksi_risiko_pertemuan`.
+     *                                                                                                            Dataset siap pakai (mis. dari snapshot `ml:train --dataset`). `null` =
+     *                                                                                                            turunkan dari `prediksi_risiko_pertemuan`.
      * @return array<string, mixed>
      */
     public function train(?array $dataset = null): array
@@ -147,9 +147,11 @@ class KlasifikasiRisikoService
             $hasil['catatan'] = 'Tidak ada data uji - metrik klasifikasi tidak dilaporkan karena bisa menyesatkan.';
         }
 
-        Storage::put($this->modelPath(), serialize($model));
+        if (! Storage::put($this->modelPath(), serialize($model))) {
+            throw new RuntimeException('Gagal menyimpan model Random Forest.');
+        }
 
-        Storage::put(
+        if (! Storage::put(
             $this->benchmarkPath(),
             json_encode([
                 'target' => self::TARGET,
@@ -171,7 +173,9 @@ class KlasifikasiRisikoService
                 'confusion_matrix' => $hasil['confusion_matrix'] ?? null,
                 'dilatih_pada' => now()->toIso8601String(),
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
-        );
+        )) {
+            throw new RuntimeException('Gagal menyimpan benchmark Random Forest.');
+        }
 
         $hasil['versi_model'] = $versi;
 

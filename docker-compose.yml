@@ -311,6 +311,7 @@ services:
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
+      FILESYSTEM_DISK: public
       OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:7b}"
       OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:7b}"

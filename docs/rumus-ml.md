@@ -53,6 +53,23 @@ model ini dengan model dari data nyata.
 | Metrik | Accuracy, macro Precision/Recall/F1, confusion matrix |
 | Catatan | Akurasi tinggi berarti "RF meniru aturan baseline", **BUKAN** bukti RF lebih baik. Output RF tidak pernah jadi label latihannya sendiri (`larangan_label`). |
 
+`php artisan ml:train-sintetis-risiko` melatih Random Forest dari data simulasi
+tanpa mengubah database siswa atau model SVR. Snapshot terpisah disimpan di
+`ml/dataset_sintetis_risiko.json` pada disk default. Label dihasilkan oleh
+aturan baseline yang aktif, dan sampel uji dipisahkan berdasarkan siswa.
+Model ini hanya pembanding sementara, bukan bukti akurasi pada siswa nyata.
+
+### Dataset CSV
+
+- [Dataset SVR sintetis](dataset-latih-svr-sintetis.csv): fitur dan target dalam
+  satuan snapshot sebelum normalisasi; kolom kosong berarti data tidak tersedia
+  dan diimputasi dengan median data latih.
+- [Dataset Random Forest sintetis](dataset-latih-random-forest-sintetis.csv):
+  empat fitur dalam skala 0–1, sesuai masukan model.
+
+Kolom `pembagian` membedakan sampel `latih` dan `uji` berdasarkan siswa.
+ID siswa hanya berlaku dalam dataset masing-masing dan bukan identitas siswa asli.
+
 ## Cosine Retrieval
 
 | Item | Nilai |

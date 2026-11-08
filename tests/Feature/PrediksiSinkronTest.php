@@ -214,6 +214,35 @@ test('endpoint status hanya mengembalikan status prediksi saat ini', function ()
         ->assertExactJson(['status' => 'processing']);
 });
 
+test('komponen status prediksi mempertahankan atribut alpine dan tidak menampilkan kode', function (string $route, string $status) {
+    Cache::put(RunPrediksiJob::STATUS_CACHE_KEY, ['status' => $status]);
+    $html = $this->actingAs($this->guru)->get(route($route))->assertOk()->getContent();
+
+    $previous = libxml_use_internal_errors(true);
+    $dom = new DOMDocument;
+    $dom->loadHTML($html);
+    libxml_clear_errors();
+    libxml_use_internal_errors($previous);
+
+    $xpath = new DOMXPath($dom);
+    $node = $xpath->query('//*[@role="status" and @x-data]')->item(0);
+    expect($node)->not->toBeNull();
+    $data = $node->getAttribute('x-data');
+    expect($data)->toContain('state: "'.$status.'"')
+        ->toContain('endpoint: "'.route('pengajar.prediksi.status').'"')
+        ->toContain('this.poll()')
+        ->toContain("this.state = 'unavailable'")
+        ->and($node->getAttribute('x-init'))->toContain('poll()')
+        ->and($xpath->query('//body//text()[not(ancestor::script) and contains(., "this.poll()")]')->length)->toBe(0);
+})->with([
+    ['pengajar.prediksi', 'queued'],
+    ['pengajar.prediksi', 'processing'],
+    ['pengajar.prediksi', 'failed'],
+    ['pengajar.prediksi.show', 'queued'],
+    ['pengajar.prediksi.show', 'processing'],
+    ['pengajar.prediksi.show', 'failed'],
+]);
+
 test('job menyimpan hasil dan menandai status prediksi selesai', function () {
     predSyncSiswaLengkap($this->kelas, $this->pertemuan->id);
 

@@ -5,8 +5,8 @@
 @if($statusAwal !== 'idle')
     <div
         x-data="{
-            state: @json($statusAwal),
-            endpoint: @json(route('pengajar.prediksi.status')),
+            state: {{ json_encode($statusAwal, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) }},
+            endpoint: {{ json_encode(route('pengajar.prediksi.status'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) }},
             async poll() {
                 try {
                     const response = await fetch(this.endpoint, {
