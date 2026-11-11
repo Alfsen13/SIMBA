@@ -27,7 +27,6 @@ class KuisGeneratorService
         $this->bloom = app(BloomTaxonomyService::class);
     }
 
-     
     public function generate(Pertemuan $pertemuan, int $jumlah, string $kesulitan, ?string $topik, array $sumber = []): array
     {
         $konteks = $this->buildMateriContext($pertemuan, $topik, $sumber);
@@ -60,7 +59,7 @@ Aturan:
 3. Soal harus berdasarkan informasi yang benar-benar ada di materi, jangan mengarang konten yang tidak ada di materi.
 4. Pilihan jawaban yang salah harus masuk akal (pengecoh berkualitas).
 5. Setiap soal unik dan tidak mengulang pertanyaan yang sama.
-{$this->bloomRule(6)}{$this->akurasiRule($this->bloom->enabled() ? 7 : 6)}
+{$this->bloomRule(6)}
 Keluarkan HANYA pure JSON array tanpa teks lain dan tanpa markdown code fence:
 {$this->jsonShape()}
 
@@ -80,7 +79,7 @@ PROMPT;
 
             try {
                 $soal = $this->parseSoal($output, $jumlah, $kesulitan);
-            } catch (\RuntimeException $e) {
+            } catch (RuntimeException $e) {
                 $terakhirError = $e;
                 Log::warning('KuisGenerator: percobaan '.$percobaan.' gagal parsing JSON.', [
                     'error' => $e->getMessage(),
@@ -107,10 +106,9 @@ PROMPT;
             throw $terakhirError ?? new RuntimeException('AI tidak menghasilkan soal yang valid. Silakan coba lagi.');
         }
 
-        return $soal;
+        return $this->hitungKemiripan($soal, $konteks);
     }
 
-     
     public function generateEssai(Pertemuan $pertemuan, int $jumlah, ?string $topik, array $sumber = []): array
     {
         $konteks = $this->buildMateriContext($pertemuan, $topik, $sumber);
@@ -134,7 +132,7 @@ Aturan:
 2. Setiap soal dilengkapi "referensi" berisi kunci jawaban atau poin-poin penting (1-3 kalimat) untuk acuan penilaian.
 3. Soal menuntut jawaban uraian (berpikir, menjelaskan, menghitung, atau membandingkan) — bukan pertanyaan yang bisa dijawab satu kata.
 4. Setiap soal unik dan tidak mengulang pertanyaan yang sama.
-{$this->bloomRule(5)}{$this->akurasiRule($this->bloom->enabled() ? 6 : 5)}
+{$this->bloomRule(5)}
 Keluarkan HANYA pure JSON array tanpa teks lain dan tanpa markdown code fence:
 {$this->jsonShape(true)}
 
@@ -154,7 +152,7 @@ PROMPT;
 
             try {
                 $soal = $this->parseEssai($output, $jumlah);
-            } catch (\RuntimeException $e) {
+            } catch (RuntimeException $e) {
                 $terakhirError = $e;
                 Log::warning('KuisGenerator: percobaan '.$percobaan.' gagal parsing esai.', [
                     'error' => $e->getMessage(),
@@ -181,10 +179,9 @@ PROMPT;
             throw $terakhirError ?? new RuntimeException('AI tidak menghasilkan soal yang valid. Silakan coba lagi.');
         }
 
-        return $soal;
+        return $this->hitungKemiripan($soal, $konteks);
     }
 
-     
     protected function parseEssai(string $output, int $max): array
     {
         $json = AiJsonParser::arrayFrom($output);
@@ -217,8 +214,6 @@ PROMPT;
                 'referensi' => is_string($item['referensi'] ?? null) ? trim($item['referensi']) : '',
             ];
 
-            $soal = $this->sertakanAkurasi($soal, $item);
-
             if ($this->bloom->enabled()) {
                 $soal['bloom'] = $this->bloom->clampToDefaultRange(
                     $this->bloom->decide($pertanyaan, (string) ($item['bloom'] ?? ''), null)
@@ -231,20 +226,55 @@ PROMPT;
         return $normalized;
     }
 
-    protected function sertakanAkurasi(array $soal, array $item): array
+    protected function hitungKemiripan(array $soal, string $konteks): array
     {
-        if (isset($item['akurasi_materi']) && is_numeric($item['akurasi_materi'])) {
-            $soal['akurasi_materi'] = max(0, min(100, (int) $item['akurasi_materi']));
+        foreach ($soal as &$item) {
+            $item['kemiripan_materi'] = null;
+            $item['kemiripan_pertanyaan'] = $item['pertanyaan'];
         }
+        unset($item);
 
-        if (isset($item['catatan_akurasi']) && trim((string) $item['catatan_akurasi']) !== '') {
-            $soal['catatan_akurasi'] = trim((string) $item['catatan_akurasi']);
+        try {
+            $bagian = mb_str_split($konteks, 1200);
+            $embedding = app(EmbeddingService::class);
+            $vectors = $embedding->embedBatch([...$bagian, ...array_column($soal, 'pertanyaan')]);
+            if (count($vectors) !== count($bagian) + count($soal)) {
+                throw new RuntimeException('Respons embedding tidak lengkap.');
+            }
+
+            foreach ($vectors as $vector) {
+                if (! is_array($vector) || $vector === [] || ! array_filter($vector, fn ($v) => is_numeric($v) && is_finite((float) $v) && (float) $v !== 0.0)) {
+                    throw new RuntimeException('Vektor embedding kosong atau bernilai nol.');
+                }
+                foreach ($vector as $value) {
+                    if (! is_numeric($value) || ! is_finite((float) $value)) {
+                        throw new RuntimeException('Vektor embedding tidak valid.');
+                    }
+                }
+            }
+
+            $hasil = [];
+            foreach ($soal as $i => $item) {
+                $skor = 0.0;
+                foreach (array_slice($vectors, 0, count($bagian)) as $vector) {
+                    $skor += $embedding->cosineSimilarity($vector, $vectors[count($bagian) + $i]);
+                }
+                $nilai = $skor / count($bagian);
+                if (! is_finite($nilai) || $nilai < -1.000001 || $nilai > 1.000001) {
+                    throw new RuntimeException('Hasil kemiripan embedding tidak valid.');
+                }
+                $hasil[] = max(-1.0, min(1.0, $nilai));
+            }
+            foreach ($hasil as $i => $nilai) {
+                $soal[$i]['kemiripan_materi'] = $nilai;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('KuisGenerator: kemiripan materi tidak tersedia.', ['error' => $e->getMessage()]);
         }
 
         return $soal;
     }
 
-     
     public function sumberKonteks(int $guruId, ?int $kelasId = null): array
     {
         $kelas = Kelas::query()
@@ -256,7 +286,6 @@ PROMPT;
         if ($kelas->isEmpty()) {
             return [];
         }
-
 
         $pertemuans = Pertemuan::query()
             ->whereIn('kelas_id', $kelas->keys()->all())
@@ -280,7 +309,6 @@ PROMPT;
         })->values()->all();
     }
 
-     
     protected function buildMateriContext(Pertemuan $pertemuan, ?string $topik = null, array $sumber = []): string
     {
         [$pertemuans, $materi] = $this->resolveSumber($pertemuan, $sumber);
@@ -290,8 +318,6 @@ PROMPT;
 
         $kategori = $pertemuan->kelas?->kategori;
         $queryRag = $this->queryRag($topik, $materi);
-
-
 
         $maxCharsRag = (int) config('services.kuis_rag.max_chars', 8000);
         $kuotaPerPertemuan = max(1500, intdiv($maxCharsRag, max(1, $pertemuans->count())));
@@ -319,7 +345,6 @@ PROMPT;
             if ($materiSumber->deskripsi) {
                 $segmen .= "\nDeskripsi: {$materiSumber->deskripsi}";
             }
-
 
             if ($materiSumber->babSummary?->ringkasan) {
                 $segmen .= "\nRingkasan guru: {$materiSumber->babSummary->ringkasan}";
@@ -351,7 +376,6 @@ PROMPT;
         return trim($konteks);
     }
 
-     
     protected function resolveSumber(Pertemuan $pertemuan, array $sumber): array
     {
         $pertemuanIds = array_values(array_unique(array_filter(
@@ -370,9 +394,6 @@ PROMPT;
         $pertemuans = Pertemuan::query()
             ->whereIn('id', $pertemuanIds)
 
-
-
-
             ->when($pertemuan->loadMissing('kelas')->kelas?->guru_id, fn ($q, $guruId) => $q->whereHas(
                 'kelas',
                 fn ($k) => $k->where('guru_id', $guruId)
@@ -381,7 +402,6 @@ PROMPT;
             ->orderBy('urutan')
             ->orderBy('id')
             ->get();
-
 
         if ($pertemuans->isEmpty()) {
             $pertemuan->loadMissing(['kelas', 'materi.babSummary', 'materi.document.chunks']);
@@ -413,7 +433,6 @@ PROMPT;
         return [$pertemuans, $terpakai];
     }
 
-     
     protected function queryRag(?string $topik, Collection $materi): string
     {
         $topik = trim((string) $topik);
@@ -428,7 +447,6 @@ PROMPT;
             ->implode(' '), 0, 600);
     }
 
-     
     protected function buildRagContext(Pertemuan $pertemuan, ?string $topik, ?string $queryOverride = null, ?int $maxChars = null): string
     {
         if (! config('services.kuis_rag.enabled', true)) {
@@ -458,9 +476,6 @@ PROMPT;
 
         try {
             $chunks = $this->rag->retrieve($query, $topK, $minScore, $kategori, null, $pertemuan->id);
-
-
-
 
             if (empty($chunks) && $kategori !== null) {
                 $chunks = $this->rag->retrieve($query, $topK, $minScore, null, null, $pertemuan->id);
@@ -507,8 +522,6 @@ PROMPT;
                 break;
             }
 
-
-
             if (mb_strlen($content) > $sisa) {
                 $content = rtrim(mb_substr($content, 0, $sisa - 1)).'…';
             }
@@ -520,7 +533,6 @@ PROMPT;
         return $terpakai > 0 ? $isi : '';
     }
 
-     
     protected function symbolQuery(Collection $materi, ?string $topik, string $konteksRag = ''): string
     {
         $topik = trim((string) $topik);
@@ -542,7 +554,6 @@ PROMPT;
         return mb_substr($gabung, 0, 800);
     }
 
-     
     protected function parseSoal(string $output, int $max, ?string $kesulitan = null): array
     {
         $json = AiJsonParser::arrayFrom($output);
@@ -550,8 +561,6 @@ PROMPT;
         if ($json === null) {
             Log::warning('KuisGenerator: respons soal bukan JSON yang bisa diparsing.', [
                 'panjang' => mb_strlen($output),
-
-
 
                 'awal' => mb_substr($output, 0, 500),
                 'ekor' => mb_substr($output, -500),
@@ -563,7 +572,6 @@ PROMPT;
         return $this->normalizeSoal($json, $max, $kesulitan);
     }
 
-     
     protected function normalizeSoal(array $items, int $max, ?string $kesulitan = null): array
     {
         $normalized = [];
@@ -628,17 +636,12 @@ PROMPT;
                 );
             }
 
-            if (isset($item['akurasi_materi']) || isset($item['catatan_akurasi'])) {
-                $soal = $this->sertakanAkurasi($soal, $item);
-            }
-
             $normalized[] = $soal;
         }
 
         return $normalized;
     }
 
-     
     protected function bloomSection(?string $kesulitan, int $jumlah): string
     {
         if (! $this->bloom->enabled()) {
@@ -651,7 +654,6 @@ PROMPT;
             ."\n";
     }
 
-     
     protected function bloomRule(int $nomor = 6): string
     {
         if (! $this->bloom->enabled()) {
@@ -661,26 +663,19 @@ PROMPT;
         return "{$nomor}. Tentukan level bloom dari tuntutan kognitif utama soal, BUKAN dari tingkat kesulitan dan BUKAN hanya dari kata kerjanya. Jangan menaikkan level hanya agar soal terasa lebih sulit.\n";
     }
 
-    protected function akurasiRule(int $nomor): string
-    {
-        return "{$nomor}. Setiap soal yang dihasilkan wajib dinilai keakurasiannya terhadap materi: tambahkan field \"akurasi_materi\" (integer 0-100, makin tinggi makin sesuai materi) dan \"catatan_akurasi\" (teks singkat, maks 25 kata) yang menjelaskan dasar nilainya.\n";
-    }
-
-     
     protected function jsonShape(bool $essai = false): string
     {
         if (! $this->bloom->enabled()) {
             return $essai
-                ? '[{"pertanyaan":"...","referensi":"...","akurasi_materi":95,"catatan_akurasi":"..."}]'
-                : '[{"pertanyaan":"...","pilihan":["...","...","...","..."],"jawaban":0,"akurasi_materi":95,"catatan_akurasi":"..."}]';
+                ? '[{"pertanyaan":"...","referensi":"..."}]'
+                : '[{"pertanyaan":"...","pilihan":["...","...","...","..."],"jawaban":0}]';
         }
 
         return $essai
-            ? '[{"pertanyaan":"...","referensi":"...","bloom":"C3","akurasi_materi":95,"catatan_akurasi":"..."}]'
-            : '[{"pertanyaan":"...","pilihan":["...","...","...","..."],"jawaban":0,"bloom":"C2","akurasi_materi":95,"catatan_akurasi":"..."}]';
+            ? '[{"pertanyaan":"...","referensi":"...","bloom":"C3"}]'
+            : '[{"pertanyaan":"...","pilihan":["...","...","...","..."],"jawaban":0,"bloom":"C2"}]';
     }
 
-     
     protected function bloomDifficulty(?string $kesulitan, int $jumlah = 4): string
     {
         return $this->bloom->difficultyGuidance($kesulitan, $jumlah);

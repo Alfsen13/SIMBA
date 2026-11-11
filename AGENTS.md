@@ -1,6 +1,7 @@
 # SIMBA — Agent Guidance
 
 Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git repo on `main`, remote `origin`.
+Check the current implementation when older documentation differs from the code.
 
 ## Commands
 
@@ -8,6 +9,8 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git 
 |---|---|
 | `php vendor/bin/pest` | The test command. `composer test` fails on host (Redis DNS from Docker `.env`). Delete `bootstrap/cache/config.php` if you ran `config:cache`. |
 | `php vendor/bin/pest tests/Feature/FooTest.php --filter="…"` | Single file / filtered run. |
+| `php vendor/bin/pint --test` | Check PHP formatting; omit `--test` to apply it. |
+| `npm run build` | Build Vite assets; `npm run dev` starts Vite HMR. |
 | `composer franken` | Serve with FrankenPHP (port 8000, multi-thread, 3 queue workers inline). Binary at `C:\xampp\frankenphp\frankenphp.exe`. |
 | `composer serve` | Single-threaded — avoid for development. |
 | `composer dev` | Adds Vite HMR + queue workers. |
@@ -15,9 +18,20 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git 
 | `docker compose build && docker compose up -d` | **Always build after code changes** — images bake source (`./app` is not bind-mounted). `up -d` alone runs stale code. |
 | `docker compose exec app php artisan <cmd>` | Run artisan inside container (migrate, ml:train, etc). |
 
+The installed dependencies currently require PHP >= 8.4.1. If the host PHP is
+too old, use a checkout with development `vendor` installed and run in PowerShell:
+
+```powershell
+docker run --rm --entrypoint php -e APP_ENV=testing -v "${PWD}:/repo" -w /repo simba-app:latest vendor/bin/pest tests/Feature/PrediksiSinkronTest.php
+```
+
+The image defaults to `production`, so `APP_ENV=testing` is required. Never run
+destructive migrations, seeders, or training against user data without checking
+their effects.
+
 ## Critical gotchas (agent would likely miss)
 
-- **Test DB/cache:** `phpunit.xml` overrides to sqlite `:memory:` + sync/array. `.env`/compose use Redis — `php artisan optimize:clear` before tests avoids Redis DNS errors. Delete `bootstrap/cache/config.php` if you ran `config:cache`.
+- **Test DB/cache:** `phpunit.xml` overrides to sqlite `:memory:` + sync/array. Do not use a production config cache in tests. `composer test` runs `optimize:clear` and can fail on the host if Redis only resolves inside Docker; use Pest directly when appropriate.
 - **`APP_KEY` mandatory:** Docker production stack fails without it. Generate via `php artisan key:generate --show` and put in `.env`.
 - **Job `$queue` trap:** Jobs using `Illuminate\Bus\Queueable` must **not** redeclare `public $queue`. `Queueable` already declares it; PHP fatals on autoload. Set queue in constructor via `$this->onQueue('ai-soal')`. Previously hit `GeneratePertemuanJob`, `GenerateSoalTugasAI`, `GenerateSoalKuisAI`.
 - **`expectsJson()` in `bootstrap/app.php`:** Required — defining `shouldRenderJsonWhen()` replaces Laravel's default check; without it JSON endpoints 302 instead of 422.
@@ -27,11 +41,12 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git 
 - **`whereHas('kelas')->whereHas('siswa')` corrupt correlation** on `BelongsToMany` — references wrong table/column. Use the `kelas_siswa` pivot directly.
 - **`tests/Pest.php` applies `RefreshDatabase` globally to Feature tests:** Don't re-add `uses(RefreshDatabase::class)`. Unit tests have no DB unless they opt in.
 - **Pest helper functions are global per file:** Use topic-unique prefixes (e.g. `remedialBuatPertemuan`); generic names fatal on full-suite run.
+- **Unit test ignore:** `.gitignore` ignores new files under `tests/Unit/`; files already tracked remain tracked. Use `git add -f` only when intentionally adding a new unit test.
 - **`Bus::fake()` for essay submit tests:** With `QUEUE_CONNECTION=sync` the AI job runs inline (~30 s/test). With fake it drops to ~3 s.
 - **SQLite hides schema bugs:** Queries on fictitious columns pass in SQLite, fail on MySQL. Add schema contract tests (`Schema::getColumnListing()`/`getIndexes()`).
 - **`fitur_siswa_history.tanggal` is `date` cast:** Pass Carbon object (`now()->startOfDay()`), not string, to `where` — string brute-forces a new row under `UNIQUE(siswa_id, pertemuan_id)` in SQLite.
 - **`storage/` and `bootstrap/cache/` bind-mounted:** Don't commit them to git.
-- **Serving is FrankenPHP, not Apache/XAMPP:** XAMPP ships PHP 8.2 (< required ^8.3). Use `composer franken` or Docker.
+- **Serving is FrankenPHP, not Apache/XAMPP:** the PHP version must meet the installed dependency requirements. Use `composer franken` or Docker.
 - **Timezone is UTC:** `now()` lands on the previous calendar day 00:00–06:59 WIB. Date-based logic needs explicit timezone or `startOfDay()`.
 - **Table is `notifikasis`, not `notifications`:** Custom `NotifikasiChannel`; a notification's `via()` must return only `[NotifikasiChannel::class]`.
 - **Array-cast model attributes:** assign a PHP array; the cast json_encodes. Do not pass `json_encode()`.
@@ -42,16 +57,14 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git 
 
 - `send()`/`sendStream()`: Gemini first → Ollama fallbacks. `sendLocalPreferred()`/`sendStreamLocalPreferred()`: Ollama → fallback → Gemini.
 - **Gemini model is `gemini-3.8-flash`** — do not revert to `gemini-2.0-flash` (404 "no longer available").
-- `GEMINI_API_KEY` is in `.env`. When set, `send()` tries Gemini first.
-- `GEMINI_SHORT_TIMEOUT=8` in `.env` (config default 30).
-- **BYO AI integration:** Replace `$aiProvider->send(...)` with `$aiProvider->sendForUser(auth()->user(), ...)` in services (KuisGenerator, RemedialTugas, ChatService, PenilaianAI). This checks user's `user_ai_settings` first; if enabled & ready uses user's AI, otherwise falls back to `sendLocalPreferred()`.
+- `sendForUser()` checks the user's AI settings first and falls back to `sendLocalPreferred()` when unavailable. Preserve the existing provider choice at each call site.
+- Docker connects to an Ollama instance on the host by default via `host.docker.internal`; verify deployment configuration before changing provider settings.
 
 ## Remedial
 
-- **Single trigger per student:** `PrediksiController::remedial()` (sync, `set_time_limit(0)`). Mass loop `RemedialService::prosesSiswaBerisiko()` is for scripts/tinker only — a former polling loop produced 319 jobs.
-- **Real-time triggers in controllers only** (`Siswa/KuisController::submit`, `Guru/TugasController::nilaiSubmit`), never inside `PengumpulanTugasService::simpanNilai`/`submit` (tests call those directly with `sync` → real AI inline).
-- `GenerateRemedianPertemuanAI` implements `ShouldBeUnique` (third idempotency layer). Do not remove.
-- `MateriRemedian` needs all pertemuan columns (`pertemuan_id`, `sumber`, `skor_pertemuan`) in `$fillable`.
+- `PrediksiController::remedial()` handles one student at a time; avoid unbounded mass triggers.
+- Quiz submission triggers a remedial check; teacher grading dispatches the unique `PeriksaRemedialSetelahNilaiTugas` job. Avoid moving these triggers into `PengumpulanTugasService` where tests may run AI inline under `sync`.
+- `GenerateRemedialPertemuanAI` implements `ShouldBeUnique`; preserve its idempotency. `MateriRemedial` needs the pertemuan fields in `$fillable`.
 - **Guru lookup via `kelas_siswa` pivot directly** — not nested `whereHas`.
 - **Student name column is `users.name`, not `nama`.**
 
@@ -61,6 +74,9 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git 
 - `ml:train` must not be redeclared in `routes/console.php`.
 - SVR `predict()` spawns a libsvm process (~47 ms each) — never call in a metric loop; use `predictBatch()`.
 - `prediksi_mendatang` keeps only latest forecast per student (`updateOrCreate(['siswa_id'])`).
+- `ml:train --dataset` still updates derived database data and may report training failure as a warning with a successful exit code. Check the report and artifacts before treating training as successful.
+- `ml:train-sintetis-nilai` and `ml:train-sintetis-risiko` train SVR and RF respectively without adding synthetic students to the database; each replaces the corresponding active model. The CSV datasets are in `docs/`, and synthetic metrics do not establish accuracy on real students.
+- Model artifacts use `ml/` on the default Laravel disk. Docker app and `queue-default` use the `public` disk; verify that training and inference processes share a disk before changing deployment configuration.
 
 ## RAG / PDF
 
@@ -74,14 +90,11 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git 
 - **`@json($data)` for JSON payloads, NOT `Js::from()`** (breaks `JSON.parse(el.textContent)`).
 - **Blade `}}` trap in Alpine `x-data`:** write `{{ Js::from($x) }} })` (space + `}` before `)`).
 - `<script type="application/json">` must be raw JSON via `@json()`.
+- For JSON embedded in an HTML attribute, encode JSON and escape it for the attribute; raw `@json()` inside a double-quoted `x-data` can break the markup.
 
-## Known open defects (don't "fix" by accident)
+## Known defects
 
-- `Guru\TugasController::nilaiSubmit` → `RemedialService::periksaSetelahNilaiTugas()` loops every graded student, dispatches `GenerateRemedianPertemuanAI` inline under `sync` — 10–30+ min per POST for a class. Use per-student `PrediksiController::remedial()` instead.
-- `Siswa\KuisController::show/submit/hasil` don't enforce `is_aktif`/`tanggal_mulai`/`tanggal_selesai` (only `index()` does).
-- `ChatService` persists augmented prompt as `user` message → context accumulates multiplicatively over turns.
-- `RemedialController::submit` marks `status='selesai'` before grading; `NilaiRemedianTugasAI` is `tries=1` no `set_time_limit`.
-- High-impact extras: `PengumpulanTugasService::submit` preserves old file on resubmission; `KuisGeneratorService` casts answer with `(int)` only (letter keys → 0); `MateriObserver` accepts doc/ppt/xls but `ProcessDocument` rejects `.doc`.
+- Consult `docs/known-defects.md` and verify the current implementation before acting. Several previously documented issues have been fixed, including quiz schedule checks and the queued remedial scan.
 
 ## References
 
@@ -89,4 +102,6 @@ Laravel 13 LMS with AI (RAG tutor, kuis/tugas/remedial, risk scoring + RF). Git 
 - `docs/known-defects.md` — open defects with severity.
 - `docs/catatan-penting.md` — operational notes.
 - `docs/alur-project.md` — feature flows (tugas, pendaftaran).
+- `docs/rumus-ml.md` — model contracts and synthetic dataset details.
+- `.github/copilot-instructions.md` — concise Copilot project guidance.
 - `README.md` — install/run (generic).

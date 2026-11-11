@@ -4,19 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Tugas;
 
- 
 final class SoalTugasService
 {
-     
     public const JUMLAH_PILIHAN = 4;
 
-     
     public const INDEKS_JAWABAN_VALID = [0, 1, 2, 3];
 
-     
     public const BLOOM_VALID = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'];
 
-     
     public function decode(?string $soalJson): ?array
     {
         if ($soalJson === null || trim($soalJson) === '') {
@@ -32,7 +27,6 @@ final class SoalTugasService
         return $decoded;
     }
 
-     
     public function encode(?array $soal): ?string
     {
         if ($soal === null || $soal === []) {
@@ -42,13 +36,11 @@ final class SoalTugasService
         return json_encode($soal, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
-     
     public function normalisasiSoalPilihanGanda(mixed $soal): array
     {
         $soal = is_array($soal) ? $soal : [];
 
         $pilihan = $this->opsiUntukNormalisasi($soal);
-
 
         $pilihan = array_slice(array_values($pilihan), 0, self::JUMLAH_PILIHAN);
         while (count($pilihan) < self::JUMLAH_PILIHAN) {
@@ -64,7 +56,6 @@ final class SoalTugasService
         ], $soal);
     }
 
-     
     public function normalisasiSoalEssai(mixed $soal): array
     {
         $soal = is_array($soal) ? $soal : [];
@@ -82,6 +73,15 @@ final class SoalTugasService
      */
     private function sertakanAkurasi(array $baris, array $sumber): array
     {
+        if (array_key_exists('kemiripan_materi', $sumber)
+            && ($sumber['kemiripan_pertanyaan'] ?? null) === $baris['pertanyaan']) {
+            $nilai = $sumber['kemiripan_materi'];
+            if ($nilai === null || (is_numeric($nilai) && is_finite((float) $nilai) && (float) $nilai >= -1 && (float) $nilai <= 1)) {
+                $baris['kemiripan_materi'] = $nilai === null ? null : (float) $nilai;
+                $baris['kemiripan_pertanyaan'] = $baris['pertanyaan'];
+            }
+        }
+
         if (isset($sumber['akurasi_materi']) && is_numeric($sumber['akurasi_materi'])) {
             $baris['akurasi_materi'] = max(0, min(100, (int) $sumber['akurasi_materi']));
         }
@@ -97,7 +97,6 @@ final class SoalTugasService
         return $baris;
     }
 
-     
     public function normalisasiDaftar(mixed $soal, string $tipe): array
     {
         if (! is_array($soal)) {
@@ -114,15 +113,11 @@ final class SoalTugasService
             return [];
         }
 
-
-
-
         $baris = array_values(array_filter($soal, 'is_array'));
 
         return array_map($normalisasi, $baris);
     }
 
-     
     public function opsiUntukTampil(mixed $soal): array
     {
         $soal = is_array($soal) ? $soal : [];
@@ -136,13 +131,11 @@ final class SoalTugasService
         return array_values($opsi);
     }
 
-     
     public function kunciJawaban(mixed $jawaban): int
     {
         return $this->indeksJawaban($jawaban);
     }
 
-     
     public function hasilAiUntukIndeks(mixed $hasilAi, int $indeks): ?array
     {
         if (! is_array($hasilAi)) {
@@ -158,7 +151,6 @@ final class SoalTugasService
         return null;
     }
 
-     
     public function bloom(mixed $kode): ?string
     {
         $kode = strtoupper(trim((string) $kode));
@@ -166,7 +158,6 @@ final class SoalTugasService
         return in_array($kode, self::BLOOM_VALID, true) ? $kode : null;
     }
 
-     
     private function opsiUntukNormalisasi(array $soal): array
     {
         $pilihan = $soal['pilihan'] ?? null;
@@ -178,13 +169,11 @@ final class SoalTugasService
         return is_array($pilihan) ? $pilihan : [];
     }
 
-     
     private function indeksJawaban(mixed $jawaban): int
     {
         if (is_int($jawaban)) {
             $nilai = $jawaban;
         } elseif (is_float($jawaban) && $jawaban === floor($jawaban)) {
-
 
             $nilai = (int) $jawaban;
         } elseif (is_string($jawaban) && preg_match('/^\d+$/', trim($jawaban)) === 1) {
@@ -196,7 +185,6 @@ final class SoalTugasService
         return in_array($nilai, self::INDEKS_JAWABAN_VALID, true) ? $nilai : 0;
     }
 
-     
     private function teks(mixed $nilai): string
     {
         if ($nilai === null || is_bool($nilai)) {
@@ -206,4 +194,3 @@ final class SoalTugasService
         return is_scalar($nilai) ? (string) $nilai : '';
     }
 }
-

@@ -18,6 +18,14 @@ function normalisasiJawaban(jawaban) {
 // Field keakurasian soal terhadap materi hanya ada pada soal hasil generate AI.
 // Disimpan secara kondisional supaya soal manual tidak ikut membawa key kosong.
 export function sertakanAkurasi(target, sumber) {
+    if (Object.hasOwn(sumber, 'kemiripan_materi') && sumber.kemiripan_pertanyaan === target.pertanyaan) {
+        const nilai = sumber.kemiripan_materi;
+        if (nilai === null || (typeof nilai === 'number' && Number.isFinite(nilai) && nilai >= -1 && nilai <= 1)) {
+            target.kemiripan_materi = nilai;
+            target.kemiripan_pertanyaan = target.pertanyaan;
+        }
+    }
+
     const n = Number(sumber.akurasi_materi);
 
     if (sumber.akurasi_materi !== null && sumber.akurasi_materi !== undefined && sumber.akurasi_materi !== '' && Number.isFinite(n)) {

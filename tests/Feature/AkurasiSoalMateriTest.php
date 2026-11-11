@@ -7,6 +7,7 @@ use App\Models\Pertemuan;
 use App\Models\User;
 use App\Services\AIProviderService;
 use App\Services\BloomTaxonomyService;
+use App\Services\EmbeddingService;
 use App\Services\KuisGeneratorService;
 use App\Services\Tugas\SoalTugasService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,6 +20,11 @@ beforeEach(function () {
         'services.kuis_rag.enabled' => false,
         'services.symbols.enabled' => false,
     ]);
+    $embedding = Mockery::mock(EmbeddingService::class)->makePartial();
+    $embedding->shouldReceive('embedBatch')->andReturnUsing(function (array $texts) {
+        return array_map(fn ($i) => $i === 0 ? [1.0, 0.0] : [0.2, sqrt(0.96)], array_keys($texts));
+    });
+    app()->instance(EmbeddingService::class, $embedding);
 });
 
 function akurasiSoalPertemuan(): Pertemuan
@@ -49,7 +55,7 @@ function akurasiSoalPertemuan(): Pertemuan
     return $pertemuan->fresh(['materi.babSummary', 'materi.document.chunks', 'kelas']);
 }
 
-it('prompt generate pilihan ganda meminta penilaian akurasi soal terhadap materi', function () {
+it('prompt pilihan ganda tidak meminta penilaian akurasi dari AI', function () {
     $pertemuan = akurasiSoalPertemuan();
     $prompt = null;
 
@@ -70,11 +76,11 @@ it('prompt generate pilihan ganda meminta penilaian akurasi soal terhadap materi
 
     app(KuisGeneratorService::class)->generate($pertemuan, 1, 'sedang', null);
 
-    expect($prompt)->toContain('"akurasi_materi"')
-        ->toContain('"catatan_akurasi"');
+    expect($prompt)->not->toContain('"akurasi_materi"')
+        ->not->toContain('"catatan_akurasi"');
 });
 
-it('prompt generate esai meminta penilaian akurasi soal terhadap materi', function () {
+it('prompt esai tidak meminta penilaian akurasi dari AI', function () {
     $pertemuan = akurasiSoalPertemuan();
     $prompt = null;
 
@@ -94,11 +100,11 @@ it('prompt generate esai meminta penilaian akurasi soal terhadap materi', functi
 
     app(KuisGeneratorService::class)->generateEssai($pertemuan, 1, null);
 
-    expect($prompt)->toContain('"akurasi_materi"')
-        ->toContain('"catatan_akurasi"');
+    expect($prompt)->not->toContain('"akurasi_materi"')
+        ->not->toContain('"catatan_akurasi"');
 });
 
-it('memparsing akurasi materi dari jawaban AI pilihan ganda dan meng-clamp ke rentang 0-100', function () {
+it('menghitung kemiripan pilihan ganda tanpa menggunakan angka dari AI', function () {
     $pertemuan = akurasiSoalPertemuan();
 
     $this->mock(AIProviderService::class, function ($mock) {
@@ -122,13 +128,13 @@ it('memparsing akurasi materi dari jawaban AI pilihan ganda dan meng-clamp ke re
 
     $soal = app(KuisGeneratorService::class)->generate($pertemuan, 2, 'sedang', null);
 
-    expect($soal[0]['akurasi_materi'])->toBe(100)
-        ->and($soal[0]['catatan_akurasi'])->toBe('Sesuai rumus V = I × R pada materi.')
-        ->and($soal[1])->not->toHaveKey('akurasi_materi')
-        ->and($soal[1])->not->toHaveKey('catatan_akurasi');
+    expect($soal[0]['kemiripan_materi'])->toEqualWithDelta(0.2, 0.000001)
+        ->and($soal[0]['kemiripan_pertanyaan'])->toBe($soal[0]['pertanyaan'])
+        ->and($soal[0])->not->toHaveKey('akurasi_materi')
+        ->and($soal[1]['kemiripan_materi'])->toEqualWithDelta(0.2, 0.000001);
 });
 
-it('memparsing akurasi materi dari jawaban AI esai', function () {
+it('menghitung kemiripan esai tanpa menggunakan angka dari AI', function () {
     $pertemuan = akurasiSoalPertemuan();
 
     $this->mock(AIProviderService::class, function ($mock) {
@@ -144,8 +150,8 @@ it('memparsing akurasi materi dari jawaban AI esai', function () {
 
     $soal = app(KuisGeneratorService::class)->generateEssai($pertemuan, 1, null);
 
-    expect($soal[0]['akurasi_materi'])->toBe(92)
-        ->and($soal[0]['catatan_akurasi'])->toBe('Definisi dan satuan diambil langsung dari materi.');
+    expect($soal[0]['kemiripan_materi'])->toEqualWithDelta(0.2, 0.000001)
+        ->and($soal[0])->not->toHaveKey('akurasi_materi');
 });
 
 it('menyimpan akurasi materi saat tugas disimpan lewat normalisasi soal', function () {
@@ -200,11 +206,74 @@ it('lengkapiOtomatis kuis mempertahankan field akurasi saat soal disimpan', func
         ->and($hasil[0]['catatan_akurasi'])->toBe('Berdasarkan rumus pada materi.');
 });
 
-it('komponen badge akurasi soal merender badge dan catatan dengan binding Alpine', function () {
+it('komponen menampilkan kemiripan hanya untuk pertanyaan yang dihitung', function () {
     $html = Blade::render('<x-akurasi-soal :soal="$var" />', ['var' => 'q']);
 
-    expect($html)->toContain('q.akurasi_materi !== undefined')
-        ->toContain('q.akurasi_materi >= 80')
-        ->toContain('q.catatan_akurasi')
-        ->toContain('akurasi_materi"></span>%');
+    expect($html)->toContain("hasOwnProperty.call(q, 'kemiripan_materi')")
+        ->toContain('q.kemiripan_pertanyaan === q.pertanyaan')
+        ->not->toContain('q.akurasi_materi');
+});
+
+it('mempertahankan nilai kemiripan negatif dan nol saat menyimpan tugas', function (float $nilai) {
+    $soal = app(SoalTugasService::class)->normalisasiDaftar([[
+        'pertanyaan' => 'Pertanyaan',
+        'kemiripan_pertanyaan' => 'Pertanyaan',
+        'kemiripan_materi' => $nilai,
+    ]], 'essai');
+
+    expect($soal[0]['kemiripan_materi'])->toBe($nilai);
+})->with([-0.2, 0.0, 0.2]);
+
+it('tidak menyimpan kemiripan jika pertanyaan berubah', function () {
+    $soal = app(SoalTugasService::class)->normalisasiDaftar([[
+        'pertanyaan' => 'Pertanyaan baru',
+        'kemiripan_pertanyaan' => 'Pertanyaan lama',
+        'kemiripan_materi' => 0.2,
+    ]], 'essai');
+
+    expect($soal[0])->not->toHaveKey('kemiripan_materi');
+});
+
+it('tetap menghasilkan soal ketika embedding gagal', function () {
+    $pertemuan = akurasiSoalPertemuan();
+    $this->mock(AIProviderService::class, fn ($mock) => $mock->shouldReceive('sendLocalPreferred')->once()->andReturn(json_encode([[
+        'pertanyaan' => 'Jelaskan hukum Ohm.',
+        'referensi' => 'V = I × R.',
+    ]])));
+    $this->mock(EmbeddingService::class, fn ($mock) => $mock->shouldReceive('embedBatch')->once()->andThrow(new RuntimeException('Embedding gagal')));
+
+    $soal = app(KuisGeneratorService::class)->generateEssai($pertemuan, 1, null);
+
+    expect($soal[0]['kemiripan_materi'])->toBeNull();
+});
+
+it('menghasilkan kemiripan kosinus negatif dan nol tanpa membulatkan ke integer', function (array $vector, float $expected) {
+    $pertemuan = akurasiSoalPertemuan();
+    $this->mock(AIProviderService::class, fn ($mock) => $mock->shouldReceive('sendLocalPreferred')->once()->andReturn(json_encode([[
+        'pertanyaan' => 'Jelaskan hukum Ohm.',
+        'referensi' => 'V = I × R.',
+    ]])));
+    $embedding = Mockery::mock(EmbeddingService::class)->makePartial();
+    $embedding->shouldReceive('embedBatch')->once()->andReturn([[1.0, 0.0], $vector]);
+    app()->instance(EmbeddingService::class, $embedding);
+
+    $soal = app(KuisGeneratorService::class)->generateEssai($pertemuan, 1, null);
+
+    expect($soal[0]['kemiripan_materi'])->toEqualWithDelta($expected, 0.000001);
+})->with([
+    [[-0.2, sqrt(0.96)], -0.2],
+    [[0.0, 1.0], 0.0],
+]);
+
+it('tidak menampilkan nilai palsu untuk vektor embedding nol', function () {
+    $pertemuan = akurasiSoalPertemuan();
+    $this->mock(AIProviderService::class, fn ($mock) => $mock->shouldReceive('sendLocalPreferred')->once()->andReturn(json_encode([[
+        'pertanyaan' => 'Jelaskan hukum Ohm.',
+        'referensi' => 'V = I × R.',
+    ]])));
+    $this->mock(EmbeddingService::class, fn ($mock) => $mock->shouldReceive('embedBatch')->once()->andReturn([[1.0, 0.0], [0.0, 0.0]]));
+
+    $soal = app(KuisGeneratorService::class)->generateEssai($pertemuan, 1, null);
+
+    expect($soal[0]['kemiripan_materi'])->toBeNull();
 });
