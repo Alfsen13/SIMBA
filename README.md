@@ -1,165 +1,239 @@
-<div align="center">
+# SIMBA — Sistem Informasi Manajemen Belajar Adaptif
 
-# SIMBA
-### Sistem Informasi Manajemen Belajar Adaptif
+**SIMBA** adalah Learning Management System (LMS) berbasis web yang dikembangkan untuk membantu pengelolaan kegiatan pembelajaran sekaligus menyediakan dukungan pembelajaran berbasis *Artificial Intelligence* (AI). Sistem ini menggabungkan pengelolaan kelas dan materi, pemantauan perkembangan peserta didik, serta layanan AI yang memanfaatkan pendekatan *Retrieval-Augmented Generation* (RAG).
 
-**Learning Management System berbasis web dengan dukungan Artificial Intelligence untuk membantu pengelolaan pembelajaran, penyediaan materi, dan analisis progres belajar.**
-
-[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/)
-[![PHP](https://img.shields.io/badge/PHP-%5E8.3-777BB4?logo=php&logoColor=white)](https://www.php.net/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
-
-[Repository](https://github.com/Alfsen13/SIMBA) · [Laporkan masalah](https://github.com/Alfsen13/SIMBA/issues)
-
-</div>
+> **Catatan:** README ini disusun berdasarkan dokumentasi dan informasi arsitektur SIMBA yang telah dijelaskan selama pengembangan. Detail yang dapat berubah—seperti konfigurasi lingkungan, dependensi Python, variabel `.env`, dan akun awal—tetap perlu disesuaikan dengan isi repositori terbaru.
 
 ---
 
 ## Daftar Isi
 
-- [Tentang SIMBA](#tentang-simba)
-- [Fitur dan modul](#fitur-dan-modul)
+- [Gambaran Umum](#gambaran-umum)
+- [Fitur Utama](#fitur-utama)
 - [Teknologi](#teknologi)
-- [Gambaran arsitektur](#gambaran-arsitektur)
-- [Struktur proyek](#struktur-proyek)
-- [Persyaratan sistem](#persyaratan-sistem)
-- [Instalasi](#instalasi)
-- [Menjalankan aplikasi](#menjalankan-aplikasi)
-- [Konfigurasi AI](#konfigurasi-ai)
+- [Arsitektur Aplikasi](#arsitektur-aplikasi)
+- [Alur AI dan Machine Learning](#alur-ai-dan-machine-learning)
+- [Persyaratan Sistem](#persyaratan-sistem)
+- [Instalasi dan Konfigurasi](#instalasi-dan-konfigurasi)
+- [Menjalankan Aplikasi](#menjalankan-aplikasi)
 - [Pengujian](#pengujian)
-- [Keamanan](#keamanan)
-- [Status pengembangan](#status-pengembangan)
+- [Struktur Proyek](#struktur-proyek)
+- [Keamanan dan Konfigurasi](#keamanan-dan-konfigurasi)
+- [Status Pengembangan](#status-pengembangan)
 - [Kontribusi](#kontribusi)
 - [Lisensi](#lisensi)
 
-## Tentang SIMBA
+## Gambaran Umum
 
-**SIMBA (Sistem Informasi Manajemen Belajar Adaptif)** adalah aplikasi Learning Management System (LMS) berbasis web yang dikembangkan menggunakan Laravel. Proyek ini dirancang untuk mendukung pengelolaan aktivitas pembelajaran dan mengintegrasikan kemampuan AI ke dalam alur belajar.
+SIMBA dikembangkan sebagai LMS yang tidak hanya berfungsi untuk mengelola administrasi pembelajaran, tetapi juga membantu pengajar memahami perkembangan peserta didik melalui analisis data pembelajaran.
 
-Selain fungsi LMS, rancangan SIMBA mencakup pemanfaatan **Retrieval-Augmented Generation (RAG)** untuk membantu AI menjawab pertanyaan berdasarkan dokumen pembelajaran, serta analisis data pembelajaran untuk mendukung pemantauan progres siswa.
+Sistem menyediakan fitur pembelajaran dan pengelolaan akademik, serta beberapa komponen AI untuk membantu proses penyusunan evaluasi, pemberian bantuan belajar, pencarian informasi dari dokumen, dan identifikasi peserta didik yang memerlukan perhatian lebih lanjut.
 
-> Catatan: ketersediaan dan perilaku setiap fitur bergantung pada implementasi, konfigurasi layanan eksternal, dan versi kode yang sedang digunakan. Bagian yang masih berupa rancangan tidak boleh dianggap sebagai fitur produksi yang telah tervalidasi.
+### Tujuan Pengembangan
 
-## Fitur dan modul
+1. Memusatkan pengelolaan kelas, materi, tugas, dan aktivitas pembelajaran dalam satu sistem.
+2. Membantu pengajar memantau perkembangan peserta didik berdasarkan data pembelajaran.
+3. Menyediakan asisten pembelajaran berbasis AI yang dapat menggunakan dokumen sebagai sumber informasi.
+4. Mendukung penyusunan soal dan tugas dengan bantuan AI.
+5. Membantu mengidentifikasi peserta didik yang berpotensi mengalami kesulitan belajar.
 
-Area fitur utama SIMBA meliputi:
+## Fitur Utama
 
-- **Manajemen pembelajaran** — pengelolaan data dan aktivitas pembelajaran melalui aplikasi web.
-- **Integrasi AI dan RAG** — rancangan alur pengambilan konteks dari dokumen pembelajaran untuk membantu menghasilkan jawaban yang relevan.
-- **Ekstraksi dokumen** — dukungan pustaka pemrosesan PDF; pipeline ekstraksi lanjutan dapat memerlukan dependensi Python tambahan.
-- **AI Tutor** — asisten pembelajaran yang dirancang untuk memanfaatkan konteks dokumen dan layanan AI.
-- **Pembuatan soal dan tugas berbantuan AI** — mendukung alur generasi materi evaluasi melalui layanan AI.
-- **Analisis progres belajar** — pengolahan indikator pembelajaran untuk membantu memantau perkembangan siswa.
-- **Prediksi nilai dan klasifikasi risiko belajar** — area analitik yang menggunakan pendekatan machine learning; hasilnya perlu dievaluasi dan tidak menggantikan penilaian pendidik.
-- **Antarmuka interaktif** — Blade, Alpine.js, Tailwind CSS, Chart.js, dan KaTeX untuk kebutuhan antarmuka, visualisasi, serta penulisan rumus.
+### 1. Manajemen Pembelajaran
 
-Fitur AI dapat memerlukan API key, konfigurasi model, dependensi tambahan, worker antrean, atau layanan lokal. Pastikan konfigurasi pada kode dan file `.env.example` sesuai sebelum menjalankannya.
+- Pengelolaan pengguna dan hak akses berdasarkan peran.
+- Pengelolaan kelas dan peserta didik.
+- Pengelolaan materi dan dokumen pembelajaran.
+- Pengelolaan pertemuan pembelajaran.
+- Pengelolaan tugas dan kuis.
+- Pemantauan aktivitas dan hasil pembelajaran.
+
+SIMBA memiliki empat peran pengguna yang didokumentasikan, yaitu **Operator, Pengelola Operator, Guru, dan Siswa**. Hak akses setiap peran mengikuti aturan yang diterapkan di dalam aplikasi.
+
+### 2. AI Tutor
+
+AI Tutor menyediakan layanan tanya jawab untuk membantu pengguna memahami materi pembelajaran. Sistem dapat memanfaatkan dokumen yang telah diproses sebagai sumber konteks melalui pendekatan RAG.
+
+Komponen yang terlibat antara lain:
+
+- Pemrosesan percakapan melalui layanan AI Tutor.
+- Pencarian potongan dokumen yang relevan.
+- Penyusunan konteks berdasarkan hasil pencarian.
+- Dukungan pemrosesan simbol atau notasi pembelajaran.
+- Dukungan pencarian web melalui layanan terkait, sesuai konfigurasi aplikasi.
+
+### 3. Retrieval-Augmented Generation (RAG)
+
+RAG digunakan untuk membantu AI menghasilkan jawaban yang mengacu pada informasi dari dokumen pembelajaran.
+
+Gambaran alur pemrosesan dokumen:
+
+1. Operator mengunggah dokumen.
+2. Sistem menjalankan proses ekstraksi dokumen melalui antrean pekerjaan (*queue job*).
+3. Teks dokumen diekstraksi menggunakan pipeline pemrosesan.
+4. Teks dibagi menjadi beberapa bagian (*chunking*).
+5. Sistem menghasilkan embedding untuk setiap bagian teks.
+6. Data embedding disimpan bersama potongan dokumen.
+7. Ketika pengguna mengajukan pertanyaan, sistem mencari potongan dokumen yang relevan.
+8. Hasil pencarian digunakan sebagai konteks untuk menghasilkan jawaban AI.
+
+Embedding menggunakan model **Gemini `text-embedding-004`** sesuai konfigurasi yang didokumentasikan.
+
+### 4. Pembuatan Soal dan Tugas Berbantuan AI
+
+SIMBA menyediakan layanan untuk membantu pengajar menyusun soal kuis dan tugas menggunakan AI. Proses penyusunan soal juga didukung komponen yang berkaitan dengan Taksonomi Bloom agar tingkat kognitif soal dapat disesuaikan dengan kebutuhan pembelajaran.
+
+### 5. Early Warning System (EWS)
+
+Fitur EWS membantu pengajar mengenali peserta didik yang perlu dipantau berdasarkan indikator pembelajaran.
+
+Sistem menggunakan pendekatan *machine learning* untuk klasifikasi tingkat risiko. Kategori yang digunakan dalam rancangan model meliputi:
+
+- **Aman**
+- **Perlu Dipantau**
+- **Berisiko Tinggi**
+
+Klasifikasi menggunakan Random Forest yang dilatih berdasarkan label baseline dari indikator pembelajaran. Hasil klasifikasi merupakan alat bantu pemantauan, bukan keputusan mutlak mengenai kemampuan peserta didik.
+
+### 6. Prediksi Perkembangan Nilai
+
+SIMBA juga memiliki komponen regresi untuk memperkirakan nilai pada pertemuan berikutnya. Model yang digunakan adalah Support Vector Regression (SVR).
+
+Prediksi mulai dilakukan setelah tersedia data dari tiga pertemuan. Data peserta didik digunakan untuk memprediksi perkembangan nilainya sendiri, bukan dengan mencampurkan data peserta didik lain sebagai data individual.
+
+### 7. Remedial Otomatis
+
+Sistem menyediakan komponen remedial yang membantu menyiapkan tindak lanjut pembelajaran bagi peserta didik yang membutuhkan penguatan materi. Proses ini terhubung dengan layanan remedial dan pembuatan tugas berbantuan AI.
+
+---
 
 ## Teknologi
 
-| Area | Teknologi |
+Teknologi utama yang digunakan dalam proyek SIMBA berdasarkan dokumentasi pengembangan:
+
+| Bagian | Teknologi |
 |---|---|
-| Backend | PHP, Laravel 13 |
-| Template antarmuka | Laravel Blade |
+| Backend | Laravel 13 |
+| Bahasa backend | PHP >= 8.4.1 |
+| Frontend | Blade dan Blade Components |
 | CSS | Tailwind CSS 4 |
-| Interaktivitas | Alpine.js |
-| Build frontend | Vite |
-| Visualisasi | Chart.js |
-| Render rumus matematika | KaTeX |
-| Database | MySQL/MariaDB atau database lain yang didukung konfigurasi Laravel |
-| Pemrosesan PDF | `smalot/pdfparser`, `barryvdh/laravel-dompdf` |
-| Machine learning PHP | `php-ai/php-ml` |
-| Autentikasi API | Laravel Sanctum |
-| Pengelolaan dependensi PHP | Composer |
-| Pengelolaan dependensi frontend | npm |
-| Pengujian | Pest / Laravel test runner |
-| Server lokal opsional | FrankenPHP dan Caddy, melalui konfigurasi proyek |
+| Interaksi frontend | Alpine.js |
+| Asset bundler | Vite |
+| Database | MySQL / MariaDB |
+| Queue | Laravel Queue (database pada lingkungan pengembangan) |
+| Server lokal | FrankenPHP |
+| AI dan embedding | Gemini API |
+| Machine Learning | PHP-ML |
+| Ekstraksi PDF | pdfplumber, PyMuPDF, Tesseract OCR, dan pix2tex |
+| Pemrosesan PDF alternatif | smalot/pdfparser |
+| Grafik | Chart.js |
+| Rendering rumus | KaTeX |
+| Pengujian | Pest / PHPUnit |
 
-Versi dependensi yang sebenarnya mengikuti `composer.json`, `composer.lock`, `package.json`, dan `package-lock.json` di repositori.
+Versi dan konfigurasi paket dapat dilihat pada `composer.json`, `composer.lock`, `package.json`, dan file konfigurasi terkait di repositori.
 
-## Gambaran arsitektur
+## Arsitektur Aplikasi
 
-Secara umum, aplikasi menggunakan pola MVC Laravel dengan pemisahan tanggung jawab ke controller, model, layanan aplikasi, dan antrean pekerjaan bila diperlukan.
+SIMBA menggunakan arsitektur Laravel dengan pola MVC yang dilengkapi lapisan *Service* dan sistem antrean (*queue*).
 
-```mermaid
-flowchart TD
-    U["Pengguna"] --> UI["Antarmuka Blade"]
-    UI --> R["Routes Laravel"]
-    R --> C["Controllers"]
-    C --> S["Services / logika aplikasi"]
-    S --> M["Models dan database"]
-    S --> Q["Queue Jobs"]
-    Q --> AI["Layanan AI / pemrosesan dokumen"]
-    AI --> S
-    S --> C
-    C --> UI
-```
+Gambaran tanggung jawab komponen:
 
-Alur tersebut merupakan gambaran konseptual. Detail implementasi suatu fitur dapat berbeda sesuai controller, service, job, dan konfigurasi yang tersedia di versi repositori.
+| Komponen | Tanggung jawab |
+|---|---|
+| Routes | Mendefinisikan jalur akses aplikasi |
+| Controllers | Menerima permintaan dan mengatur alur respons |
+| Services | Menangani logika bisnis dan proses utama aplikasi |
+| Models | Mengelola representasi data dan relasi database |
+| Jobs | Menjalankan proses yang dikerjakan melalui queue |
+| Policies | Mengatur pemeriksaan hak akses |
+| Middleware | Memeriksa permintaan sebelum diteruskan |
+| Notifications | Mengelola pemberitahuan aplikasi |
+| Observers | Menangani peristiwa pada model |
 
-### Alur RAG (konseptual)
+Logika bisnis utama ditempatkan pada lapisan Service agar Controller tetap berfokus pada pengelolaan alur permintaan. Proses yang membutuhkan waktu lebih lama, seperti pemrosesan dokumen, dapat dijalankan melalui Queue.
 
-1. Dokumen pembelajaran dimasukkan ke sistem.
-2. Dokumen diekstrak menjadi teks dan diproses menjadi potongan teks (*chunks*).
-3. Potongan teks disiapkan untuk proses embedding dan penyimpanan.
-4. Ketika pertanyaan diajukan, sistem mencari konteks yang relevan.
-5. Konteks yang ditemukan digunakan bersama pertanyaan untuk menyusun jawaban melalui model AI.
+## Alur AI dan Machine Learning
 
-RAG membutuhkan implementasi embedding, penyimpanan dan pencarian vektor, serta provider model yang dikonfigurasi dengan benar. Diagram ini menjelaskan pendekatan yang dituju, bukan jaminan bahwa semua tahap telah aktif di setiap deployment.
-
-## Struktur proyek
+### Pipeline RAG
 
 ```text
-SIMBA/
-├── app/                 # Kode inti aplikasi Laravel
-├── bootstrap/           # Bootstrap aplikasi
-├── config/              # Konfigurasi aplikasi
-├── database/            # Migrations, factories, dan seeders
-├── lang/                # Berkas bahasa
-├── public/              # Entry point dan aset publik
-├── resources/           # Blade, CSS, dan JavaScript
-├── routes/              # Definisi route
-├── storage/             # Log, cache, dan berkas aplikasi
-├── tests/               # Pengujian otomatis
-├── .env.example         # Contoh konfigurasi environment
-├── Caddyfile            # Konfigurasi Caddy/FrankenPHP
-├── composer.json        # Dependensi dan skrip Composer
-├── package.json         # Dependensi dan skrip frontend
-└── vite.config.js       # Konfigurasi Vite
+Dokumen Pembelajaran
+        |
+        v
+Unggah Dokumen
+        |
+        v
+ProcessDocument Job
+        |
+        v
+DocumentExtractorService
+        |
+        v
+Python Extraction Pipeline
+        |
+        v
+Text Chunking
+        |
+        v
+Embedding Generation
+        |
+        v
+Penyimpanan Document Chunks
+        |
+        v
+Retrieval berdasarkan pertanyaan
+        |
+        v
+Konteks untuk AI Tutor
+        |
+        v
+Jawaban
 ```
 
-Direktori penting:
+### Model Klasifikasi Risiko
 
-- `app/` — logika utama aplikasi, termasuk controller, model, dan komponen domain lain.
-- `database/` — skema database melalui migration serta data awal jika seeders disediakan.
-- `resources/` — template Blade dan aset frontend.
-- `routes/` — endpoint web/API yang didaftarkan aplikasi.
-- `tests/` — tempat pengujian otomatis.
-- `storage/` — penyimpanan runtime; jangan mengunggah data sensitif atau artefak privat ke repositori.
+Klasifikasi risiko menggunakan Random Forest. Label pelatihan baseline dibentuk dari indikator pembelajaran, kemudian digunakan sebagai target klasifikasi model.
 
-## Persyaratan sistem
+Indikator baseline yang didokumentasikan meliputi:
 
-Pastikan lingkungan pengembangan memiliki:
+- Rata-rata nilai.
+- Persentase keterlambatan.
+- Persentase tugas atau aktivitas yang terlewat.
+- Nilai keseluruhan.
 
-- PHP **8.3 atau lebih baru yang kompatibel dengan batasan `composer.json`**.
+Kategori hasil klasifikasi digunakan sebagai informasi pendukung bagi pengajar dalam menentukan peserta didik yang perlu dipantau.
+
+### Model Regresi Nilai
+
+Model SVR digunakan untuk memperkirakan `rata_nilai` pada pertemuan berikutnya. Fitur yang didokumentasikan untuk model ini meliputi:
+
+1. `rata_durasi_belajar`
+2. `persen_tugas_terkumpul`
+3. `tren_nilai`
+4. `persen_kehadiran`
+5. `rata_nilai`
+6. `jumlah_pertemuan_tidak_aktif`
+
+Evaluasi model menggunakan metrik MAE, RMSE, dan R². Hasil prediksi merupakan estimasi berdasarkan data yang tersedia dan tidak menjamin nilai aktual peserta didik.
+
+---
+
+## Persyaratan Sistem
+
+Sebelum menjalankan SIMBA, siapkan lingkungan berikut:
+
+- PHP **8.4.1 atau lebih baru**.
 - Composer.
-- Node.js dan npm yang kompatibel dengan versi Vite yang digunakan.
-- MySQL/MariaDB atau database lain yang didukung aplikasi.
-- Ekstensi PHP yang diperlukan Laravel dan dependensi Composer.
-- Kredensial layanan AI apabila fitur AI diaktifkan.
-- Dependensi Python/OCR tambahan jika pipeline ekstraksi dokumen tertentu menggunakannya.
+- MySQL atau MariaDB.
+- Node.js dan npm.
+- Python 3 untuk pipeline ekstraksi dokumen.
+- Tesseract OCR beserta bahasa data yang diperlukan.
+- Ekstensi PHP yang dibutuhkan oleh Laravel dan dependensi proyek.
+- Git.
 
-Periksa versi yang terpasang:
+Beberapa fitur memerlukan konfigurasi layanan eksternal, terutama API AI dan embedding. Pastikan kredensial layanan tersebut tersedia melalui konfigurasi lingkungan aplikasi.
 
-```bash
-php -v
-composer --version
-node -v
-npm -v
-```
-
-## Instalasi
+## Instalasi dan Konfigurasi
 
 ### 1. Clone repositori
 
@@ -168,14 +242,15 @@ git clone https://github.com/Alfsen13/SIMBA.git
 cd SIMBA
 ```
 
-### 2. Instal dependensi
+### 2. Instal dependensi PHP
 
 ```bash
 composer install
-npm install
 ```
 
-### 3. Siapkan file environment
+### 3. Siapkan file lingkungan
+
+Salin `.env.example` menjadi `.env`.
 
 Linux/macOS:
 
@@ -189,16 +264,13 @@ Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
-### 4. Atur konfigurasi database
+### 4. Konfigurasi database
 
-Buka `.env`, kemudian sesuaikan konfigurasi database dengan lingkungan lokalmu. Contoh untuk MySQL:
+Buat database MySQL atau MariaDB, kemudian sesuaikan konfigurasi database pada file `.env`.
 
-```dotenv
-APP_NAME=SIMBA
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://127.0.0.1:8000
+Contoh konfigurasi:
 
+```env
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -207,137 +279,173 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-Nilai di atas hanya contoh. Buat database terlebih dahulu dan gunakan kredensial yang sesuai dengan sistemmu. Jangan menimpa konfigurasi lain yang dibutuhkan aplikasi; sesuaikan `.env` dengan `.env.example` dan dokumentasi fitur terkait.
+Sesuaikan nama database, username, dan password dengan lingkungan masing-masing.
 
-### 5. Buat application key dan jalankan migration
+### 5. Generate application key
 
 ```bash
 php artisan key:generate
+```
+
+### 6. Jalankan migrasi database
+
+```bash
 php artisan migrate
 ```
 
-Jika proyek menyediakan seeder yang memang dibutuhkan, jalankan secara eksplisit setelah memeriksa isinya:
+Gunakan seeder jika proyek menyediakan seeder yang memang diperlukan:
 
 ```bash
 php artisan db:seed
 ```
 
-**Perhatian:** `db:seed` tidak wajib untuk semua instalasi dan dapat memasukkan data awal. Periksa seeder terlebih dahulu sebelum menjalankannya.
-
-### 6. Build aset frontend
-
-Untuk pengembangan:
+### 7. Instal dependensi frontend
 
 ```bash
-npm run dev
+npm install
 ```
 
-Untuk membangun aset:
+Build aset frontend:
 
 ```bash
 npm run build
 ```
 
-## Menjalankan aplikasi
+### 8. Konfigurasi layanan AI dan ekstraksi dokumen
 
-### Mode pengembangan standar
+Lengkapi variabel lingkungan yang diperlukan oleh layanan AI, embedding, dan komponen lain sesuai `.env.example` serta konfigurasi pada source code.
 
-Jalankan server Laravel:
+Pipeline ekstraksi dokumen menggunakan Python dan beberapa pustaka pemrosesan PDF/OCR. Pastikan interpreter Python, dependensi pipeline, dan Tesseract OCR tersedia serta dapat diakses oleh aplikasi.
 
-```bash
-php artisan serve
-```
+> Nama variabel lingkungan dan perintah instalasi Python harus mengikuti konfigurasi aktual pada repositori. Jangan menggunakan kredensial contoh sebagai kredensial produksi.
 
-Pada terminal terpisah, jalankan Vite:
+### 9. Siapkan storage
 
 ```bash
-npm run dev
+php artisan storage:link
 ```
 
-Jika fitur menggunakan antrean, jalankan worker pada terminal lain:
+Jika aplikasi menggunakan direktori penyimpanan privat, pastikan direktori tersebut tersedia dan memiliki hak akses yang sesuai.
+
+## Menjalankan Aplikasi
+
+### Menjalankan server FrankenPHP
+
+SIMBA didokumentasikan menggunakan FrankenPHP dalam mode klasik untuk lingkungan lokal. Jalankan perintah Composer yang disediakan proyek:
+
+```bash
+composer franken
+```
+
+Perintah tersebut menggunakan script yang didefinisikan di `composer.json`.
+
+### Menjalankan queue worker
+
+Jika konfigurasi queue menggunakan database, jalankan worker pada terminal terpisah:
 
 ```bash
 php artisan queue:work
 ```
 
-Buka URL yang ditampilkan oleh `php artisan serve`, biasanya `http://127.0.0.1:8000`.
+Pastikan konfigurasi `QUEUE_CONNECTION` sesuai dengan lingkungan yang digunakan.
 
-### Menjalankan skrip pengembangan Composer
+### Menjalankan Vite dalam mode pengembangan
 
-Repositori juga mendefinisikan skrip Composer bernama `dev` dan `franken`. Periksa isi `composer.json` sebelum memilihnya karena skrip tersebut menjalankan beberapa proses sekaligus.
+Untuk pengembangan frontend:
 
 ```bash
-composer run dev
+npm run dev
 ```
 
-Skrip `franken` dikonfigurasi untuk lingkungan Windows tertentu dan merujuk ke lokasi executable FrankenPHP khusus. Sesuaikan path di `composer.json` dan `Caddyfile` sebelum menggunakannya di komputer lain.
+Gunakan script yang tersedia pada `package.json` jika nama atau konfigurasi perintah berbeda.
 
-## Konfigurasi AI
-
-Fitur yang terhubung dengan provider AI membutuhkan konfigurasi tambahan. Sebelum mengaktifkannya:
-
-1. Periksa `.env.example` dan konfigurasi di direktori `config/` untuk mengetahui nama variabel yang benar.
-2. Isi API key atau pengaturan provider hanya di `.env` lokal atau secret manager deployment.
-3. Periksa queue dan worker yang diperlukan oleh proses AI.
-4. Pastikan endpoint, nama model, batas penggunaan, dan penanganan kegagalan sudah sesuai dengan provider.
-5. Uji proses dengan dokumen dan data non-sensitif terlebih dahulu.
-
-Jangan menambahkan API key, token, password, data siswa, atau dokumen privat ke Git. Nama variabel environment tidak dicantumkan di sini apabila belum dapat dipastikan dari konfigurasi aktual.
+---
 
 ## Pengujian
 
-Jalankan pengujian aplikasi dengan:
+Jalankan pengujian aplikasi menggunakan:
 
 ```bash
 php artisan test
 ```
 
-Atau gunakan skrip yang tersedia:
+Jika proyek menggunakan Pest, jalankan perintah sesuai konfigurasi pengujian yang tersedia.
 
-```bash
-composer run test
+Pengujian sebaiknya dilakukan setelah konfigurasi database, environment, dan dependensi aplikasi disiapkan.
+
+## Struktur Proyek
+
+Berikut gambaran direktori utama Laravel dan komponen SIMBA:
+
+```text
+SIMBA/
+├── app/
+│   ├── Console/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   └── Middleware/
+│   ├── Jobs/
+│   ├── Models/
+│   ├── Notifications/
+│   ├── Observers/
+│   ├── Policies/
+│   ├── Providers/
+│   ├── Services/
+│   └── Python/
+├── bootstrap/
+├── config/
+├── database/
+│   ├── migrations/
+│   ├── factories/
+│   └── seeders/
+├── public/
+├── resources/
+│   ├── css/
+│   ├── js/
+│   └── views/
+├── routes/
+├── storage/
+├── tests/
+├── .env.example
+├── artisan
+├── composer.json
+├── package.json
+└── README.md
 ```
 
-Pastikan konfigurasi database testing dan `.env.testing` (jika digunakan) terpisah dari data pengembangan atau produksi. Hasil tes perlu diperiksa pada lingkungan yang sesuai sebelum melakukan deployment.
+Struktur di atas merupakan gambaran direktori utama. Isi dan susunan subdirektori dapat berubah mengikuti perkembangan kode sumber.
 
-## Keamanan
+## Keamanan dan Konfigurasi
 
-- Jangan commit file `.env` atau kredensial rahasia.
-- Gunakan `APP_DEBUG=false` di lingkungan produksi.
-- Gunakan kredensial database dengan hak akses minimum.
-- Validasi akses dan otorisasi sebelum memproses data pembelajaran atau data pribadi.
-- Lindungi dokumen sumber, embedding, log, dan artefak model yang bersifat privat.
-- Jangan menganggap prediksi machine learning sebagai keputusan final tentang kemampuan siswa; hasil perlu ditinjau oleh pendidik.
-- Sebelum deployment, periksa dependency, konfigurasi storage, permission, backup, dan kebijakan retensi data.
+Beberapa hal yang perlu diperhatikan ketika menjalankan atau menerapkan SIMBA:
 
-## Status pengembangan
+- Jangan mengunggah file `.env` yang berisi kredensial ke repositori publik.
+- Jangan menyimpan API key, token, atau password langsung di source code.
+- Pastikan direktori penyimpanan privat tidak dapat diakses langsung oleh pengguna yang tidak berwenang.
+- Terapkan hak akses sesuai peran pengguna.
+- Gunakan HTTPS pada lingkungan produksi.
+- Atur worker queue dan proses Python sesuai kebutuhan server.
+- Batasi ukuran dan jenis file yang dapat diunggah.
+- Lakukan backup database dan dokumen secara berkala.
 
-SIMBA merupakan proyek yang terus dikembangkan. Struktur dependensi dan skrip di repositori menunjukkan penggunaan Laravel 13, Tailwind CSS 4, Vite, Alpine.js, Chart.js, KaTeX, serta beberapa pustaka PDF dan machine learning. Keberadaan dependensi saja tidak membuktikan bahwa seluruh fitur yang memakainya sudah lengkap atau tervalidasi.
+## Status Pengembangan
 
-Untuk mengetahui kondisi terbaru, rujuk kode pada branch aktif dan jalankan pengujian proyek. Dokumentasi sebaiknya diperbarui ketika perilaku fitur, konfigurasi, atau prosedur instalasi berubah.
+SIMBA dikembangkan secara bertahap. Fitur, konfigurasi, dan dokumentasi dapat berubah mengikuti proses pengembangan dan evaluasi sistem.
+
+Untuk mengetahui implementasi terbaru, lihat source code dan riwayat perubahan pada repositori:
+
+**https://github.com/Alfsen13/SIMBA**
 
 ## Kontribusi
 
-Kontribusi, laporan bug, dan saran pengembangan dapat diajukan melalui [GitHub Issues](https://github.com/Alfsen13/SIMBA/issues) atau Pull Request.
-
-1. Fork repositori.
-2. Buat branch baru: `git checkout -b feature/nama-fitur`.
-3. Buat perubahan dan tambahkan pengujian yang relevan.
-4. Jalankan pengujian.
-5. Commit perubahan dengan pesan yang jelas.
-6. Push branch dan buat Pull Request.
-
-Jangan sertakan secret, data pengguna, atau berkas lokal yang tidak diperlukan dalam Pull Request.
+Saran, laporan kesalahan (*bug report*), dan masukan pengembangan sangat terbuka. Silakan gunakan fitur Issues atau Pull Requests pada GitHub untuk menyampaikan masukan dan kontribusi.
 
 ## Lisensi
 
-Repositori mencantumkan lisensi `MIT` pada metadata `composer.json`. Pastikan file `LICENSE` tersedia dan isi lisensinya sesuai sebelum mendistribusikan proyek.
+Informasi lisensi mengikuti file `LICENSE` yang tersedia di repositori. Jika file lisensi belum tersedia, penggunaan, modifikasi, dan distribusi ulang kode sumber harus dikonfirmasi terlebih dahulu kepada pemilik proyek.
 
-## Pengembang
+---
 
-Dikembangkan oleh **Alfsen13**.
-
-- GitHub: [@Alfsen13](https://github.com/Alfsen13)
-- Repository: [Alfsen13/SIMBA](https://github.com/Alfsen13/SIMBA)
-#   S I M B A  
- 
+<p align="center">
+  Dikembangkan sebagai proyek Learning Management System terintegrasi Artificial Intelligence.
+</p>
