@@ -27,7 +27,7 @@
 /storage/pail
 /bootstrap/cache/
 /vendor
-/tests/Unit/
+/tests/
 _ide_helper.php
 Homestead.json
 Homestead.yaml
@@ -35,3 +35,20 @@ Thumbs.db
 README.md
 /anti-slop/
 /role-browser-*.cjs
+
+# Konfigurasi agen AI — lokal saja, tidak dipakai runtime aplikasi
+/AGENTS.md
+/AGENTS.local.md
+/.agents/
+/.qwen/
+/.github/
+/boost.json
+
+# Skrip sekali pakai (audit/debug manual)
+/check_user.php
+/create_user.php
+/compile_layout.php
+/clean_comments.py
+/storage/test_integral.php
+__pycache__/
+*.pyc
