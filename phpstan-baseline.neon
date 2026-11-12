@@ -1,0 +1,589 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kategori\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/FixDocumentKategori.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PrediksiRisikoPertemuan\:\:\$jumlah\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/SeedDataLatihCommand.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cv_path\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Web/Admin/UserController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ijazah_path\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Web/Admin/UserController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kategori_mapel\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Admin/UserController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$api_key\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Web/Guru/AiSettingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$endpoint\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/AiSettingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$model\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/AiSettingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$provider\.$#'
+			identifier: property.notFound
+			count: 6
+			path: app/Http/Controllers/Web/Guru/AiSettingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$document_chunk_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$embedding\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$page\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:formulaReviews\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:siswa\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Guru/KehadiranController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$error_message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/MateriController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/MateriController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$judul\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Guru/NilaiController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kelas\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Guru/NilaiController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nama_pertemuan\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Guru/NilaiController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$pertemuan\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Guru/NilaiController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$urutan\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Guru/NilaiController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kelas_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/PrediksiController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nama_pertemuan\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Web/Guru/PrediksiController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$urutan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/PrediksiController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:dibuka\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/PrediksiController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:kelasDiikuti\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Guru/RemedialController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$aplikasiPengajar\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Operator/PengajuanMengajarController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$guru_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Operator/PengajuanMengajarController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nama_kelas\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Web/Operator/PengajuanMengajarController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Operator/PengajuanMengajarController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: app/Http/Controllers/Web/Operator/PengajuanMengajarController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$babSummary\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/AITutorController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Siswa/AITutorController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$judul\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Siswa/AITutorController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kategori\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/AITutorController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:dibuka\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/AITutorController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\Relation\<\*, \*, \*\>\:\:dibuka\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/AITutorController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Web\\Siswa\\AITutorController\:\:chat\(\) should return Illuminate\\View\\View but returns Illuminate\\Http\\RedirectResponse\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/AITutorController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:dibuka\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: app/Http/Controllers/Web/Siswa/DashboardController.php
+
+		-
+			message: '#^Property App\\Models\\Kuis\:\:\$hasil is not writable\.$#'
+			identifier: assign.propertyReadOnly
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/DashboardController.php
+
+		-
+			message: '#^Property App\\Models\\Tugas\:\:\$pengumpulan is not writable\.$#'
+			identifier: assign.propertyReadOnly
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$jalur\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/KelasController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:dibuka\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/KelasController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$dibuka\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/KuisController.php
+
+		-
+			message: '#^Argument of an invalid type string supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/KuisController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:dibuka\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/KuisController.php
+
+		-
+			message: '#^Cannot call method isAfter\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/KuisController.php
+
+		-
+			message: '#^Cannot call method isBefore\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/KuisController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$dibuka\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/MateriController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:chunks\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/MateriController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$jalur\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/Siswa/PengajuanPerubahanPendidikanController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$dibuka\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/Siswa/TugasController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Jobs/GeneratePertemuanJob.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Jobs/GenerateRemedialAI.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Jobs/GenerateRemedialPertemuanAI.php
+
+		-
+			message: '#^Call to method getMessage\(\) on an unknown class App\\Jobs\\Throwable\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Jobs/ProcessDocument.php
+
+		-
+			message: '#^Caught class App\\Jobs\\Throwable not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Jobs/ProcessDocument.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/Tugas.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\UserAiSetting\:\:\$api_key\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/UserAiSetting.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Notifications\\Notification\:\:toNotifikasi\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Notifications/NotifikasiChannel.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Observers/KelasObserver.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kategori\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Observers/MateriObserver.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$guru_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Policies/KuisPolicy.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$guru_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Policies/PertemuanPolicy.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kategori_mapel\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Policies/UserPolicy.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$api_key\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/AIProviderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$enabled\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/AIProviderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$endpoint\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/AIProviderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$model\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/AIProviderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$provider\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/AIProviderService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isReady\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/AIProviderService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$config$#'
+			identifier: parameter.notFound
+			count: 1
+			path: app/Services/CustomAiService.php
+
+		-
+			message: '#^Variable \$read in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Services/DocumentExtractorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$materi\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/EmbeddingService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$original_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/EmbeddingService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$deskripsi\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/KuisGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$guru_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/KuisGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$judul\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/KuisGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kategori\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/KuisGeneratorService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:dibuka\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/MLService.php
+
+		-
+			message: '#^Variable \$http_response_header on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Services/OllamaService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$judul\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/PenilaianAIService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tipe\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/PenilaianAIService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kelas_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/PrediksiMendatangService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$urutan\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/PrediksiMendatangService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:dibuka\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: app/Services/PrediksiMendatangService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$urutan\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/PrediksiRisikoService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/RemedialService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/RemedialService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$jawaban\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Tugas/PengumpulanTugasService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:dibuka\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Tugas/TugasService.php
+
+		-
+			message: '#^Call to an undefined method DOMNameSpaceNode\|DOMNode\:\:getAttribute\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/WebSearchService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ForeignKeyDefinition\:\:unique\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: database/migrations/2026_11_03_000000_create_user_ai_settings_table.php
+
+		-
+			message: '#^Class App\\Http\\Controllers\\web\\Admin\\UserController referenced with incorrect case\: App\\Http\\Controllers\\Web\\Admin\\UserController\.$#'
+			identifier: class.nameCase
+			count: 1
+			path: routes/web.php
