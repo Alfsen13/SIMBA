@@ -85,6 +85,9 @@ window.tugasBuilder = function (initial = {}, options = {}) {
             this.genError = '';
             this.genMessage = '';
 
+            const startController = new AbortController();
+            const startTimeout = setTimeout(() => startController.abort(), 20 * 60 * 1000);
+
             try {
                 const res = await fetch(this.generateUrl, {
                     method: 'POST',
@@ -93,6 +96,7 @@ window.tugasBuilder = function (initial = {}, options = {}) {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content') || ''
                     },
+                    signal: startController.signal,
                     body: JSON.stringify({
                         pertemuan_id: pertemuanId,
                         tipe: this.tipe,
@@ -136,25 +140,55 @@ window.tugasBuilder = function (initial = {}, options = {}) {
                 let attempts = 0;
                 const maxAttempts = 800; // ~20 menit (800 * 1.5s)
                 let consecutiveErrors = 0;
+                let requestPending = false;
+                let active = true;
+                let controller = null;
 
                 const poll = setInterval(async () => {
                     attempts++;
 
+                    if (attempts >= maxAttempts) {
+                        active = false;
+                        clearInterval(poll);
+                        controller?.abort();
+                        this.genError = 'Proses generate terlalu lama. Silakan coba lagi.';
+                        this.generating = false;
+                        return;
+                    }
+
+                    if (requestPending) {
+                        return;
+                    }
+
+                    requestPending = true;
+                    controller = new AbortController();
+                    const requestTimeout = setTimeout(() => controller.abort(), 15000);
+
                     try {
                         const r = await fetch(statusUrl, {
                             headers: { 'Accept': 'application/json' },
-                            cache: 'no-store'
+                            cache: 'no-store',
+                            signal: controller.signal
                         });
 
+                        if (!r.ok) {
+                            throw new Error('Gagal memeriksa status generate.');
+                        }
+
                         const st = await r.json();
+                        if (!active) {
+                            return;
+                        }
                         consecutiveErrors = 0;
 
-                        if (!st || st.status === 'processing') {
-                            if (attempts >= maxAttempts) {
-                                clearInterval(poll);
-                                this.genError = 'Proses generate terlalu lama. Silakan coba lagi.';
-                                this.generating = false;
-                            }
+                        if (!st || typeof st !== 'object') {
+                            clearInterval(poll);
+                            this.genError = 'Status generate tidak valid. Silakan coba lagi.';
+                            this.generating = false;
+                            return;
+                        }
+
+                        if (st.status === 'processing' || st.status === 'queued') {
                             return;
                         }
 
@@ -180,18 +214,32 @@ window.tugasBuilder = function (initial = {}, options = {}) {
                             this.generating = false;
                             return;
                         }
+
+                        clearInterval(poll);
+                        this.genError = 'Status generate tidak valid. Silakan coba lagi.';
+                        this.generating = false;
                     } catch {
+                        if (!active) {
+                            return;
+                        }
                         consecutiveErrors++;
-                        if (consecutiveErrors >= 3 || attempts >= maxAttempts) {
+                        if (consecutiveErrors >= 3) {
                             clearInterval(poll);
                             this.genError = 'Terjadi kesalahan saat memantau proses generate. Silakan coba lagi.';
                             this.generating = false;
                         }
+                    } finally {
+                        clearTimeout(requestTimeout);
+                        requestPending = false;
                     }
                 }, 1500);
             } catch {
-                this.genError = 'Terjadi kesalahan saat menghubungi server. Silakan coba lagi.';
+                this.genError = startController.signal.aborted
+                    ? 'Permintaan generate terlalu lama. Silakan periksa hasilnya sebelum mencoba lagi.'
+                    : 'Terjadi kesalahan saat menghubungi server. Silakan coba lagi.';
                 this.generating = false;
+            } finally {
+                clearTimeout(startTimeout);
             }
         }
     };

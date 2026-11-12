@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\TimeoutExceededException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -59,5 +60,21 @@ class GenerateSoalTugasAI implements ShouldQueue
                 'message' => 'Gagal generate soal. Silakan coba lagi.',
             ], now()->addMinutes(15));
         }
+    }
+
+    public function failed(Throwable $e): void
+    {
+        Log::error('GenerateSoalTugasAI gagal di worker', [
+            'user_id' => $this->userId,
+            'pertemuan_id' => $this->pertemuanId,
+            'error' => $e->getMessage(),
+        ]);
+
+        Cache::put($this->cacheKey, [
+            'status' => 'failed',
+            'message' => $e instanceof TimeoutExceededException
+                ? 'Generate soal melewati batas waktu. Silakan coba lagi.'
+                : 'Gagal generate soal. Silakan coba lagi.',
+        ], now()->addMinutes(15));
     }
 }

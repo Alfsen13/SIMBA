@@ -1,12 +1,14 @@
 <?php
 
+use App\Jobs\GenerateSoalTugasAI;
 use App\Models\Kelas;
 use App\Models\Materi;
 use App\Models\MateriBabSummary;
 use App\Models\Pertemuan;
 use App\Models\User;
-use App\Jobs\GenerateSoalTugasAI;
 use App\Services\AIProviderService;
+use Illuminate\Queue\TimeoutExceededException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 
 function buatPertemuanMateriTugas(User $guru): Pertemuan
@@ -110,6 +112,32 @@ test('generate soal tugas dijadwalkan ke queue', function () {
         && $job->userId === $this->guru->id
         && $job->pertemuanId === $pertemuan->id
         && $job->tipe === 'essai');
+});
+
+test('job tugas yang timeout memperbarui status agar halaman berhenti loading', function () {
+    $pertemuan = buatPertemuanMateriTugas($this->guru);
+    $key = 'ai-soal:tugas:'.$this->guru->id.':timeout-test';
+    Cache::put($key, ['status' => 'processing'], now()->addMinutes(30));
+
+    $job = new GenerateSoalTugasAI($this->guru->id, $pertemuan->id, 'essai', 1, null, null, [], $key);
+    $job->failed(new TimeoutExceededException('Worker timeout'));
+
+    $this->actingAs($this->guru)
+        ->getJson(route('pengajar.tugas.generate-status', ['key' => $key]))
+        ->assertSuccessful()
+        ->assertJsonPath('status', 'failed')
+        ->assertJsonPath('message', 'Generate soal melewati batas waktu. Silakan coba lagi.');
+});
+
+test('kegagalan worker tugas tidak membocorkan detail exception', function () {
+    $key = 'ai-soal:tugas:'.$this->guru->id.':failure-test';
+    $job = new GenerateSoalTugasAI($this->guru->id, 1, 'essai', 1, null, null, [], $key);
+    $job->failed(new RuntimeException('internal failure'));
+
+    expect(Cache::get($key))->toBe([
+        'status' => 'failed',
+        'message' => 'Gagal generate soal. Silakan coba lagi.',
+    ]);
 });
 
 test('generate soal tugas divalidasi parameter', function () {
