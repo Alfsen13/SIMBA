@@ -28,6 +28,7 @@
 /bootstrap/cache/
 /vendor
 /tests/
+/phpunit.xml
 _ide_helper.php
 Homestead.json
 Homestead.yaml
