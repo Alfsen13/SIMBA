@@ -355,18 +355,6 @@ parameters:
 			path: app/Jobs/GenerateRemedialPertemuanAI.php
 
 		-
-			message: '#^Call to method getMessage\(\) on an unknown class App\\Jobs\\Throwable\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Jobs/ProcessDocument.php
-
-		-
-			message: '#^Caught class App\\Jobs\\Throwable not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Jobs/ProcessDocument.php
-
-		-
 			message: '#^Cannot call method isPast\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
