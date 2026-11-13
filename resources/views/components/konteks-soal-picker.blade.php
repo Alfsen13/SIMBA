@@ -27,6 +27,21 @@
             {{ __('komponen.kembalikan_ke_pertemuan') }}
         </button>
     </div>
+    <div class="mb-3">
+        <label for="rag_top_k" class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            {{ __('komponen.rag_top_k') }}
+        </label>
+        <select id="rag_top_k" x-model="ragTopK" aria-describedby="rag_top_k_help"
+            class="block w-full sm:w-48 rounded-lg border-slate-300 dark:border-slate-700 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+            <option value="">{{ __('komponen.rag_top_k_default', ['count' => (int) config('services.kuis_rag.top_k', 4)]) }}</option>
+            @for ($k = 1; $k <= 10; $k++)
+                <option value="{{ $k }}">{{ $k }}</option>
+            @endfor
+        </select>
+        <p id="rag_top_k_help" class="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            {{ __('komponen.rag_top_k_help') }}
+        </p>
+    </div>
     <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">
         {{ __('komponen.bantuan_konteks_materi') }}
     </p>

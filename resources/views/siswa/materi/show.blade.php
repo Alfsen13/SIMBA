@@ -16,6 +16,8 @@
     @endif
     <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('siswa.kelas.guru', ['guru' => $materi->guru?->name]) }}</p>
 
+    <x-ringkasan-materi :materi="$materi" />
+
     @if($materi->file_path)
         <div class="mt-6 flex items-center gap-3">
             <a
@@ -97,7 +99,7 @@
                         <span class="text-xs font-semibold {{ $isHighlighted ? 'text-yellow-700 dark:text-yellow-300' : 'text-slate-500 dark:text-slate-400' }}">
                             {{ __('siswa.shared.bagian') }} {{ $chunk->chunk_index + 1 }}
                         </span>
-                        <p class="mt-1 text-slate-700 dark:text-slate-300 whitespace-pre-line">{!! nl2br(e($chunk->content)) !!}</p>
+                        <p class="mt-1 overflow-x-auto whitespace-pre-wrap break-words text-slate-700 dark:text-slate-300"><x-math :value="$chunk->content" /></p>
                     </div>
                 @endforeach
             </div>

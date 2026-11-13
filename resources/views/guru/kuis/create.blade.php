@@ -173,6 +173,8 @@
                             placeholder="{{ __('guru_soal.ph_masukkan_pertanyaan') }}"
                             class="block w-full rounded-lg border-slate-300 dark:border-slate-700 text-sm focus:border-emerald-500 focus:ring-emerald-500"
                         >
+                        <x-pratinjau-rumus value="q.pertanyaan" />
+                        <x-rumus-bantu value="q.pertanyaan" />
                     </div>
 
                     <div class="mb-3">
@@ -192,7 +194,8 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                         <template x-for="(pil, j) in q.pilihan" :key="j">
-                            <div class="flex items-center gap-2">
+                            <div>
+                              <div class="flex items-center gap-2">
                                 <input
                                     type="radio"
                                     :name="'jawaban_' + i"
@@ -213,6 +216,9 @@
                                     x-cloak
                                     class="shrink-0 text-xs font-semibold text-emerald-700 dark:text-emerald-400"
                                 >{{ __('guru_soal.kunci') }}</span>
+                              </div>
+                              <x-pratinjau-rumus value="q.pilihan[j]" />
+                              <x-rumus-bantu value="q.pilihan[j]" />
                             </div>
                         </template>
                     </div>

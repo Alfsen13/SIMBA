@@ -17,6 +17,9 @@ return [
 
     // components/konteks-soal-picker.blade.php
     'konteks_materi' => 'Material Context (optional)',
+    'rag_top_k' => 'Maximum document excerpts per meeting (k)',
+    'rag_top_k_default' => 'System default (:count)',
+    'rag_top_k_help' => 'Fewer excerpts may be used due to relevance and context length limits. This value does not measure accuracy.',
     'kembalikan_ke_pertemuan' => 'Back to this meeting',
     'bantuan_konteks_materi' => 'Tick the meetings whose materials you want to use as a reference. Tick specific materials when only some of them are used; materials left unticked in other meetings are still used.',
     'konteks_tidak_ada_pertemuan' => 'There are no other meetings to choose from yet. The context uses the materials of this meeting.',

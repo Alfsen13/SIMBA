@@ -1,8 +1,10 @@
  
 
+import { convertAsciiMath, findLatexIssues } from './latex-check.js';
+
 let katexPromise = null;
 
-function loadKatex() {
+export function loadKatex() {
     if (!katexPromise) {
         katexPromise = Promise.all([
             import('katex'),
@@ -13,7 +15,7 @@ function loadKatex() {
     return katexPromise;
 }
 
-function escapeHtml(text) {
+export function escapeHtml(text) {
     return text
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -21,9 +23,7 @@ function escapeHtml(text) {
 }
 
  
-export function renderMathText(raw, katex) {
-    if (!raw) return '';
-
+export function protectMath(raw, katex) {
     const placeholders = [];
 
     const simpan = (latex, displayMode) => {
@@ -49,11 +49,63 @@ export function renderMathText(raw, katex) {
     text = text.replace(/\\\(([\s\S]+?)\\\)/g, (m, latex) => simpan(latex, false));
     text = text.replace(/(^|[^\\])\$([^$]+?)\$/g, (m, pre, latex) => pre + simpan(latex, false));
 
-    let html = escapeHtml(text);
+    return {
+        text,
+        restore: html => html.replace(/\u0000KX(\d+)\u0000/g, (m, i) => placeholders[Number(i)] || ''),
+    };
+}
+
+export function renderMathText(raw, katex) {
+    if (!raw) return '';
+
+    const math = protectMath(raw, katex);
+    let html = escapeHtml(math.text);
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\n/g, '<br>');
 
-    return html.replace(/\u0000KX(\d+)\u0000/g, (m, i) => placeholders[Number(i)] || '');
+    return math.restore(html);
+}
+
+export function mathPreviewState() {
+    return {
+        mathKatex: null,
+        initMathPreview() {
+            loadKatex().then(katex => {
+                this.mathKatex = katex;
+            }).catch(error => console.error('Gagal memuat penampil rumus:', error));
+        },
+        hasMath(text) {
+            return /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(^|[^\\])\$[^$\n]+?\$/.test(text || '');
+        },
+        mathPreview(text) {
+            return this.mathKatex ? renderMathText(text, this.mathKatex) : escapeHtml(text || '');
+        },
+        periksaRumus(text) {
+            return findLatexIssues(text || '');
+        },
+        rapikanRumus(text) {
+            return convertAsciiMath(text || '').text;
+        },
+        akanDirapikan(text) {
+            return this.rapikanRumus(text) !== (text || '');
+        },
+    };
+}
+
+export function hydrateMathElement(el, katex) {
+    if (!el || typeof el.getAttribute !== 'function') return false;
+
+    const raw = el.getAttribute('data-raw');
+    if (raw == null) return false;
+
+    // Simpan nilai yang sudah dirender supaya konten baru bisa dibedakan
+    // dari konten yang sudah pernah di-render (penting saat AI streaming).
+    if (el.dataset && el.dataset.mathRenderedRaw === raw) return false;
+
+    el.innerHTML = renderMathText(raw, katex);
+    if (el.dataset) el.dataset.mathRenderedRaw = raw;
+
+    return true;
 }
 
 export function renderMathElements(root = document) {
@@ -62,11 +114,36 @@ export function renderMathElements(root = document) {
 
     loadKatex()
         .then((katex) => {
-            elems.forEach((el) => {
-                const raw = el.getAttribute('data-raw');
-                if (raw != null) el.innerHTML = renderMathText(raw, katex);
-            });
+            elems.forEach((el) => hydrateMathElement(el, katex));
         })
-        .catch(() => {});
+        .catch(error => console.error('Gagal memuat penampil rumus:', error));
+}
+
+let mathObserver = null;
+let mathObserverTimer = null;
+
+export function startMathHydration(root = document.body) {
+    renderMathElements(root);
+
+    if (mathObserver || typeof MutationObserver === 'undefined') return;
+
+    mathObserver = new MutationObserver(() => {
+        // Render hasil kita sendiri juga memicu observer; lewat debounce, lalu
+        // satu putaran kosong menghentikan siklusnya.
+        if (mathObserverTimer) return;
+
+        mathObserverTimer = setTimeout(() => {
+            mathObserverTimer = null;
+            renderMathElements();
+        }, 150);
+    });
+
+    mathObserver.observe(root, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ['data-raw'],
+    });
 }
 

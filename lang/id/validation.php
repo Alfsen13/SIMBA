@@ -156,6 +156,8 @@ return [
     'url' => ':attribute harus berupa URL yang valid.',
     'ulid' => ':attribute harus berupa ULID yang valid.',
     'uuid' => ':attribute harus berupa UUID yang valid.',
+    'math_latex_unfinished' => 'Pembatas :delimiter pada rumus belum ditutup.',
+    'math_latex_unbalanced' => 'Kurung kurawal pada rumus tidak seimbang.',
 
     /*
     |--------------------------------------------------------------------------

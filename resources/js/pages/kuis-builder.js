@@ -1,11 +1,13 @@
 ﻿import { konteksSoalState } from './konteks-soal';
 import { sertakanAkurasi } from './soal-tugas';
+import { mathPreviewState } from './math-content';
 
 window.kuisBuilder = function (initial, options = {}) {
     const opts = options || {};
 
     return {
         ...konteksSoalState(opts, opts.pertemuanId ?? opts.selectedPertemuan ?? null),
+        ...mathPreviewState(),
         bloomLevels: Array.isArray(opts.bloomLevels) ? opts.bloomLevels : [],
         questions: Array.isArray(initial) ? initial.map(q => sertakanAkurasi({
             pertanyaan: q.pertanyaan || '',
@@ -26,6 +28,7 @@ window.kuisBuilder = function (initial, options = {}) {
         genTopik: '',
         init() {
             this.initKonteks();
+            this.initMathPreview();
 
 
 

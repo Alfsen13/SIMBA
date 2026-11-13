@@ -200,10 +200,14 @@
             isLoading: false,
             sidebarOpen: false,
             summaryOpen: false,
+            katex: null,
             suggestedQuestions: window.aiTutorConfig?.suggestedQuestions || [],
 
             init() {
                 this.$nextTick(() => this.scrollToBottom());
+                window.simbaMath.loadKatex().then(katex => {
+                    this.katex = katex;
+                }).catch(error => console.error('Gagal memuat penampil rumus:', error));
             },
 
             async sendMessage() {
@@ -293,7 +297,8 @@
 
             renderMarkdown(text) {
                 if (!text) return '';
-                let html = this.escapeHtml(text);
+                const math = this.katex ? window.simbaMath.protectMath(text, this.katex) : null;
+                let html = this.escapeHtml(math ? math.text : text);
 
                 html = html.replace(/\[\[([^\]]+)\]\]/g, (match, judul) => {
                     const key = this.normalizeJudul(judul);
@@ -305,11 +310,12 @@
                         : label;
                 });
 
-                return html
+                html = html
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     .replace(/\*(.*?)\*/g, '<em>$1</em>')
                     .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-xs">$1</code>')
                     .replace(/\n/g, '<br>');
+                return math ? math.restore(html) : html;
             },
 
             escapeHtml(text) {

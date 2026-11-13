@@ -17,6 +17,9 @@ return [
 
     // components/konteks-soal-picker.blade.php
     'konteks_materi' => 'Konteks Materi (opsional)',
+    'rag_top_k' => 'Maksimal potongan dokumen per pertemuan (k)',
+    'rag_top_k_default' => 'Bawaan sistem (:count)',
+    'rag_top_k_help' => 'Jumlah yang dipakai bisa lebih sedikit karena relevansi dan batas panjang konteks. Nilai ini bukan ukuran akurasi.',
     'kembalikan_ke_pertemuan' => 'Kembalikan ke pertemuan ini',
     'bantuan_konteks_materi' => 'Centang pertemuan yang materinya mau dipakai sebagai acuan. Centang materi tertentu bila hanya sebagian yang dipakai; materi yang tidak dicentang di pertemuan lain tetap ikut dipakai.',
     'konteks_tidak_ada_pertemuan' => 'Belum ada pertemuan lain yang bisa dipilih. Konteks memakai materi pertemuan ini.',

@@ -12,7 +12,6 @@ class RAGService
 
     protected float $minScore;
 
-     
     protected array $lastReferences = [];
 
     public function __construct()
@@ -32,7 +31,12 @@ class RAGService
         $k = $k ?? $this->topK;
         $minScore = $minScore ?? $this->minScore;
 
-        return $this->embedding->searchChunks($query, $k, $minScore, $kategori, $materiId, $pertemuanId);
+        // Isi chunk menyimpan token penanda sebagai alamat substitusi. Yang keluar
+        // dari mari sudah jadi label, supaya prompt tidak menirunya mentah-mentah.
+        return array_map(
+            static fn (array $chunk): array => [...$chunk, 'content' => RumusPenanda::manusiakan((string) ($chunk['content'] ?? ''))],
+            $this->embedding->searchChunks($query, $k, $minScore, $kategori, $materiId, $pertemuanId),
+        );
     }
 
     public function buildContext(string $query, ?string $kategori = null, ?int $materiId = null, ?int $pertemuanId = null): string

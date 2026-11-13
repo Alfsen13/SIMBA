@@ -55,70 +55,10 @@ parameters:
 			path: app/Http/Controllers/Web/Guru/AiSettingController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$content\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$document_chunk_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$embedding\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$page\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:formulaReviews\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Web/Guru/FormulaReviewController.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:siswa\(\)\.$#'
 			identifier: method.notFound
 			count: 2
 			path: app/Http/Controllers/Web/Guru/KehadiranController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$error_message\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Web/Guru/MateriController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Web/Guru/MateriController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$judul\.$#'
@@ -315,12 +255,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$dibuka\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Web/Siswa/MateriController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:chunks\(\)\.$#'
-			identifier: method.notFound
 			count: 1
 			path: app/Http/Controllers/Web/Siswa/MateriController.php
 

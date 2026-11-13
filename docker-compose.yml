@@ -283,6 +283,72 @@ services:
         reservations:
           memory: 256M
 
+  # Pemindaian rumus punya worker sendiri: guru menekan tombol dan job langsung
+  # dikerjakan, tidak menunggu antrean pertemuan/soal yang bisa menit-menit.
+  queue-rumus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        INSTALL_DEV: "false"
+    # Satu image dipakai bersama app + semua worker, supaya kode tidak pernah
+    # berbeda antar container (penyebab 500 "class not found"/versi lama).
+    image: simba-app:latest
+    container_name: simba-queue-rumus
+    healthcheck:
+      disable: true
+    entrypoint: ["php", "artisan", "queue:work", "--queue=rumus", "--tries=1", "--timeout=200", "--sleep=1", "--memory=256"]
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: "${APP_KEY}"
+      DB_CONNECTION: mysql
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_DATABASE: simba
+      DB_USERNAME: simba
+      DB_PASSWORD: "${DB_PASSWORD:-simba_secret}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_1: "${OLLAMA_MODEL_FALLBACK_1:-qwen2.5:7b}"
+      OLLAMA_MODEL_FALLBACK_2: "${OLLAMA_MODEL_FALLBACK_2:-qwen2.5-coder:1.5b-base}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+      GEMINI_SHORT_TIMEOUT: "8"
+      PYTHON_PATH: "python3.14"
+      PDF_EXTRACT_TIMEOUT: "600"
+      PDF_FORMULA_OCR_BUDGET: "180"
+      SYMBOLS_ENABLED: "true"
+      BLOOM_ENABLED: "true"
+      BLOOM_MIN_CONFIDENCE: "0.34"
+      KUIS_RAG_ENABLED: "true"
+      REMEDIAL_COOLDOWN_HARI: "7"
+      REMEDIAL_AMBANG_PERTEMUAN: "75"
+      PREDIKSI_AMBANG_AMAN: "20"
+      PREDIKSI_AMBANG_PANTAU: "40"
+    volumes:
+      - ./storage:/app/storage
+      - ./bootstrap/cache:/app/bootstrap/cache
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - simba-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
   queue-default:
     build:
       context: .

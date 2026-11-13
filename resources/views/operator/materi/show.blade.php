@@ -47,7 +47,7 @@
         @if($materi->deskripsi)
             <div class="mt-6 border-t border-slate-200 pt-4 dark:border-slate-700">
                 <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('operator.materi.description') }}</h2>
-                <p class="mt-2 whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">{{ $materi->deskripsi }}</p>
+                <p class="mt-2 text-sm text-slate-600 dark:text-slate-300"><x-math :value="$materi->deskripsi" /></p>
             </div>
         @endif
 

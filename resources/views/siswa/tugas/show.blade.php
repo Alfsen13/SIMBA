@@ -37,7 +37,7 @@
 
     <x-card padding="true" class="mt-4">
         <h2 class="font-semibold mb-2">{{ __('siswa.tugas.deskripsi') }}</h2>
-        <p class="whitespace-pre-wrap">{{ $tugas->deskripsi ?: __('siswa.tugas.tidak_ada_deskripsi') }}</p>
+        <p class="whitespace-pre-wrap"><x-math :value="$tugas->deskripsi ?: __('siswa.tugas.tidak_ada_deskripsi')" /></p>
     </x-card>
 
     @if($pengumpulan?->sudahDikumpulkan())

@@ -30,7 +30,7 @@
                 :value="old('judul')"
                 required
             />
-            <x-form-textarea
+            <x-rumus-teks
                 name="deskripsi"
                 :label="__('guru_kelas.materi.deskripsi')"
                 :value="old('deskripsi')"

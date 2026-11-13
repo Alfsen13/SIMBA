@@ -1,16 +1,6 @@
 
 
-let katexPromise = null;
-let katexCssLoaded = false;
-function loadKatex() {
-    if (!katexPromise) {
-        katexPromise = Promise.all([
-            import('katex'),
-            import('katex/dist/katex.min.css').then(() => { katexCssLoaded = true; }),
-        ]).then(([mod]) => mod.default);
-    }
-    return katexPromise;
-}
+import { escapeHtml, loadKatex, protectMath } from './math-content';
 
 window.aiTutor = function () {
     return {
@@ -24,7 +14,6 @@ window.aiTutor = function () {
         summaryOpen: true,
         katex: null,
         katexReady: null,
-        _mathPlaceholders: [],
         suggestedQuestions: [
             'Jelaskan inti dari materi ini',
             'Buatkan rangkuman singkat',
@@ -77,42 +66,6 @@ window.aiTutor = function () {
             }
         },
 
-        renderMath(text) {
-            if (!text || !this.katex) return text;
-            const placeholders = [];
-            let result = text;
-
-            result = result.replace(/\$\$([\s\S]+?)\$\$/g, (m, latex) => {
-                const ph = `\u0000KX${placeholders.length}\u0000`;
-                placeholders.push(this.katex.renderToString(latex.trim(), { throwOnError: false, displayMode: true }));
-                return ph;
-            });
-            result = result.replace(/\\\[([\s\S]+?)\\\]/g, (m, latex) => {
-                const ph = `\u0000KX${placeholders.length}\u0000`;
-                placeholders.push(this.katex.renderToString(latex.trim(), { throwOnError: false, displayMode: true }));
-                return ph;
-            });
-
-            result = result.replace(/\\\(([\s\S]+?)\\\)/g, (m, latex) => {
-                const ph = `\u0000KX${placeholders.length}\u0000`;
-                placeholders.push(this.katex.renderToString(latex.trim(), { throwOnError: false, displayMode: false }));
-                return ph;
-            });
-            result = result.replace(/(^|[^\\])\$([^$]+?)\$/g, (m, pre, latex) => {
-                const ph = `\u0000KX${placeholders.length}\u0000`;
-                placeholders.push(this.katex.renderToString(latex.trim(), { throwOnError: false, displayMode: false }));
-                return pre + ph;
-            });
-
-            this._mathPlaceholders = placeholders;
-            return result;
-        },
-
-        restoreMath(html) {
-            const placeholders = this._mathPlaceholders || [];
-            return html.replace(/\u0000KX(\d+)\u0000/g, (m, i) => placeholders[Number(i)] || '');
-        },
-
         normalizeJudul(judul) {
             return String(judul || '')
                 .toLowerCase()
@@ -141,27 +94,26 @@ window.aiTutor = function () {
 
             this.prepareKatex();
 
-            let html = this.renderMath(text);
-
-            html = html
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
+            const math = this.katex ? protectMath(text, this.katex) : { text, restore: (h) => h };
+            let html = escapeHtml(math.text);
 
             html = html.replace(/\[\[([^\]]+)\]\]/g, (match, judul) => {
                 const url = this.resolveMateriUrl(judul);
+                // `escapeHtml` tidak menyentuh tanda kutip; judul masuk ke dalam
+                // atribut `title`, jadi kutipnya harus dilindungi di sini.
+                const judulAman = String(judul).replace(/"/g, '&quot;');
                 const icon = '<svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>';
                 if (url) {
-                    return `<a href="${url}" target="_blank" class="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 rounded-md px-1.5 py-0.5 text-xs font-medium leading-none cursor-pointer transition-colors no-underline" title="Buka materi: ${judul}">${icon}${judul}</a>`;
+                    return `<a href="${url}" target="_blank" class="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 rounded-md px-1.5 py-0.5 text-xs font-medium leading-none cursor-pointer transition-colors no-underline" title="Buka materi: ${judulAman}">${icon}${judulAman}</a>`;
                 }
-                return `<span class="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md px-1.5 py-0.5 text-xs font-medium leading-none" title="${judul}">${icon}${judul}</span>`;
+                return `<span class="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md px-1.5 py-0.5 text-xs font-medium leading-none" title="${judulAman}">${icon}${judulAman}</span>`;
             });
 
             html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
             html = html.replace(/\n/g, '<br>');
 
-            html = this.restoreMath(html);
+            html = math.restore(html);
 
             return html;
         },

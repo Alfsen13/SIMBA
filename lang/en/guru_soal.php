@@ -41,6 +41,8 @@ return [
     'download' => 'Download',
 
     // Assignment / quiz forms
+    'pratinjau_rumus' => 'Formula preview',
+    'rumus_rapikan' => 'Tidy formulas',
     'judul_tugas' => 'Assignment Title',
     'deskripsi_tugas' => 'Assignment Description',
     'deskripsi' => 'Description',

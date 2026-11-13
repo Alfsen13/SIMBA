@@ -1,5 +1,6 @@
 ﻿import { konteksSoalState } from './konteks-soal';
 import { normalisasiSoalEsai, normalisasiSoalPG } from './soal-tugas';
+import { mathPreviewState } from './math-content';
 
 window.tugasBuilder = function (initial = {}, options = {}) {
     const opts = options || {};
@@ -9,6 +10,7 @@ window.tugasBuilder = function (initial = {}, options = {}) {
 
     return {
         ...konteksSoalState(opts, opts.pertemuanId ?? opts.selectedPertemuan ?? null),
+        ...mathPreviewState(),
         tipe,
 
 
@@ -31,6 +33,7 @@ window.tugasBuilder = function (initial = {}, options = {}) {
 
         init() {
             this.initKonteks();
+            this.initMathPreview();
 
 
 

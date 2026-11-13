@@ -8,13 +8,17 @@ import './pages/ai-tutor'
 import './pages/kuis-builder'
 import './pages/tugas-builder'
 import './pages/prediksi-show'
+import './pages/rumus-review'
 import { initAktivitasDurasi } from './pages/aktivitas-durasi'
-import { renderMathElements } from './pages/math-content'
+import { loadKatex, protectMath, renderMathText, startMathHydration } from './pages/math-content'
+import { convertAsciiMath, findLatexIssues } from './pages/latex-check'
 
+window.simbaMath = { loadKatex, protectMath, renderMathText }
+window.simbaLatex = { findLatexIssues, convertAsciiMath }
 window.Alpine = Alpine
 Alpine.start()
 
-renderMathElements()
+startMathHydration()
 initAktivitasDurasi()
 
 if (document.querySelector('.reveal')) {

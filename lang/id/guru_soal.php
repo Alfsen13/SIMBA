@@ -41,6 +41,8 @@ return [
     'download' => 'Download',
 
     // Form tugas / kuis
+    'pratinjau_rumus' => 'Pratinjau rumus',
+    'rumus_rapikan' => 'Rapikan rumus',
     'judul_tugas' => 'Judul Tugas',
     'deskripsi_tugas' => 'Deskripsi Tugas',
     'deskripsi' => 'Deskripsi',

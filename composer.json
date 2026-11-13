@@ -52,7 +52,7 @@
         ],
         "franken": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#22c55e,#f59e0b,#a855f7\" \"C:\\xampp\\frankenphp\\frankenphp.exe run --config Caddyfile\" \"php artisan queue:work --queue=ai-soal --tries=1 --timeout=600 --sleep=1\" \"php artisan queue:work --queue=pertemuan --tries=2 --timeout=300 --sleep=1\" \"php artisan queue:work --queue=default --tries=1 --timeout=600 --sleep=1\" --names='server,queue-soal,queue-pertemuan,queue-default'"
+            "npx concurrently -c \"#93c5fd,#22c55e,#f59e0b,#a855f7,#f472b6\" \"C:\\xampp\\frankenphp\\frankenphp.exe run --config Caddyfile\" \"php artisan queue:work --queue=ai-soal --tries=1 --timeout=600 --sleep=1\" \"php artisan queue:work --queue=pertemuan --tries=2 --timeout=300 --sleep=1\" \"php artisan queue:work --queue=default --tries=1 --timeout=600 --sleep=1\" \"php artisan queue:work --queue=rumus --tries=1 --timeout=200 --sleep=1\" --names='server,queue-soal,queue-pertemuan,queue-default,queue-rumus'"
         ],
         "serve": [
             "Composer\\Config::disableProcessTimeout",
@@ -60,7 +60,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93cpxldb#wqld93c5fd,#fdba74,#22c55e,#f59e0b,#a855f7\" \"php artisan serve\" \"npm run dev\" \"php artisan queue:work --queue=ai-soal --tries=1 --timeout=600 --sleep=1\" \"php artisan queue:work --queue=pertemuan --tries=2 --timeout=300 --sleep=1\" \"php artisan queue:work --queue=default --tries=1 --timeout=600 --sleep=1\" --names='server,vite,queue-soal,queue-pertemuan,queue-default'"
+            "npx concurrently -c \"#93c5fd,#fdba74,#22c55e,#f59e0b,#a855f7,#f472b6\" \"php artisan serve\" \"npm run dev\" \"php artisan queue:work --queue=ai-soal --tries=1 --timeout=600 --sleep=1\" \"php artisan queue:work --queue=pertemuan --tries=2 --timeout=300 --sleep=1\" \"php artisan queue:work --queue=default --tries=1 --timeout=600 --sleep=1\" \"php artisan queue:work --queue=rumus --tries=1 --timeout=200 --sleep=1\" --names='server,vite,queue-soal,queue-pertemuan,queue-default,queue-rumus'"
         ],
         "test": [
             "@php artisan optimize:clear --ansi @no_additional_args",

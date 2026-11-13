@@ -24,6 +24,15 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 BAWAAN_TESSERACT = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+
+try:
+    from math_regions import marked_text
+except Exception as e:  # tanpa penanda rumus ekstraksi tetap berjalan seperti sebelumnya
+    print(f"math_regions tidak tersedia: {e}", file=sys.stderr)
+    marked_text = None
+
 
 def resolve_tesseract() -> str:
     """Cari binary Tesseract: env TESSERACT_PATH, PATH, lalu lokasi umum.
@@ -127,8 +136,21 @@ def extract_pdfplumber(pdf_path: str) -> dict:
 
 
 # ─── METHOD 2: PyMuPDF (fitz) ──────────────────────────────────────────────
+def ada_font_math(page) -> bool:
+    """Gerbang murah: halaman tanpa font math tidak akan pernah dapat penanda."""
+    try:
+        return any("math" in (str(f[3]) + str(f[4])).lower() for f in page.get_fonts())
+    except Exception:
+        return True
+
+
 def extract_pymupdf(pdf_path: str) -> dict:
-    """Extract text using PyMuPDF (best Unicode handling)."""
+    """Extract text using PyMuPDF (best Unicode handling).
+
+    Halaman yang punya region rumus ditulis dengan penanda region pada tempat
+    glif math, supaya teks rusak tidak ikut ter-embed dan bisa diganti saat
+    guru menyetujui hasil OCR.
+    """
     try:
         import pymupdf
         doc = pymupdf.open(pdf_path)
@@ -136,10 +158,14 @@ def extract_pymupdf(pdf_path: str) -> dict:
         full_text = []
         for i in range(len(doc)):
             page = doc[i]
-            txt = page.get_text("text") or ""
+            regions = 0
+            if marked_text is not None and ada_font_math(page):
+                txt, regions = marked_text(page, i + 1)
+            else:
+                txt = page.get_text("text") or ""
             txt = clean_text(txt)
             if txt:
-                pages.append({"page": i + 1, "text": txt})
+                pages.append({"page": i + 1, "text": txt, "math_regions": regions})
                 full_text.append(txt)
         doc.close()
         combined = "\n\n".join(full_text)
@@ -148,6 +174,7 @@ def extract_pymupdf(pdf_path: str) -> dict:
             "ok": True,
             "length": len(combined),
             "pages": len(pages),
+            "math_regions": sum(p["math_regions"] for p in pages),
             "garbage_ratio": round(garbage_ratio(combined), 4),
             "text": combined,
             "pages_detail": pages,
@@ -379,6 +406,14 @@ def merge_results(results: list) -> dict:
         if r.get("ok"):
             page_maps[r["method"]] = _page_map(r)
 
+    # Halaman yang memuat region rumus: hanya teks PyMuPDF yang punya penanda,
+    # jadi metode lain tidak boleh menang di halaman itu meski hasilnya lebih
+    # bersih menurut garbage_ratio (teks pdfplumber sama-sama rusak).
+    region_maps = {}
+    for r in results:
+        if r.get("ok") and r["method"] == "pymupdf":
+            region_maps = {p["page"]: p.get("math_regions", 0) for p in r.get("pages_detail", []) or []}
+
     # Total pages: use the max across methods that produced pages.
     total_pages = 0
     for m in page_maps.values():
@@ -400,6 +435,10 @@ def merge_results(results: list) -> dict:
             m = page_maps.get(tm["method"], {})
             if pno in m:
                 candidates.append((tm["method"], m[pno]))
+
+        bertanda = bool(region_maps.get(pno)) and any(m == "pymupdf" for m, _ in candidates)
+        if bertanda:
+            candidates = [(m, t) for m, t in candidates if m == "pymupdf"]
 
         # OCR text for this page (if any).
         ocr_txt = ""
@@ -450,7 +489,7 @@ def merge_results(results: list) -> dict:
                 source_tags.append("latex_ocr")
 
         if parts:
-            merged_pages.append({"page": pno, "text": "\n\n".join(parts)})
+            merged_pages.append({"page": pno, "text": "\n\n".join(parts), "math_regions": int(region_maps.get(pno, 0))})
             page_sources[pno] = list(dict.fromkeys(source_tags))
 
     # Build full text from merged pages.

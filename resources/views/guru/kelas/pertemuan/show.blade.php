@@ -123,37 +123,6 @@
         @endforelse
     </x-card>
 
-    {{-- AI Tutor --}}
-    <x-card class="mt-6 border-l-4 border-purple-500">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">AI Tutor</h2>
-        </div>
-        @forelse($pertemuan->materi as $materi)
-            <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-purple-100 dark:bg-purple-500/20 rounded-lg flex items-center justify-center">
-                        <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ $materi->judul }}</span>
-                        @if($materi->bab)
-                            <span class="text-xs text-slate-500 dark:text-slate-400 ml-2">{{ __('guru_kelas.bab_label', ['bab' => $materi->bab]) }}</span>
-                        @endif
-                    </div>
-                </div>
-                <div>
-                    <x-btn-secondary href="{{ route('pelajar.ai-tutor.chat', [$pertemuan->kelas, $pertemuan]) }}" size="sm">
-                        {{ __('guru_kelas.pertemuan.buka_ai_tutor') }}
-                    </x-btn-secondary>
-                </div>
-            </div>
-        @empty
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('guru_kelas.pertemuan.belum_ada_ai_tutor') }}</p>
-        @endforelse
-    </x-card>
-
     {{-- Tugas --}}
     <x-card class="mt-6">
         <div class="flex items-center justify-between mb-4">

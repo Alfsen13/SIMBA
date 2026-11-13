@@ -166,6 +166,8 @@ return [
     'url' => 'The :attribute field must be a valid URL.',
     'ulid' => 'The :attribute field must be a valid ULID.',
     'uuid' => 'The :attribute field must be a valid UUID.',
+    'math_latex_unfinished' => 'The :delimiter formula delimiter is not closed.',
+    'math_latex_unbalanced' => 'The curly braces in the formula are not balanced.',
 
     /*
     |--------------------------------------------------------------------------

@@ -48,7 +48,7 @@
                     :value="old('tanggal_selesai')"
                 />
             </x-form-columns>
-            <x-form-textarea
+            <x-rumus-teks
                 name="deskripsi"
                 :label="__('guru_kelas.pertemuan.deskripsi')"
                 :value="old('deskripsi')"

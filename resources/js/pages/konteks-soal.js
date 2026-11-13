@@ -6,6 +6,7 @@ export function konteksSoalState(options = {}, defaultPertemuanId = null) {
         sumberKonteks: Array.isArray(opts.sumberKonteks) ? opts.sumberKonteks : [],
         konteksPertemuan: [],
         konteksMateri: [],
+        ragTopK: '',
 
         initKonteks() {
             if (this.konteksPertemuan.length === 0 && defaultPertemuanId) {
@@ -96,7 +97,8 @@ export function konteksSoalState(options = {}, defaultPertemuanId = null) {
         payloadKonteks() {
             return {
                 konteks_pertemuan_ids: this.konteksPertemuan,
-                konteks_materi_ids: this.konteksMateri
+                konteks_materi_ids: this.konteksMateri,
+                rag_top_k: this.ragTopK === '' ? null : Number(this.ragTopK)
             };
         }
     };

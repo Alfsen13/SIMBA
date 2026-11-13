@@ -13,7 +13,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MateriController extends Controller
 {
-     
     public function show(Materi $materi, Request $request, AktivitasService $aktivitas): View
     {
         $user = Auth::user();
@@ -21,7 +20,7 @@ class MateriController extends Controller
             abort(403);
         }
 
-        $materi->load('pertemuan', 'guru');
+        $materi->load('pertemuan', 'guru', 'babSummary');
         $this->pastikanPertemuanDibuka($materi);
 
         $aktivitasLog = $aktivitas->catat($user, 'buka_materi', $materi->pertemuan, $materi->kelas, ['materi_id' => $materi->id]);
@@ -35,7 +34,6 @@ class MateriController extends Controller
         return view('siswa.materi.show', compact('materi', 'highlight', 'chunks', 'aktivitasLog'));
     }
 
-     
     public function download(Materi $materi): StreamedResponse
     {
         $user = Auth::user();
@@ -52,7 +50,6 @@ class MateriController extends Controller
         return Storage::disk('public')->download($materi->file_path);
     }
 
-     
     public function preview(Materi $materi)
     {
         $user = Auth::user();
@@ -75,7 +72,6 @@ class MateriController extends Controller
         ]);
     }
 
-     
     private function pastikanPertemuanDibuka(Materi $materi): void
     {
         if ($materi->pertemuan !== null && ! $materi->pertemuan->dibuka) {
@@ -83,4 +79,3 @@ class MateriController extends Controller
         }
     }
 }
-

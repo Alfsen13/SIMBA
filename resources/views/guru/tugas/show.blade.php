@@ -33,7 +33,7 @@
             </div>
         </dl>
         @if($tugas->deskripsi)
-            <div class="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-sm text-slate-700 dark:text-slate-300">{{ $tugas->deskripsi }}</div>
+            <div class="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-sm text-slate-700 dark:text-slate-300"><x-math :value="$tugas->deskripsi" /></div>
         @endif
     </x-card>
 @endsection

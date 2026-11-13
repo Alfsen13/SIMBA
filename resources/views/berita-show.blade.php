@@ -29,7 +29,7 @@
             @endif
 
             <div class="prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed">
-                {!! nl2br(e($beritum->konten)) !!}
+                <x-math :value="$beritum->konten" />
             </div>
         </article>
 

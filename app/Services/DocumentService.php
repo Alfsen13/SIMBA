@@ -217,18 +217,34 @@ class DocumentService
     private function splitTextIntoChunks(string $text, int $chunkSize, int $overlap): array
     {
         $length = mb_strlen($text);
-        $step = max(1, $chunkSize - $overlap);
         $chunks = [];
+        $offset = 0;
 
-        for ($offset = 0; $offset < $length; $offset += $step) {
-            $chunk = trim(mb_substr($text, $offset, $chunkSize));
+        while ($offset < $length) {
+            if ($length - $offset <= $chunkSize) {
+                $terakhir = trim(mb_substr($text, $offset));
+                if ($terakhir !== '') {
+                    $chunks[] = $terakhir;
+                }
+
+                break;
+            }
+
+            // Potongan yang jatuh di tengah penanda rumus ditutup sebelum
+            // penandanya; chunk berikutnya tetap memuat penanda itu utuh
+            // karena overlap selalu lebih panjang dari satu token.
+            $batas = $offset + $chunkSize;
+            $geser = RumusPenanda::batasSebelumPenanda($text, $batas);
+            if ($geser !== null && $geser > $offset) {
+                $batas = $geser;
+            }
+
+            $chunk = trim(mb_substr($text, $offset, $batas - $offset));
             if ($chunk !== '') {
                 $chunks[] = $chunk;
             }
 
-            if ($offset + $chunkSize >= $length) {
-                break;
-            }
+            $offset = max($offset + 1, $batas - $overlap);
         }
 
         return $chunks;

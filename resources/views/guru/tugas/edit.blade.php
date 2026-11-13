@@ -29,7 +29,7 @@
                 :value="old('judul', $tugas->judul)"
                 required
             />
-            <x-form-textarea
+            <x-rumus-teks
                 name="deskripsi"
                 :label="__('guru_soal.deskripsi')"
                 :value="old('deskripsi', $tugas->deskripsi)"
@@ -194,6 +194,8 @@
                             required
                             class="block w-full rounded-lg border-slate-300 dark:border-slate-700 text-sm focus:border-emerald-500 focus:ring-emerald-500"
                         ></textarea>
+                        <x-pratinjau-rumus value="s.pertanyaan" />
+                        <x-rumus-bantu value="s.pertanyaan" />
                         <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mt-2">{{ __('guru_soal.label_referensi') }}</label>
                         <textarea
                             x-model="s.referensi"
@@ -201,6 +203,8 @@
                             placeholder="{{ __('guru_soal.ph_referensi') }}"
                             class="block w-full rounded-lg border-slate-200 dark:border-slate-800 text-sm focus:border-emerald-500 focus:ring-emerald-500"
                         ></textarea>
+                        <x-pratinjau-rumus value="s.referensi" />
+                        <x-rumus-bantu value="s.referensi" />
                         <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mt-2">{{ __('guru_soal.label_bloom') }}</label>
                         <select
                             x-model="s.bloom"
@@ -242,9 +246,12 @@
                             required
                             class="block w-full rounded-lg border-slate-300 dark:border-slate-700 text-sm focus:border-emerald-500 focus:ring-emerald-500"
                         ></textarea>
+                        <x-pratinjau-rumus value="q.pertanyaan" />
+                        <x-rumus-bantu value="q.pertanyaan" />
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                             <template x-for="(pil, j) in q.pilihan" :key="j">
-                                <div class="flex items-center gap-2">
+                                <div>
+                                  <div class="flex items-center gap-2">
                                     <input
                                         type="radio"
                                         :name="'jawaban_' + i"
@@ -264,6 +271,9 @@
                                         x-cloak
                                         class="shrink-0 text-xs font-semibold text-emerald-700 dark:text-emerald-400"
                                     >{{ __('guru_soal.kunci') }}</span>
+                                  </div>
+                                  <x-pratinjau-rumus value="q.pilihan[j]" />
+                                  <x-rumus-bantu value="q.pilihan[j]" />
                                 </div>
                             </template>
                         </div>

@@ -60,6 +60,9 @@ return [
     'pdf' => [
         'python_path' => env('PYTHON_PATH', 'py -X utf8'),
         'timeout' => env('PDF_EXTRACT_TIMEOUT', 600),
+        'formula_ocr_enabled' => env('PDF_FORMULA_OCR_ENABLED', true),
+        'formula_ocr_model' => env('PDF_FORMULA_OCR_MODEL', 'qwen3.5:4b'),
+        'formula_ocr_budget' => (int) env('PDF_FORMULA_OCR_BUDGET', 180),
     ],
 
     'ml_service' => [

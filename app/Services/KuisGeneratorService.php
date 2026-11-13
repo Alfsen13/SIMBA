@@ -325,7 +325,7 @@ PROMPT;
         $bagianRag = [];
         foreach ($pertemuans as $sumberPertemuan) {
             $sumberPertemuan->loadMissing(['materi.babSummary', 'materi.document.chunks']);
-            $kutipan = $this->buildRagContext($sumberPertemuan, $topik, $queryRag, $kuotaPerPertemuan);
+            $kutipan = $this->buildRagContext($sumberPertemuan, $topik, $queryRag, $kuotaPerPertemuan, $sumber['rag_top_k'] ?? null);
 
             if ($kutipan !== '') {
                 $bagianRag[] = $kutipan;
@@ -351,7 +351,7 @@ PROMPT;
             } elseif (! $adaRag) {
                 $chunks = $materiSumber->document?->chunks?->whereNotNull('content')->take(6);
                 if ($chunks && $chunks->isNotEmpty()) {
-                    $segmen .= "\nIsi:\n".$chunks->pluck('content')->implode("\n");
+                    $segmen .= "\nIsi:\n".$chunks->pluck('konten_terbaca')->implode("\n");
                 }
             }
 
@@ -447,7 +447,7 @@ PROMPT;
             ->implode(' '), 0, 600);
     }
 
-    protected function buildRagContext(Pertemuan $pertemuan, ?string $topik, ?string $queryOverride = null, ?int $maxChars = null): string
+    protected function buildRagContext(Pertemuan $pertemuan, ?string $topik, ?string $queryOverride = null, ?int $maxChars = null, ?int $topK = null): string
     {
         if (! config('services.kuis_rag.enabled', true)) {
             return '';
@@ -471,7 +471,7 @@ PROMPT;
         }
 
         $kategori = $pertemuan->kelas?->kategori;
-        $topK = (int) config('services.kuis_rag.top_k', 6);
+        $topK = $topK ?? (int) config('services.kuis_rag.top_k', 6);
         $minScore = (float) config('services.kuis_rag.min_score', 0.35);
 
         try {

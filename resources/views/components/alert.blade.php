@@ -41,6 +41,27 @@
     </div>
 @endif
 
+@if(session('info'))
+    <div
+        x-data="{ show: true }"
+        x-show="show"
+        x-init="setTimeout(() => show = false, 5000)"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-100 translate-x-0"
+        x-transition:leave-end="opacity-0 translate-x-4"
+        class="flex items-start gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2.5 mb-4 text-sm"
+        role="status"
+    >
+        <svg class="w-5 h-5 text-blue-700 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span class="flex-1 text-blue-800 dark:text-blue-300">{{ session('info') }}</span>
+        <button @click="show = false" class="text-blue-700 hover:text-blue-700 transition-colors shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+@endif
+
 {{-- Flash `warning` dipakai untuk hasil yang BERHASIL tetapi perlu dibaca guru,
      mis. prediksi ML jatuh ke perhitungan manual karena model belum dilatih.
      Sengaja TIDAK auto-hide seperti success/error: kalau guru mengabaikannya,

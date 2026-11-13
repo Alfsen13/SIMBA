@@ -65,7 +65,13 @@ class MateriController extends Controller
     public function show(Materi $materi): View
     {
         $this->authorize('view', $materi);
-        $materi->load(['kelas', 'pertemuan', 'guru', 'document']);
+        $materi->load([
+            'kelas', 'pertemuan', 'guru', 'document', 'babSummary',
+            'document.formulaReviews' => fn ($query) => $query->orderBy('page')->orderBy('id'),
+            'document.chunks' => fn ($query) => $query
+                ->select('id', 'document_id', 'chunk_index', 'content', 'page_start', 'page_end')
+                ->orderBy('chunk_index'),
+        ]);
 
         return view('guru.materi.show', compact('materi'));
     }
