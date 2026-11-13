@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Guru;
 
 use App\Http\Requests\Guru\Concerns\ValidatesKelasDanPertemuan;
+use App\Http\Requests\Guru\Concerns\ValidatesKonteksSoal;
 use App\Http\Requests\Guru\Concerns\ValidatesMateriUtama;
 use App\Rules\MathLatexValid;
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,6 +14,7 @@ use Illuminate\Validation\Rule;
 class TugasRequest extends FormRequest
 {
     use ValidatesKelasDanPertemuan;
+    use ValidatesKonteksSoal;
     use ValidatesMateriUtama;
 
     public function authorize(): bool
@@ -31,6 +33,6 @@ class TugasRequest extends FormRequest
             'soal' => ['nullable', 'json', Rule::requiredIf($this->input('tipe') === 'essai')],
             'deadline' => 'nullable|date',
             'batas_jam' => 'nullable|integer|min:1|max:24',
-        ] + $this->materiUtamaRules();
+        ] + $this->materiUtamaRules() + $this->konteksSoalRules();
     }
 }

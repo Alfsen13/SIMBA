@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Document;
+use App\Models\DocumentChunk;
 use App\Models\Kelas;
 use App\Models\Materi;
 use App\Models\Pertemuan;
@@ -18,6 +20,19 @@ class KuisGeneratorService
     protected RAGService $rag;
 
     protected BloomTaxonomyService $bloom;
+
+    private const SAMPUL_OTOMATIS = "Kutipan dari dokumen pembelajaran (diambil otomatis berdasarkan topik):\n";
+
+    private const SAMPUL_TERPILIH = "Kutipan dari dokumen pembelajaran (potongan yang dipilih pengajar):\n";
+
+    /** Anggaran karakter per potongan yang dipilih manual, dan plafon totalnya. */
+    public const KHAR_PER_CHUNK = 1100;
+
+    public const KHAR_MANUAL = 20000;
+
+    protected int $chunkDiminta = 0;
+
+    protected int $chunkHilang = 0;
 
     public function __construct()
     {
@@ -294,7 +309,16 @@ PROMPT;
             ->orderBy('urutan')
             ->get(['id', 'kelas_id', 'nama_pertemuan', 'urutan']);
 
-        return $pertemuans->map(function (Pertemuan $pertemuan) use ($kelas) {
+        // Guru perlu tahu materi mana yang benar-benar punya isi untuk dicentang:
+        // tanpa dokumen terindeks, pemilih potongan tidak akan menampilkan apa pun.
+        $berchunk = Materi::query()
+            ->whereIn('id', $pertemuans->flatMap(fn (Pertemuan $p) => $p->materi->pluck('id'))->unique()->all())
+            ->whereHas('document', fn ($q) => $q->where('status', 'completed')->has('chunks'))
+            ->pluck('id')
+            ->mapWithKeys(fn ($id) => [(int) $id => true])
+            ->all();
+
+        return $pertemuans->map(function (Pertemuan $pertemuan) use ($kelas, $berchunk) {
             return [
                 'id' => $pertemuan->id,
                 'kelas_id' => $pertemuan->kelas_id,
@@ -304,6 +328,7 @@ PROMPT;
                 'materi' => $pertemuan->materi->map(fn (Materi $m) => [
                     'id' => $m->id,
                     'judul' => $m->judul,
+                    'punya_chunk' => isset($berchunk[(int) $m->id]),
                 ])->values()->all(),
             ];
         })->values()->all();
@@ -322,13 +347,27 @@ PROMPT;
         $maxCharsRag = (int) config('services.kuis_rag.max_chars', 8000);
         $kuotaPerPertemuan = max(1500, intdiv($maxCharsRag, max(1, $pertemuans->count())));
 
-        $bagianRag = [];
-        foreach ($pertemuans as $sumberPertemuan) {
-            $sumberPertemuan->loadMissing(['materi.babSummary', 'materi.document.chunks']);
-            $kutipan = $this->buildRagContext($sumberPertemuan, $topik, $queryRag, $kuotaPerPertemuan, $sumber['rag_top_k'] ?? null);
+        // Potongan yang dipilih guru dipakai apa adanya, tanpa similaritas, supaya
+        // generate ulang menyusun konteks yang sama persis.
+        $terpilih = $this->chunkTerpilih($sumber, $pertemuans);
+        $kutipanTerpilih = $this->formatKutipan(
+            $terpilih,
+            min(self::KHAR_MANUAL, max($maxCharsRag, count($terpilih) * self::KHAR_PER_CHUNK)),
+            self::SAMPUL_TERPILIH
+        );
 
-            if ($kutipan !== '') {
-                $bagianRag[] = $kutipan;
+        $bagianRag = [];
+
+        if ($kutipanTerpilih !== '') {
+            $bagianRag[] = $kutipanTerpilih;
+        } else {
+            foreach ($pertemuans as $sumberPertemuan) {
+                $sumberPertemuan->loadMissing(['materi.babSummary', 'materi.document.chunks']);
+                $kutipan = $this->buildRagContext($sumberPertemuan, $topik, $queryRag, $kuotaPerPertemuan, $sumber['rag_top_k'] ?? null);
+
+                if ($kutipan !== '') {
+                    $bagianRag[] = $kutipan;
+                }
             }
         }
 
@@ -492,8 +531,21 @@ PROMPT;
             return '';
         }
 
-        $maxChars = $maxChars ?? (int) config('services.kuis_rag.max_chars', 8000);
-        $isi = "Kutipan dari dokumen pembelajaran (diambil otomatis berdasarkan topik):\n";
+        return $this->formatKutipan(
+            $chunks,
+            $maxChars ?? (int) config('services.kuis_rag.max_chars', 8000),
+            self::SAMPUL_OTOMATIS
+        );
+    }
+
+    /**
+     * Susun kutipan bernomor sampai kuota karakter habis.
+     *
+     * @param  list<array<string, mixed>>  $chunks
+     */
+    protected function formatKutipan(array $chunks, int $maxChars, string $sampul): string
+    {
+        $isi = $sampul;
         $terpakai = 0;
 
         foreach ($chunks as $i => $chunk) {
@@ -531,6 +583,62 @@ PROMPT;
         }
 
         return $terpakai > 0 ? $isi : '';
+    }
+
+    /**
+     * Potongan yang dipilih guru, dibatasi ke pertemuan yang sedang dipakai supaya
+     * id dari kelas lain tidak ikut merembes meski lolos validasi request.
+     *
+     * @param  array<string, mixed>  $sumber
+     * @param  Collection<int, Pertemuan>  $pertemuans
+     * @return list<array<string, mixed>>
+     */
+    protected function chunkTerpilih(array $sumber, Collection $pertemuans): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($sumber['chunk_ids'] ?? [])))));
+        $this->chunkDiminta = count($ids);
+        $this->chunkHilang = 0;
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $baris = DocumentChunk::query()
+            ->whereIn('document_chunks.id', $ids)
+            ->whereHas('document.materi', fn ($q) => $q->whereIn('pertemuan_id', $pertemuans->pluck('id')->all()))
+            ->with(['document:id,original_name,materi_id', 'document.materi:id,judul'])
+            ->orderBy('document_chunks.document_id')
+            ->orderBy('document_chunks.chunk_index')
+            ->get();
+
+        $this->chunkHilang = max(0, count($ids) - $baris->count());
+
+        return $baris->map(function (DocumentChunk $c): array {
+            $dokumen = $c->document instanceof Document ? $c->document : null;
+            $materi = $dokumen?->materi instanceof Materi ? $dokumen->materi : null;
+
+            return [
+                'content' => RumusPenanda::manusiakan((string) $c->content),
+                'materi_judul' => $materi?->judul,
+                'source' => $dokumen?->original_name,
+                'page_start' => $c->page_start,
+                'page_end' => $c->page_end,
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Generate tetap memakai potongan yang masih ada; guru perlu tahu kalau ada
+     * yang hilang karena dokumennya ditanam ulang setelah soal ini dibuat.
+     */
+    public function peringatanKonteks(): ?string
+    {
+        if ($this->chunkDiminta === 0 || $this->chunkHilang === 0) {
+            return null;
+        }
+
+        return $this->chunkHilang.' dari '.$this->chunkDiminta.' potongan terpilih sudah tidak tersedia '
+            .'(dokumennya ditanam ulang); soal disusun dari potongan yang masih ada.';
     }
 
     protected function symbolQuery(Collection $materi, ?string $topik, string $konteksRag = ''): string

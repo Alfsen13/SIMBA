@@ -23,7 +23,6 @@ use Illuminate\View\View;
 
 class KuisController extends Controller
 {
-     
     public function index(): View
     {
         $kuisList = Kuis::whereHas('kelas', fn ($q) => $q->where('guru_id', Auth::id()))
@@ -35,7 +34,6 @@ class KuisController extends Controller
         return view('guru.kuis.index', compact('kuisList'));
     }
 
-     
     public function create(): View
     {
         $pertemuan = Pertemuan::with('kelas')->findOrFail(request('pertemuan_id'));
@@ -47,10 +45,9 @@ class KuisController extends Controller
         return view('guru.kuis.create', compact('pertemuan', 'bloomLevels', 'sumberKonteks'));
     }
 
-     
     public function store(KuisRequest $request): RedirectResponse
     {
-        $validated = $this->soalDenganBloom($request->validated());
+        $validated = $request->terapkanKonteksSoal($this->soalDenganBloom($request->validated()));
 
         $kelas = Kelas::findOrFail($validated['kelas_id']);
         $this->authorize('create', [Kuis::class, $kelas]);
@@ -63,7 +60,6 @@ class KuisController extends Controller
         return redirect()->route('pengajar.pertemuan.show', $kuis->pertemuan_id)->with('success', 'Kuis berhasil dibuat.');
     }
 
-     
     private function soalDenganBloom(array $validated): array
     {
         $raw = $validated['soal'] ?? null;
@@ -90,7 +86,6 @@ class KuisController extends Controller
         return $validated;
     }
 
-     
     public function edit(Kuis $kuis): View
     {
         $this->authorize('update', $kuis);
@@ -100,12 +95,11 @@ class KuisController extends Controller
             ->groupBy('kelas_id');
 
         $bloomLevels = app(BloomTaxonomyService::class)->levels();
-        $sumberKonteks = app(KuisGeneratorService::class)->sumberKonteks(Auth::id());
+        $sumberKonteks = app(KuisGeneratorService::class)->sumberKonteks((int) Auth::id(), $kuis->kelas_id);
 
         return view('guru.kuis.edit', compact('kuis', 'kelasList', 'pertemuanList', 'bloomLevels', 'sumberKonteks'));
     }
 
-      
     public function generate(GenerateSoalKuisRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -142,7 +136,11 @@ class KuisController extends Controller
 
         $status = Cache::get($key);
         if (($status['status'] ?? null) === 'done') {
-            return response()->json(['success' => true, 'soal' => $status['soal']]);
+            return response()->json([
+                'success' => true,
+                'soal' => $status['soal'],
+                'peringatan' => $status['peringatan'] ?? null,
+            ]);
         }
         if (($status['status'] ?? null) === 'failed') {
             return response()->json(['success' => false, 'message' => $status['message']], 422);
@@ -179,11 +177,10 @@ class KuisController extends Controller
         return response()->json($data);
     }
 
-     
     public function update(UpdateKuisRequest $request, Kuis $kuis): RedirectResponse
     {
         $this->authorize('update', $kuis);
-        $validated = $this->soalDenganBloom($request->validated());
+        $validated = $request->terapkanKonteksSoal($this->soalDenganBloom($request->validated()));
         $kuis->update($validated);
 
         $kuis->materiPendukung()->sync($request->materiPendukungIds($validated));
@@ -191,7 +188,6 @@ class KuisController extends Controller
         return redirect()->route('pengajar.kuis.index')->with('success', 'Kuis berhasil diupdate.');
     }
 
-     
     public function destroy(Kuis $kuis): RedirectResponse
     {
         $this->authorize('delete', $kuis);

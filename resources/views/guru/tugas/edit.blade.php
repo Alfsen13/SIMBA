@@ -16,7 +16,7 @@
         class="w-full"
         x-data="tugasBuilder(
             { tipe: '{{ old('tipe', $tugas->tipe) }}', soal: {{ json_encode($tugas->soal ?? []) }} },
-            { selectedPertemuan: {{ $tugas->pertemuan_id ?? 'null' }}, materiUtama: {{ $tugas->materi_id ?? 'null' }}, materiPendukung: {{ Js::from($tugas->materiPendukung->pluck('id')) }}, generateUrl: '{{ route('pengajar.tugas.generate') }}', bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} }
+            { selectedPertemuan: {{ $tugas->pertemuan_id ?? 'null' }}, materiUtama: {{ $tugas->materi_id ?? 'null' }}, materiPendukung: {{ Js::from($tugas->materiPendukung->pluck('id')) }}, generateUrl: '{{ route('pengajar.tugas.generate') }}', chunkUrl: '{{ route('pengajar.konteks-chunk') }}', tersimpan: {{ Js::from($tugas->konteks_soal) }}, bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} }
         )"
     >
         @csrf

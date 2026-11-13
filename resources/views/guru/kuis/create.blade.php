@@ -17,7 +17,7 @@
         action="{{ route('pengajar.kuis.store') }}"
         method="POST"
         class="w-full"
-        x-data="kuisBuilder([], { pertemuanId: {{ $pertemuan->id }}, generateUrl: '{{ route('pengajar.kuis.generate') }}', bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} })"
+        x-data="kuisBuilder([], { pertemuanId: {{ $pertemuan->id }}, generateUrl: '{{ route('pengajar.kuis.generate') }}', chunkUrl: '{{ route('pengajar.konteks-chunk') }}', bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} })"
     >
         @csrf
         <input type="hidden" name="kelas_id" value="{{ $pertemuan->kelas_id }}">

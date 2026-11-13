@@ -50,6 +50,7 @@ class GenerateSoalKuisAI implements ShouldQueue
             Cache::put($this->cacheKey, [
                 'status' => 'done',
                 'soal' => $soal,
+                'peringatan' => $generator->peringatanKonteks(),
             ], now()->addMinutes(15));
         } catch (Throwable $e) {
             Log::error('GenerateSoalKuisAI gagal', [

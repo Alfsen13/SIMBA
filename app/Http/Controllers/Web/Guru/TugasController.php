@@ -28,7 +28,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
- 
 class TugasController extends Controller
 {
     public function __construct(
@@ -56,7 +55,7 @@ class TugasController extends Controller
     public function store(TugasRequest $request)
     {
         // Validasi input tugas
-        $validated = $request->validated();
+        $validated = $request->terapkanKonteksSoal($request->validated());
 
         $kelas = Kelas::findOrFail($validated['kelas_id']);
         $this->authorize('create', [Tugas::class, $kelas]);
@@ -97,7 +96,7 @@ class TugasController extends Controller
     {
         $this->authorize('update', $tugas);
 
-        $validated = $request->validated();
+        $validated = $request->terapkanKonteksSoal($request->validated());
 
         $this->tugas->perbarui($tugas, $validated, $request->materiPendukungIds($validated));
 
@@ -154,7 +153,11 @@ class TugasController extends Controller
 
         $status = Cache::get($key);
         if (($status['status'] ?? null) === 'done') {
-            return response()->json(['success' => true, 'soal' => $status['soal']]);
+            return response()->json([
+                'success' => true,
+                'soal' => $status['soal'],
+                'peringatan' => $status['peringatan'] ?? null,
+            ]);
         }
         if (($status['status'] ?? null) === 'failed') {
             return response()->json(['success' => false, 'message' => $status['message']], 422);
@@ -196,9 +199,6 @@ class TugasController extends Controller
         $this->authorize('penilaian', $tugas);
         $tugas->load(['pengumpulan.siswa', 'kelas.siswa']);
 
-
-
-
         return view('guru.tugas.penilaian', [
             'tugas' => $tugas,
             'presenter' => $this->presenter,
@@ -227,7 +227,6 @@ class TugasController extends Controller
         return back()->with($kunci, $pesan);
     }
 
-     
     private function dataForm(?Pertemuan $pertemuan = null, ?Tugas $tugas = null, array $tambahan = []): array
     {
         $guruId = (int) Auth::id();
@@ -236,7 +235,7 @@ class TugasController extends Controller
             'bloomLevels' => app(BloomTaxonomyService::class)->levels(),
             'sumberKonteks' => app(KuisGeneratorService::class)->sumberKonteks(
                 $guruId,
-                $pertemuan?->kelas_id
+                $pertemuan?->kelas_id ?? $tugas?->kelas_id
             ),
         ];
 

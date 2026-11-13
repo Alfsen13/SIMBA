@@ -19,7 +19,7 @@
         action="{{ route('pengajar.tugas.store') }}"
         method="POST"
         class="w-full"
-        x-data="tugasBuilder({}, { pertemuanId: {{ $pertemuan->id }}, generateUrl: '{{ route('pengajar.tugas.generate') }}', bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} })"
+        x-data="tugasBuilder({}, { pertemuanId: {{ $pertemuan->id }}, generateUrl: '{{ route('pengajar.tugas.generate') }}', chunkUrl: '{{ route('pengajar.konteks-chunk') }}', bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} })"
     >
         @csrf
         <input type="hidden" name="kelas_id" value="{{ $pertemuan->kelas_id }}">

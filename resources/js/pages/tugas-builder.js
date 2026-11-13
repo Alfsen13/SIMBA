@@ -206,7 +206,7 @@ window.tugasBuilder = function (initial = {}, options = {}) {
                                 hasil.map(normalisasiSoalPG).forEach((q) => this.questions.push(q));
                             }
 
-                            this.genMessage = 'Berhasil menambahkan ' + hasil.length + ' soal dari ' + this.ringkasanKonteks() + '. Silakan periksa dan rapikan sebelum menyimpan.';
+                            this.genMessage = 'Berhasil menambahkan ' + hasil.length + ' soal dari ' + this.ringkasanKonteks() + '. Silakan periksa dan rapikan sebelum menyimpan.' + (st.peringatan ? ' ' + st.peringatan : '');
                             this.generating = false;
                             return;
                         }

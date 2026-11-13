@@ -14,7 +14,7 @@
         action="{{ route('pengajar.kuis.update', $kuis) }}"
         method="POST"
         class="w-full"
-        x-data="kuisBuilder({{ json_encode($kuis->soal) }}, { selectedPertemuan: {{ $kuis->pertemuan_id ?? 'null' }}, materiUtama: {{ $kuis->materi_id ?? 'null' }}, materiPendukung: {{ Js::from($kuis->materiPendukung->pluck('id')) }}, generateUrl: '{{ route('pengajar.kuis.generate') }}', bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} })"
+        x-data="kuisBuilder({{ json_encode($kuis->soal) }}, { selectedPertemuan: {{ $kuis->pertemuan_id ?? 'null' }}, materiUtama: {{ $kuis->materi_id ?? 'null' }}, materiPendukung: {{ Js::from($kuis->materiPendukung->pluck('id')) }}, generateUrl: '{{ route('pengajar.kuis.generate') }}', chunkUrl: '{{ route('pengajar.konteks-chunk') }}', tersimpan: {{ Js::from($kuis->konteks_soal) }}, bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} })"
     >
         @csrf
         @method('PUT')

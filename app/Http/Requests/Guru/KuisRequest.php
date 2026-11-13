@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Guru;
 
 use App\Http\Requests\Guru\Concerns\ValidatesKelasDanPertemuan;
+use App\Http\Requests\Guru\Concerns\ValidatesKonteksSoal;
 use App\Http\Requests\Guru\Concerns\ValidatesMateriUtama;
 use App\Rules\MathLatexSoalValid;
 use Illuminate\Foundation\Http\FormRequest;
@@ -12,6 +13,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class KuisRequest extends FormRequest
 {
     use ValidatesKelasDanPertemuan;
+    use ValidatesKonteksSoal;
     use ValidatesMateriUtama;
 
     public function authorize(): bool
@@ -29,6 +31,6 @@ class KuisRequest extends FormRequest
             'durasi_menit' => 'required|integer|min:1',
             'tanggal_mulai' => 'nullable|date',
             'tanggal_selesai' => 'nullable|date|after:tanggal_mulai',
-        ] + $this->materiUtamaRules();
+        ] + $this->materiUtamaRules() + $this->konteksSoalRules();
     }
 }

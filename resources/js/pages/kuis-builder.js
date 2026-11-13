@@ -119,7 +119,7 @@ window.kuisBuilder = function (initial, options = {}) {
                             bloom: s.bloom || null
                         }, s));
                     });
-                    this.genMessage = 'Berhasil menambahkan ' + (data.soal || []).length + ' soal. Silakan periksa dan rapikan sebelum menyimpan.';
+                    this.genMessage = 'Berhasil menambahkan ' + (data.soal || []).length + ' soal. Silakan periksa dan rapikan sebelum menyimpan.' + (data.peringatan ? ' ' + data.peringatan : '');
                     this.generating = false;
                     return;
                 }
@@ -175,7 +175,7 @@ window.kuisBuilder = function (initial, options = {}) {
                                 }, s));
                             });
 
-                            this.genMessage = 'Berhasil menambahkan ' + (st.soal || []).length + ' soal dari ' + this.ringkasanKonteks() + '. Silakan periksa dan rapikan sebelum menyimpan.';
+                            this.genMessage = 'Berhasil menambahkan ' + (st.soal || []).length + ' soal dari ' + this.ringkasanKonteks() + '. Silakan periksa dan rapikan sebelum menyimpan.' + (st.peringatan ? ' ' + st.peringatan : '');
                             this.generating = false;
                             return;
                         }
