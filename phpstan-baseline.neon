@@ -397,19 +397,7 @@ parameters:
 			path: app/Services/EmbeddingService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$deskripsi\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/KuisGeneratorService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$guru_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/KuisGeneratorService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$judul\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/KuisGeneratorService.php
@@ -417,7 +405,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kategori\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Services/KuisGeneratorService.php
 
 		-

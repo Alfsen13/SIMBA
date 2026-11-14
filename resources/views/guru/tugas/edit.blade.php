@@ -16,7 +16,7 @@
         class="w-full"
         x-data="tugasBuilder(
             { tipe: '{{ old('tipe', $tugas->tipe) }}', soal: {{ json_encode($tugas->soal ?? []) }} },
-            { selectedPertemuan: {{ $tugas->pertemuan_id ?? 'null' }}, materiUtama: {{ $tugas->materi_id ?? 'null' }}, materiPendukung: {{ Js::from($tugas->materiPendukung->pluck('id')) }}, generateUrl: '{{ route('pengajar.tugas.generate') }}', chunkUrl: '{{ route('pengajar.konteks-chunk') }}', tersimpan: {{ Js::from($tugas->konteks_soal) }}, bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} }
+            { selectedPertemuan: {{ $tugas->pertemuan_id ?? 'null' }}, materiUtama: {{ $tugas->materi_id ?? 'null' }}, materiPendukung: {{ Js::from($tugas->materiPendukung->pluck('id')) }}, generateUrl: '{{ route('pengajar.tugas.generate') }}', tersimpan: {{ Js::from($tugas->konteks_soal) }}, bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} }
         )"
     >
         @csrf
@@ -81,6 +81,9 @@
                 </select>
                 <p x-show="tipe === 'essai'" x-cloak class="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {{ __('guru_soal.help_esai_ai') }}
+                </p>
+                <p x-show="tipe === 'upload'" x-cloak class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {{ __('guru_soal.catatan_konteks_upload') }}
                 </p>
             </div>
 

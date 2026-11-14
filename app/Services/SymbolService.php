@@ -480,7 +480,7 @@ class SymbolService
             $terms[$part] = true;
         }
 
-        return array_keys($terms);
+        return array_map('strval', array_keys($terms));
     }
 
      

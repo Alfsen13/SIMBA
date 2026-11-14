@@ -1,13 +1,15 @@
 # Catatan Penting SIMBA
 
-- `composer test`, **jangan** bare `php artisan test`, sementara cache ada. `composer test` menjalankan `optimize:clear` terlebih dahulu.
+- Jangan `php artisan test` sementara cache konfigurasi ada. `composer test` menjalankan `optimize:clear` lebih dulu, tetapi di host ia gagal (Redis hanya resolve di dalam Docker) — di host pakai `php vendor/bin/pest` setelah menghapus `bootstrap/cache/config.php`.
 - Serving = **FrankenPHP**, bukan Apache/XAMPP. XAMPP ships PHP 8.2 yang di bawah requirement `^8.3`.
-- Queue: database di dev dengan 3 worker (`ai-soal`, `pertemuan`, `default`) via `composer franken/dev`; sync di tests. Generate soal/tugas **sinkron** di request; generate pertemuan dan remedial massal via queue.
+- Queue: database di dev dengan 4 worker (`ai-soal`, `pertemuan`, `default`, `rumus`) via `composer franken/dev`; sync di tests. Generate soal/tugas **sinkron** di request; generate pertemuan, remedial massal, dan pemindaian rumus via queue.
 - Tabel `notifikasis` (bukan `notifications`). Notification `via()` harus hanya mengembalikan `[NotifikasiChannel::class]`.
 - Model array casts selalu `json_encode()` pada assignment. Pass array, bukan `json_encode()`.
 - Timezone adalah UTC. `now()` jatuh pada hari sebelumnya antara 00:00–06:59 WIB.
 - View syntax verifikasi via `php artisan view:cache` — lolos tanpa error.
-- AI provider: `send()` coba **Gemini pertama** (`GEMINI_API_KEY` di `.env`), fallback Ollama (`OLLAMA_MODEL` di `.env`, default `qwen2.5:1.5b`). Timeout Ollama 1200s (20 menit) untuk model besar (phi4-mini).
+- AI provider: `send()`/`sendStream()` coba **Gemini pertama** (`GEMINI_API_KEY`), lalu Ollama; `sendLocalPreferred()`/`sendStreamLocalPreferred()` kebalikannya. `sendForUser()` pakai AI pribadi user dulu, jatuh ke `sendLocalPreferred()`. Timeout Ollama 600 detik di semua jalur.
+- Model Ollama dari `OLLAMA_MODEL` (default config `simba-tutor`; `.env` dev mengisi `qwen2.5:7b`). `OLLAMA_MODEL_FALLBACK_1/2` default mengikuti `OLLAMA_MODEL` — jangan arahkan ke `qwen2.5-coder:1.5b-base`: itu base model, tidak bisa mengikuti instruksi. Model Gemini `gemini-3.8-flash` dan URL endpoint default disusun dari nama modelnya, jadi `GEMINI_ENDPOINT` hanya diisi untuk menimpa seluruh URL.
+- Model custom Ollama dibangun dari `Modelfile`, `Modelfile.full`, atau `Modelfile.slim` di root repo (ketiganya `FROM qwen2.5:7b` dengan parameter berbeda); nama hasilnya ditentukan perintah `ollama create`, bukan isi berkasnya.
 
 ## Seeder awal
 

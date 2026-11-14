@@ -53,6 +53,7 @@ return [
     'opsi_pilihan_ganda' => 'Pilihan Ganda',
     'opsi_esai_ai' => 'Esai / Uraian (dinilai AI)',
     'help_esai_ai' => 'Jawaban siswa akan diperiksa otomatis oleh AI (benar / mendekati / salah) dengan skor saran. Anda tetap bisa mengonfirmasi/mengubah nilai di halaman penilaian.',
+    'catatan_konteks_upload' => 'Pilihan sumber konteks muncul setelah tipe diganti ke Pilihan Ganda atau Esai. AI memakai seluruh isi materi pada pertemuan yang dicentang.',
     'pertemuan_opsional' => 'Pertemuan (opsional)',
     'pilih_pertemuan' => 'Pilih Pertemuan',
     'pilih_pertemuan_placeholder' => '-- Pilih Pertemuan --',

@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Document;
-use App\Models\DocumentChunk;
 use App\Models\Kelas;
 use App\Models\Materi;
 use App\Models\Pertemuan;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
@@ -17,28 +17,19 @@ class KuisGeneratorService
 
     protected SymbolService $symbols;
 
-    protected RAGService $rag;
-
     protected BloomTaxonomyService $bloom;
 
-    private const SAMPUL_OTOMATIS = "Kutipan dari dokumen pembelajaran (diambil otomatis berdasarkan topik):\n";
+    private const SAMPUL_KUTIPAN = "Kutipan dari dokumen pembelajaran (seluruh isi materi terpilih):\n";
 
-    private const SAMPUL_TERPILIH = "Kutipan dari dokumen pembelajaran (potongan yang dipilih pengajar):\n";
+    /** Jumlah potongan yang ada versus yang benar-benar masuk ke prompt. */
+    protected int $potonganTotal = 0;
 
-    /** Anggaran karakter per potongan yang dipilih manual, dan plafon totalnya. */
-    public const KHAR_PER_CHUNK = 1100;
-
-    public const KHAR_MANUAL = 20000;
-
-    protected int $chunkDiminta = 0;
-
-    protected int $chunkHilang = 0;
+    protected int $potonganTermuat = 0;
 
     public function __construct()
     {
         $this->ai = app(AIProviderService::class);
         $this->symbols = app(SymbolService::class);
-        $this->rag = app(RAGService::class);
         $this->bloom = app(BloomTaxonomyService::class);
     }
 
@@ -310,7 +301,7 @@ PROMPT;
             ->get(['id', 'kelas_id', 'nama_pertemuan', 'urutan']);
 
         // Guru perlu tahu materi mana yang benar-benar punya isi untuk dicentang:
-        // tanpa dokumen terindeks, pemilih potongan tidak akan menampilkan apa pun.
+        // tanpa dokumen terindeks, tidak ada yang bisa dikutip dari materi itu.
         $berchunk = Materi::query()
             ->whereIn('id', $pertemuans->flatMap(fn (Pertemuan $p) => $p->materi->pluck('id'))->unique()->all())
             ->whereHas('document', fn ($q) => $q->where('status', 'completed')->has('chunks'))
@@ -336,43 +327,13 @@ PROMPT;
 
     protected function buildMateriContext(Pertemuan $pertemuan, ?string $topik = null, array $sumber = []): string
     {
-        [$pertemuans, $materi] = $this->resolveSumber($pertemuan, $sumber);
+        $materi = $this->resolveSumber($pertemuan, $sumber);
 
         $pertemuan->loadMissing('kelas');
-        $materi->loadMissing(['babSummary', 'document.chunks']);
+        $materi->loadMissing('babSummary');
 
         $kategori = $pertemuan->kelas?->kategori;
-        $queryRag = $this->queryRag($topik, $materi);
-
-        $maxCharsRag = (int) config('services.kuis_rag.max_chars', 8000);
-        $kuotaPerPertemuan = max(1500, intdiv($maxCharsRag, max(1, $pertemuans->count())));
-
-        // Potongan yang dipilih guru dipakai apa adanya, tanpa similaritas, supaya
-        // generate ulang menyusun konteks yang sama persis.
-        $terpilih = $this->chunkTerpilih($sumber, $pertemuans);
-        $kutipanTerpilih = $this->formatKutipan(
-            $terpilih,
-            min(self::KHAR_MANUAL, max($maxCharsRag, count($terpilih) * self::KHAR_PER_CHUNK)),
-            self::SAMPUL_TERPILIH
-        );
-
-        $bagianRag = [];
-
-        if ($kutipanTerpilih !== '') {
-            $bagianRag[] = $kutipanTerpilih;
-        } else {
-            foreach ($pertemuans as $sumberPertemuan) {
-                $sumberPertemuan->loadMissing(['materi.babSummary', 'materi.document.chunks']);
-                $kutipan = $this->buildRagContext($sumberPertemuan, $topik, $queryRag, $kuotaPerPertemuan, $sumber['rag_top_k'] ?? null);
-
-                if ($kutipan !== '') {
-                    $bagianRag[] = $kutipan;
-                }
-            }
-        }
-
-        $konteksRag = implode("\n\n", $bagianRag);
-        $adaRag = $konteksRag !== '';
+        $kutipan = $this->kutipanMateri($materi);
 
         $bagian = [];
         foreach ($materi as $materiSumber) {
@@ -387,11 +348,6 @@ PROMPT;
 
             if ($materiSumber->babSummary?->ringkasan) {
                 $segmen .= "\nRingkasan guru: {$materiSumber->babSummary->ringkasan}";
-            } elseif (! $adaRag) {
-                $chunks = $materiSumber->document?->chunks?->whereNotNull('content')->take(6);
-                if ($chunks && $chunks->isNotEmpty()) {
-                    $segmen .= "\nIsi:\n".$chunks->pluck('konten_terbaca')->implode("\n");
-                }
             }
 
             $bagian[] = $segmen;
@@ -399,12 +355,12 @@ PROMPT;
 
         $konteks = mb_substr(implode("\n\n---\n\n", $bagian), 0, 12000);
 
-        if ($konteksRag !== '') {
-            $konteks = $konteksRag."\n\n---\n\n".$konteks;
+        if ($kutipan !== '') {
+            $konteks = $kutipan."\n\n---\n\n".$konteks;
         }
 
         $konteksSimbol = $this->symbols->buildContext(
-            $this->symbolQuery($materi, $topik, $konteksRag),
+            $this->symbolQuery($materi, $topik, $kutipan),
             $this->symbols->resolveDomains($kategori),
         );
 
@@ -415,40 +371,134 @@ PROMPT;
         return trim($konteks);
     }
 
-    protected function resolveSumber(Pertemuan $pertemuan, array $sumber): array
+    /**
+     * Seluruh potongan dokumen milik materi terpilih, dikutip berurutan
+     * document + chunk_index tanpa similaritas, supaya generate ulang menyusun
+     * acuan yang sama persis.
+     *
+     * @param  Collection<int, Materi>  $materi
+     */
+    protected function kutipanMateri(Collection $materi): string
+    {
+        $this->potonganTotal = 0;
+        $this->potonganTermuat = 0;
+
+        if (! config('services.soal_konteks.enabled', true)) {
+            return '';
+        }
+
+        $perPertemuan = $this->potonganPerPertemuan($materi);
+        $this->potonganTotal = array_sum(array_map('count', $perPertemuan));
+
+        if ($perPertemuan === []) {
+            return '';
+        }
+
+        $anggaran = (int) config('services.soal_konteks.max_chars', 24000);
+        $ukuran = [];
+
+        foreach ($perPertemuan as $pertemuanId => $potongan) {
+            $ukuran[$pertemuanId] = array_sum(array_map(
+                fn (array $p): int => mb_strlen($p['content']) + mb_strlen($p['materi_judul']) + 6,
+                $potongan
+            ));
+        }
+
+        $muatSemua = array_sum($ukuran) <= $anggaran;
+        $totalUkuran = max(1, array_sum($ukuran));
+        $bagian = [];
+
+        foreach ($perPertemuan as $pertemuanId => $potongan) {
+            // Kuota dibagi proporsional supaya satu pertemuan besar tidak
+            // menghabiskan jatah pertemuan lain yang ikut dicentang.
+            $kuota = $muatSemua ? $anggaran : (int) floor($anggaran * $ukuran[$pertemuanId] / $totalUkuran);
+            $kutipan = $this->formatKutipan($potongan, $kuota, self::SAMPUL_KUTIPAN);
+
+            if ($kutipan !== '') {
+                $bagian[] = $kutipan;
+            }
+        }
+
+        return implode("\n\n", $bagian);
+    }
+
+    /**
+     * Potongan yang ada isinya, dikelompokkan per pertemuan dan dinomori
+     * global supaya nomor kutipan tidak bergantung pada kelompoknya.
+     *
+     * @param  Collection<int, Materi>  $materi
+     * @return array<int, array<int, array<string, mixed>>>
+     */
+    protected function potonganPerPertemuan(Collection $materi): array
+    {
+        $baris = DB::table('document_chunks')
+            ->join('documents', 'documents.id', '=', 'document_chunks.document_id')
+            ->join('materi', 'materi.id', '=', 'documents.materi_id')
+            ->whereIn('documents.materi_id', $materi->pluck('id')->all())
+            ->where('documents.status', 'completed')
+            ->whereNotNull('document_chunks.content')
+            ->orderBy('document_chunks.document_id')
+            ->orderBy('document_chunks.chunk_index')
+            ->get([
+                'document_chunks.content',
+                'document_chunks.page_start',
+                'document_chunks.page_end',
+                'documents.original_name',
+                'materi.judul',
+                'materi.pertemuan_id',
+            ]);
+
+        $hasil = [];
+        $nomor = 0;
+
+        foreach ($baris as $chunk) {
+            $isi = RumusPenanda::manusiakan((string) $chunk->content);
+
+            if (trim($isi) === '') {
+                continue;
+            }
+
+            $hasil[(int) $chunk->pertemuan_id][$nomor++] = [
+                'content' => $isi,
+                'materi_judul' => (string) $chunk->judul,
+                'source' => (string) $chunk->original_name,
+                'page_start' => $chunk->page_start,
+                'page_end' => $chunk->page_end,
+            ];
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Materi yang jadi acuan soal: pilihan guru kalau ada, kalau tidak seluruh
+     * materi pertemuan yang sedang dibuka.
+     *
+     * @param  array<string, mixed>  $sumber
+     * @return EloquentCollection<int, Materi>
+     */
+    protected function resolveSumber(Pertemuan $pertemuan, array $sumber): EloquentCollection
     {
         $pertemuanIds = array_values(array_unique(array_filter(
             array_map('intval', (array) ($sumber['pertemuan_ids'] ?? []))
         )));
 
         if ($pertemuanIds === []) {
-            $pertemuan->loadMissing(['kelas', 'materi.babSummary', 'materi.document.chunks']);
-
-            return [
-                collect([$pertemuan]),
-                $pertemuan->materi->sortBy('id')->values(),
-            ];
+            return $this->materiPertemuanSaatIni($pertemuan);
         }
 
         $pertemuans = Pertemuan::query()
             ->whereIn('id', $pertemuanIds)
-
             ->when($pertemuan->loadMissing('kelas')->kelas?->guru_id, fn ($q, $guruId) => $q->whereHas(
                 'kelas',
                 fn ($k) => $k->where('guru_id', $guruId)
             ))
-            ->with('kelas')
             ->orderBy('urutan')
             ->orderBy('id')
             ->get();
 
         if ($pertemuans->isEmpty()) {
-            $pertemuan->loadMissing(['kelas', 'materi.babSummary', 'materi.document.chunks']);
-
-            return [
-                collect([$pertemuan]),
-                $pertemuan->materi->sortBy('id')->values(),
-            ];
+            return $this->materiPertemuanSaatIni($pertemuan);
         }
 
         $materiIds = array_values(array_unique(array_filter(
@@ -469,79 +519,24 @@ PROMPT;
             return $dipilih === null || $dipilih->isEmpty() || $dipilih->contains('id', $m->id);
         })->values();
 
-        return [$pertemuans, $terpakai];
+        return $terpakai;
     }
 
-    protected function queryRag(?string $topik, Collection $materi): string
+    /** Acuan cadangan: seluruh materi pada pertemuan yang sedang dibuka. */
+    protected function materiPertemuanSaatIni(Pertemuan $pertemuan): EloquentCollection
     {
-        $topik = trim((string) $topik);
-
-        if ($topik !== '') {
-            return $topik;
-        }
-
-        return mb_substr($materi
-            ->map(fn (Materi $m) => trim($m->judul.' '.(string) $m->deskripsi))
-            ->filter()
-            ->implode(' '), 0, 600);
-    }
-
-    protected function buildRagContext(Pertemuan $pertemuan, ?string $topik, ?string $queryOverride = null, ?int $maxChars = null, ?int $topK = null): string
-    {
-        if (! config('services.kuis_rag.enabled', true)) {
-            return '';
-        }
-
-        $query = trim((string) $topik);
-
-        if ($query === '') {
-            $query = trim((string) $queryOverride);
-        }
-
-        if ($query === '') {
-            $query = mb_substr($pertemuan->materi
-                ->map(fn ($m) => trim($m->judul.' '.(string) $m->deskripsi))
-                ->filter()
-                ->implode(' '), 0, 600);
-        }
-
-        if ($query === '') {
-            return '';
-        }
-
-        $kategori = $pertemuan->kelas?->kategori;
-        $topK = $topK ?? (int) config('services.kuis_rag.top_k', 6);
-        $minScore = (float) config('services.kuis_rag.min_score', 0.35);
-
-        try {
-            $chunks = $this->rag->retrieve($query, $topK, $minScore, $kategori, null, $pertemuan->id);
-
-            if (empty($chunks) && $kategori !== null) {
-                $chunks = $this->rag->retrieve($query, $topK, $minScore, null, null, $pertemuan->id);
-            }
-        } catch (\Throwable $e) {
-            Log::warning('KuisGenerator: retrieval RAG gagal, pakai fallback.', [
-                'msg' => $e->getMessage(),
-            ]);
-
-            return '';
-        }
-
-        if (empty($chunks)) {
-            return '';
-        }
-
-        return $this->formatKutipan(
-            $chunks,
-            $maxChars ?? (int) config('services.kuis_rag.max_chars', 8000),
-            self::SAMPUL_OTOMATIS
-        );
+        return Materi::query()
+            ->where('pertemuan_id', $pertemuan->id)
+            ->orderBy('id')
+            ->with('babSummary')
+            ->get();
     }
 
     /**
-     * Susun kutipan bernomor sampai kuota karakter habis.
+     * Susun kutipan bernomor sampai kuota karakter habis, dan catat berapa
+     * potongan yang sempat masuk supaya pemotongan bisa dilaporkan.
      *
-     * @param  list<array<string, mixed>>  $chunks
+     * @param  array<int, array<string, mixed>>  $chunks
      */
     protected function formatKutipan(array $chunks, int $maxChars, string $sampul): string
     {
@@ -578,70 +573,32 @@ PROMPT;
                 $content = rtrim(mb_substr($content, 0, $sisa - 1)).'…';
             }
 
-            $isi .= '['.($i + 1)."] {$label}\n{$content}\n\n";
+            $isi .= '['.((int) $i + 1)."] {$label}\n{$content}\n\n";
             $terpakai += mb_strlen($content) + mb_strlen($label) + 6;
+            $this->potonganTermuat++;
         }
 
         return $terpakai > 0 ? $isi : '';
     }
 
     /**
-     * Potongan yang dipilih guru, dibatasi ke pertemuan yang sedang dipakai supaya
-     * id dari kelas lain tidak ikut merembes meski lolos validasi request.
-     *
-     * @param  array<string, mixed>  $sumber
-     * @param  Collection<int, Pertemuan>  $pertemuans
-     * @return list<array<string, mixed>>
-     */
-    protected function chunkTerpilih(array $sumber, Collection $pertemuans): array
-    {
-        $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($sumber['chunk_ids'] ?? [])))));
-        $this->chunkDiminta = count($ids);
-        $this->chunkHilang = 0;
-
-        if ($ids === []) {
-            return [];
-        }
-
-        $baris = DocumentChunk::query()
-            ->whereIn('document_chunks.id', $ids)
-            ->whereHas('document.materi', fn ($q) => $q->whereIn('pertemuan_id', $pertemuans->pluck('id')->all()))
-            ->with(['document:id,original_name,materi_id', 'document.materi:id,judul'])
-            ->orderBy('document_chunks.document_id')
-            ->orderBy('document_chunks.chunk_index')
-            ->get();
-
-        $this->chunkHilang = max(0, count($ids) - $baris->count());
-
-        return $baris->map(function (DocumentChunk $c): array {
-            $dokumen = $c->document instanceof Document ? $c->document : null;
-            $materi = $dokumen?->materi instanceof Materi ? $dokumen->materi : null;
-
-            return [
-                'content' => RumusPenanda::manusiakan((string) $c->content),
-                'materi_judul' => $materi?->judul,
-                'source' => $dokumen?->original_name,
-                'page_start' => $c->page_start,
-                'page_end' => $c->page_end,
-            ];
-        })->values()->all();
-    }
-
-    /**
-     * Generate tetap memakai potongan yang masih ada; guru perlu tahu kalau ada
-     * yang hilang karena dokumennya ditanam ulang setelah soal ini dibuat.
+     * Isi materi hampir selalu lebih panjang dari anggaran karakter, jadi guru
+     * perlu tahu bahwa tidak seluruhnya sempat masuk ke prompt.
      */
     public function peringatanKonteks(): ?string
     {
-        if ($this->chunkDiminta === 0 || $this->chunkHilang === 0) {
+        if ($this->potonganTermuat === 0 || $this->potonganTermuat >= $this->potonganTotal) {
             return null;
         }
 
-        return $this->chunkHilang.' dari '.$this->chunkDiminta.' potongan terpilih sudah tidak tersedia '
-            .'(dokumennya ditanam ulang); soal disusun dari potongan yang masih ada.';
+        $anggaran = (int) config('services.soal_konteks.max_chars', 24000);
+
+        return number_format($this->potonganTermuat, 0, ',', '.').' dari '
+            .number_format($this->potonganTotal, 0, ',', '.').' potongan dokumen ikut dipakai; sisanya tidak muat '
+            .'dalam anggaran konteks '.number_format($anggaran, 0, ',', '.').' karakter.';
     }
 
-    protected function symbolQuery(Collection $materi, ?string $topik, string $konteksRag = ''): string
+    protected function symbolQuery(Collection $materi, ?string $topik, string $kutipan = ''): string
     {
         $topik = trim((string) $topik);
 
@@ -654,10 +611,10 @@ PROMPT;
             ->filter()
             ->implode(' ');
 
-        $dariRag = trim(preg_replace('/^\[\d+\].*$/m', '', $konteksRag) ?? '');
-        $dariRag = trim(preg_replace('/\s+/', ' ', $dariRag) ?? '');
+        $dariKutipan = trim(preg_replace('/^\[\d+\].*$/m', '', $kutipan) ?? '');
+        $dariKutipan = trim(preg_replace('/\s+/', ' ', $dariKutipan) ?? '');
 
-        $gabung = trim($dariMateri.' '.$dariRag);
+        $gabung = trim($dariMateri.' '.$dariKutipan);
 
         return mb_substr($gabung, 0, 800);
     }

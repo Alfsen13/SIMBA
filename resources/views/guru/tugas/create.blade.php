@@ -19,7 +19,7 @@
         action="{{ route('pengajar.tugas.store') }}"
         method="POST"
         class="w-full"
-        x-data="tugasBuilder({}, { pertemuanId: {{ $pertemuan->id }}, generateUrl: '{{ route('pengajar.tugas.generate') }}', chunkUrl: '{{ route('pengajar.konteks-chunk') }}', bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} })"
+        x-data="tugasBuilder({}, { pertemuanId: {{ $pertemuan->id }}, generateUrl: '{{ route('pengajar.tugas.generate') }}', bloomLevels: {{ Js::from($bloomLevels) }}, sumberKonteks: {{ Js::from($sumberKonteks) }} })"
     >
         @csrf
         <input type="hidden" name="kelas_id" value="{{ $pertemuan->kelas_id }}">
@@ -56,6 +56,9 @@
                     </select>
                     <p x-show="tipe === 'essai'" x-cloak class="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {{ __('guru_soal.help_esai_ai') }}
+                    </p>
+                    <p x-show="tipe === 'upload'" x-cloak class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        {{ __('guru_soal.catatan_konteks_upload') }}
                     </p>
                 </div>
                 <x-form-input

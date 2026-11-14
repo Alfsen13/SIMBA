@@ -11,7 +11,6 @@ use App\Http\Controllers\Web\Guru\FiturSiswaController;
 use App\Http\Controllers\Web\Guru\FormulaReviewController;
 use App\Http\Controllers\Web\Guru\KehadiranController as GuruKehadiran;
 use App\Http\Controllers\Web\Guru\KelasController as GuruKelas;
-use App\Http\Controllers\Web\Guru\KonteksChunkController;
 use App\Http\Controllers\Web\Guru\KuisController;
 use App\Http\Controllers\Web\Guru\MateriController;
 use App\Http\Controllers\Web\Guru\NilaiController as GuruNilai;
@@ -106,7 +105,6 @@ Route::prefix('pengajar')->name('pengajar.')->middleware(['auth', 'role:pengajar
     Route::get('materi/{materi}/rumus/status', [FormulaReviewController::class, 'status'])->middleware('throttle:60,1')->name('materi.rumus.status');
     Route::post('materi/{materi}/rumus/setujui-banyak', [FormulaReviewController::class, 'approveBatch'])->middleware('throttle:10,1')->name('materi.rumus.setujui-banyak');
     Route::post('materi/{materi}/rumus/tolak-banyak', [FormulaReviewController::class, 'rejectBatch'])->middleware('throttle:10,1')->name('materi.rumus.tolak-banyak');
-    Route::get('konteks-chunk', [KonteksChunkController::class, 'index'])->middleware('throttle:10,1')->name('konteks-chunk');
     Route::post('tugas/generate', [TugasController::class, 'generate'])->name('tugas.generate');
     Route::get('tugas/generate-status', [TugasController::class, 'generateStatus'])->name('tugas.generate-status');
     Route::resource('tugas', TugasController::class)->parameters(['tugas' => 'tugas']);

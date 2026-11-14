@@ -1,5 +1,12 @@
 <?php
 
+// Fallback mengikuti model utama: satu OLLAMA_MODEL cukup, dan tidak ada jalur
+// yang diam-diam menunjuk model yang tidak terpasang.
+$ollamaModel = env('OLLAMA_MODEL', 'simba-tutor');
+
+// Endpoint default Gemini memuat nama modelnya, jadi keduanya dari satu sumber.
+$geminiModel = env('GEMINI_MODEL', 'gemini-3.8-flash');
+
 return [
 
     /*
@@ -37,16 +44,20 @@ return [
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
-        'endpoint' => env('GEMINI_ENDPOINT', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent'),
+        'model' => $geminiModel,
+        'endpoint' => env(
+            'GEMINI_ENDPOINT',
+            'https://generativelanguage.googleapis.com/v1beta/models/'.$geminiModel.':generateContent'
+        ),
         'short_timeout' => env('GEMINI_SHORT_TIMEOUT', 30),
         'embedding_model' => env('GEMINI_EMBEDDING_MODEL', 'gemini-embedding-001'),
     ],
 
     'ollama' => [
         'base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
-        'model' => env('OLLAMA_MODEL', 'simba-tutor'),
-        'fallback_model_1' => env('OLLAMA_MODEL_FALLBACK_1', 'qwen2.5-coder:1.5b-base'),
-        'fallback_model_2' => env('OLLAMA_MODEL_FALLBACK_2', 'qwen2.5:7b'),
+        'model' => $ollamaModel,
+        'fallback_model_1' => env('OLLAMA_MODEL_FALLBACK_1', $ollamaModel),
+        'fallback_model_2' => env('OLLAMA_MODEL_FALLBACK_2', $ollamaModel),
         'embed_model' => env('OLLAMA_EMBED_MODEL', 'nomic-embed-text'),
         'num_ctx' => env('OLLAMA_NUM_CTX', 16384),
         'num_predict' => env('OLLAMA_NUM_PREDICT', 2048),
@@ -125,11 +136,21 @@ return [
         'min_confidence' => (float) env('BLOOM_MIN_CONFIDENCE', 0.34),
     ],
 
-    'kuis_rag' => [
-        'enabled' => env('KUIS_RAG_ENABLED', true),
-        'top_k' => env('KUIS_RAG_TOP_K', 4),
-        'min_score' => env('KUIS_RAG_MIN_SCORE', 0.35),
-        'max_chars' => env('KUIS_RAG_MAX_CHARS', 4000),
+    /*
+    |--------------------------------------------------------------------------
+    | Konteks generate soal (kuis/tugas)
+    |--------------------------------------------------------------------------
+    |
+    | Seluruh potongan dokumen milik materi pada pertemuan yang dipilih guru
+    | dikutip ke prompt, berurutan document + chunk_index tanpa similaritas,
+    | jadi generate ulang memakai acuan yang sama. `max_chars` adalah anggaran
+    | karakter kutipan per susunan soal; sisanya dipotong dan dilaporkan lewat
+    | peringatan. Matikan `enabled` untuk kembali ke ringkasan bab saja.
+    |
+    */
+    'soal_konteks' => [
+        'enabled' => env('SOAL_KONTEKS_ENABLED', true),
+        'max_chars' => env('SOAL_KONTEKS_MAX_CHARS', 24000),
     ],
 
     /*

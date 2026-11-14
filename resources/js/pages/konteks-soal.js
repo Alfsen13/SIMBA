@@ -1,9 +1,7 @@
-﻿import { konteksChunkState, unduhChunk } from './konteks-chunk.js';
+﻿const KONFIG_ELEMEN = 'konteks-soal-konfig';
 
-const KONFIG_ELEMEN = 'konteks-chunk-konfig';
-
-// Batas dan teks pesan dikirim Blade dari satu tempat supaya JS tidak
-// pernah memegang angka yang berbeda dari yang divalidasi server.
+// Teks ringkasan dikirim Blade dari katalog terjemahan supaya JS tidak
+// menempelkan kalimat yang bisa berbeda dari yang dipakai halaman.
 export function konteksKonfigurasi() {
     const elemen = typeof document === 'undefined' ? null : document.getElementById(KONFIG_ELEMEN);
     let isi = {};
@@ -16,7 +14,7 @@ export function konteksKonfigurasi() {
         }
     }
 
-    return { batas: 40, perPotongan: 1100, plafon: 20000, anggaran: 8000, pesan: {}, ...isi };
+    return { pesan: {}, ...isi };
 }
 
 export function pesanDariKatalog(katalog) {
@@ -46,27 +44,12 @@ export function idUtuh(nilai) {
 export function konteksSoalState(options = {}, defaultPertemuanId = null) {
     const opts = options || {};
     const tersimpan = opts.tersimpan && typeof opts.tersimpan === 'object' ? opts.tersimpan : {};
-    const konfigurasi = konteksKonfigurasi();
-    const pesan = typeof opts.kunci === 'function' ? opts.kunci : pesanDariKatalog(konfigurasi);
-    let diri = null;
+    const pesan = typeof opts.kunci === 'function' ? opts.kunci : pesanDariKatalog(konteksKonfigurasi());
 
-    const state = {
-        ...konteksChunkState({
-            batas: opts.chunkBatas ?? konfigurasi.batas,
-            perPotongan: opts.chunkPerPotongan ?? konfigurasi.perPotongan,
-            plafon: opts.chunkPlafon ?? konfigurasi.plafon,
-            anggaran: opts.chunkAnggaran ?? konfigurasi.anggaran,
-            kunci: pesan,
-            unduh: typeof opts.unduh === 'function' ? opts.unduh : (opts.chunkUrl ? unduhChunk(opts.chunkUrl) : undefined),
-            // Potongan ikut pertemuan yang dipilih, dan daftar pertemuannya baru
-            // diketahui setelah state ini terbentuk.
-            scope: () => (diri ? diri.konteksPertemuan : []),
-        }),
-
+    return {
         sumberKonteks: Array.isArray(opts.sumberKonteks) ? opts.sumberKonteks : [],
         konteksPertemuan: [],
         konteksMateri: [],
-        ragTopK: '',
         panelMateri: {},
 
         initKonteks() {
@@ -79,18 +62,6 @@ export function konteksSoalState(options = {}, defaultPertemuanId = null) {
             }
 
             this.konteksMateri = idUtuh(tersimpan.materi_ids);
-
-            if (tersimpan.rag_top_k) {
-                this.ragTopK = String(tersimpan.rag_top_k);
-            }
-
-            this.chunkSiapkan(tersimpan.chunk_ids);
-
-            // Pilihan yang tersimpan harus terlihat begitu halaman dibuka,
-            // termasuk bila ada potongan yang sudah hilang karena menanam ulang.
-            if (this.chunkJumlah() > 0) {
-                this.chunkPanel();
-            }
         },
 
         panelMateriTerbuka(pertemuanId) {
@@ -160,7 +131,6 @@ export function konteksSoalState(options = {}, defaultPertemuanId = null) {
                 const sisaIdMateri = this.materiDari(nilai).map(m => Number(m.id));
 
                 this.konteksMateri = this.konteksMateri.filter(m => !sisaIdMateri.includes(Number(m)));
-                this.chunkLepasDariPertemuan(nilai);
             } else {
                 this.konteksPertemuan = [...this.konteksPertemuan, nilai];
             }
@@ -179,12 +149,11 @@ export function konteksSoalState(options = {}, defaultPertemuanId = null) {
         resetKonteks() {
             this.konteksPertemuan = [];
             this.konteksMateri = [];
-            this.chunkKosongkan();
         },
 
         ringkasanKonteks() {
             if (this.konteksPertemuan.length === 0) {
-                return this._pesan('pakai_pertemuan', {}, 'Memakai materi pertemuan ini.');
+                return pesan('pakai_pertemuan', {}, 'Memakai materi pertemuan ini.');
             }
 
             const namaPertemuan = this.konteksPertemuan.map(id => {
@@ -193,36 +162,18 @@ export function konteksSoalState(options = {}, defaultPertemuanId = null) {
                 return pertemuan ? pertemuan.nama : '#' + id;
             });
 
-            let ringkas = namaPertemuan.join(' + ');
             const jumlahMateri = this.konteksMateri.length;
-            const jumlahPotongan = this.chunkJumlah();
 
-            ringkas += jumlahMateri > 0
-                ? ' (' + this._pesan('materi_dipilih', { count: jumlahMateri }, jumlahMateri + ' materi dipilih)')
-                : ' (' + this._pesan('semua_materi', {}, 'seluruh materi') + ')';
-
-            if (jumlahPotongan > 0) {
-                ringkas += ' · ' + this._pesan('potongan_dipilih', { count: jumlahPotongan }, jumlahPotongan + ' potongan');
-            }
-
-            return ringkas;
+            return namaPertemuan.join(' + ') + (jumlahMateri > 0
+                ? ' (' + pesan('materi_dipilih', { count: jumlahMateri }, jumlahMateri + ' materi dipilih') + ')'
+                : ' (' + pesan('semua_materi', {}, 'seluruh materi') + ')');
         },
 
         payloadKonteks() {
             return {
                 konteks_pertemuan_ids: this.konteksPertemuan,
                 konteks_materi_ids: this.konteksMateri,
-                konteks_chunk_ids: this.chunkIds(),
-                rag_top_k: this.ragTopK === '' ? null : Number(this.ragTopK)
             };
         },
-
-        _pesan(kunci, args, bawaan) {
-            return pesan(kunci, args, bawaan);
-        },
     };
-
-    diri = state;
-
-    return state;
 }

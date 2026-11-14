@@ -53,6 +53,7 @@ return [
     'opsi_pilihan_ganda' => 'Multiple Choice',
     'opsi_esai_ai' => 'Essay / Written Answer (AI graded)',
     'help_esai_ai' => 'Student answers will be checked automatically by AI (correct / close / incorrect) with a suggested score. You can still confirm or adjust the grade on the grading page.',
+    'catatan_konteks_upload' => 'The context picker appears once the type is Multiple Choice or Essay. The AI uses the full text of the materials in the ticked meetings.',
     'pertemuan_opsional' => 'Session (optional)',
     'pilih_pertemuan' => 'Select a Session',
     'pilih_pertemuan_placeholder' => '-- Select a Session --',

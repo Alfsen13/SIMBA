@@ -33,6 +33,7 @@ class Materi extends Model
         return $this->belongsTo(Pertemuan::class);
     }
 
+    /** @return HasOne<MateriBabSummary, $this> */
     public function babSummary(): HasOne
     {
         return $this->hasOne(MateriBabSummary::class);

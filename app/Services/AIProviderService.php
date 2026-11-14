@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Support\Bahasa;
-use App\Services\CustomAiService;
 use Generator;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -43,7 +42,6 @@ class AIProviderService
         '/tidak ada respons/i',
     ];
 
-     
     public function send(string $prompt, array $history = [], ?string $systemPrompt = null): string
     {
         $geminiTimeout = min((int) config('services.gemini.short_timeout', 8), 15);
@@ -74,7 +72,6 @@ class AIProviderService
         return $aiOutput;
     }
 
-     
     protected function isRefusal(string $response): bool
     {
         foreach ($this->refusalPatterns as $pattern) {
@@ -91,7 +88,6 @@ class AIProviderService
         return false;
     }
 
-     
     protected function retryWithForcedPrompt(string $originalPrompt, array $history, ?string $systemPrompt = null): string
     {
         $forcedPrompt = "PENTING: Jawab pertanyaan berikut berdasarkan dokumen yang diberikan. Jika dokumen tidak mencakup topik ini, katakan bahwa materi belum tersedia. Jangan membuat jawaban sendiri.\n\nPertanyaan: {$originalPrompt}";
@@ -116,7 +112,6 @@ class AIProviderService
         }
     }
 
-     
     public function sendStream(string $prompt, array $history = [], ?string $systemPrompt = null): Generator
     {
         $geminiTimeout = (int) config('services.gemini.short_timeout', 8);
@@ -128,7 +123,6 @@ class AIProviderService
         ]);
     }
 
-     
     public function sendLocalPreferred(string $prompt, array $history = [], ?string $systemPrompt = null): string
     {
         $historyWithSystem = $this->prepareHistory($history, $systemPrompt);
@@ -183,7 +177,6 @@ class AIProviderService
         throw new RuntimeException('Maaf, layanan AI tidak tersedia saat ini. Silakan coba lagi.');
     }
 
-     
     public function sendStreamLocalPreferred(string $prompt, array $history = [], ?string $systemPrompt = null): Generator
     {
         $historyWithSystem = $this->prepareHistory($history, $systemPrompt);
@@ -196,13 +189,6 @@ class AIProviderService
         ]);
     }
 
-     
-    public function sendOllama(string $prompt, array $history = [], string $model = 'qwen2.5-coder:1.5b-base'): string
-    {
-        return $this->ollama->send($prompt, $this->prepareHistory($history), $model, 600);
-    }
-
-     
     protected function attemptWithFallback(callable $callable): string
     {
         $exceptions = [];
@@ -224,7 +210,6 @@ class AIProviderService
         throw new RuntimeException("Semua provider AI gagal. {$detail}");
     }
 
-     
     protected function untilSuccess(array $generators): Generator
     {
         $indexes = ['Ollama (primary)', 'Ollama (fallback)', 'Gemini'];
@@ -245,7 +230,6 @@ class AIProviderService
         }
     }
 
-     
     protected function prepareHistory(array $history, ?string $systemPrompt = null): array
     {
         $prompt = trim(($systemPrompt ?? $this->systemPrompt).' '.Bahasa::instruksi());
