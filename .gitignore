@@ -51,5 +51,7 @@ README.md
 /compile_layout.php
 /clean_comments.py
 /storage/test_integral.php
+/storage/phpstan-serial.neon
+/storage/scratch-*.php
 __pycache__/
 *.pyc
